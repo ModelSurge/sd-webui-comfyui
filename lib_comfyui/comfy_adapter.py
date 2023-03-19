@@ -16,7 +16,7 @@ script_callbacks.on_model_loaded(on_model_loaded)
 def start():
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     global thread
-    thread = multiprocessing.Process(target=async_comfy_loader.main, args=([], model_queue, ), daemon=True)
+    thread = multiprocessing.Process(target=async_comfy_loader.main, args=(model_queue, ), daemon=True)
     thread.start()
 
 

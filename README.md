@@ -1,8 +1,8 @@
-# sd-webui-comfy
+# sd-webui-comfyui
 Note: This project is currently under development and not yet ready for use. 
 
 ## Overview
-sd-webui-comfy is an extension for Automatic1111's webui. It's designed to embed ComfyUI as a widget. 
+sd-webui-comfyui is an extension for Automatic1111's webui. It's designed to embed ComfyUI as a widget. 
 
 ## Contributing
 We welcome contributions from anyone who is interested in improving sd-webui-comfy. If you would like to contribute, please follow these steps:

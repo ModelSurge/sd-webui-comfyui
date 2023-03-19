@@ -2,7 +2,7 @@ import sys
 from modules import shared
 
 
-comfyui_keyword = 'comfyui-'
+comfyui_argv_prefix = '--comfyui-'
 
 
 def set_comfyui_command_args():
@@ -14,8 +14,8 @@ def set_comfyui_command_args():
 def convert_arguments(cmd_opts):
     result = []
     for k, v in _items(cmd_opts):
-        if comfyui_keyword in k:
-            k = k.replace(comfyui_keyword, '')
+        if k.startswith(comfyui_argv_prefix):
+            k = k.replace(comfyui_argv_prefix[2:], '')
             result.extend(as_argv_list(k, v))
     return result
 

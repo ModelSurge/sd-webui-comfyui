@@ -8,7 +8,7 @@ from modules import script_callbacks
 from lib_comfyui import comfy_adapter
 
 
-class AutoBackupScript(scripts.Script):
+class ComfyUIScript(scripts.Script):
     def title(self):
         return "ComfyUI"
 

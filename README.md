@@ -5,14 +5,14 @@ Note: This project is currently under development and not yet ready for use.
 sd-webui-comfyui is an extension for Automatic1111's webui. It's designed to embed ComfyUI as a widget. 
 
 ## Contributing
-We welcome contributions from anyone who is interested in improving sd-webui-comfy. If you would like to contribute, please follow these steps:
+We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:
 
 Fork the repository and create a new branch for your feature or bug fix.
 Implement your changes, adding any necessary documentation and tests.
 Submit a pull request.
 We will review your contribution as soon as possible and provide feedback.
 
-License
+## License
 MIT
 
 Contact

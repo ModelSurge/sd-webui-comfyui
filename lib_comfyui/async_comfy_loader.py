@@ -17,7 +17,7 @@ def start_comfyui(cmd_argv):
     runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')
 
 
-def set_comfyui_command_args(argv=()):
+def set_comfyui_command_args(argv):
     sys.argv = sys.argv[:1]
     sys.argv.extend(argv)
 

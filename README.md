@@ -15,7 +15,7 @@ We will review your contribution as soon as possible and provide feedback.
 ## License
 MIT
 
-Contact
+## Contact
 If you have any questions or concerns, please leave an issue, or start a thread in the discussions.
 
 Thank you for your interest!

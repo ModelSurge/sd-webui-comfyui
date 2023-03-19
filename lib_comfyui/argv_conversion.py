@@ -1,17 +1,17 @@
 import sys
 from modules import shared
 
+
 comfyui_argv_prefix = 'comfyui_'
 
 
 def set_comfyui_argv():
-    comfyui_argv = extract_comfyui_argv(shared.cmd_opts)
-    sys.argv = sys.argv[:1] + comfyui_argv
+    sys.argv = sys.argv[:1] + extract_comfyui_argv()
 
 
-def extract_comfyui_argv(cmd_opts):
+def extract_comfyui_argv():
     result = []
-    for k, v in _items(cmd_opts):
+    for k, v in _items(shared.cmd_opts):
         if k.startswith(comfyui_argv_prefix):
             k = k.replace(comfyui_argv_prefix, '')
             result.extend(as_argv_list(k, v))

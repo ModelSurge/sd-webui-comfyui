@@ -5,9 +5,9 @@ from modules import shared
 import threading
 
 
-def update_queue(model_queue):
+def update_queue(model_name_queue):
     while True:
-        shared.sd_model = model_queue.get()
+        shared.sd_model_ckpt_name = model_name_queue.get()
 
 
 def main(model_queue):

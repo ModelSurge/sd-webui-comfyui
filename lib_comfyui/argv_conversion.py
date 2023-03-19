@@ -4,13 +4,12 @@ from modules import shared
 comfyui_argv_prefix = 'comfyui_'
 
 
-def set_comfyui_command_args():
-    sys.argv = sys.argv[:1]
-    argv = convert_arguments(shared.cmd_opts)
-    sys.argv.extend(argv)
+def set_comfyui_argv():
+    comfyui_argv = extract_comfyui_argv(shared.cmd_opts)
+    sys.argv = sys.argv[:1] + comfyui_argv
 
 
-def convert_arguments(cmd_opts):
+def extract_comfyui_argv(cmd_opts):
     result = []
     for k, v in _items(cmd_opts):
         if k.startswith(comfyui_argv_prefix):

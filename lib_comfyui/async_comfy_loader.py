@@ -14,7 +14,7 @@ def main(model_name_queue):
 def start_comfyui():
     comfyui_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ComfyUI')
     sys.path.insert(0, comfyui_path)
-    argv_conversion.set_comfyui_command_args()
+    argv_conversion.set_comfyui_argv()
     runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')
 
 

@@ -1,6 +1,7 @@
 import sys
 import os
 import importlib
+from modules import shared
 from torch import multiprocessing
 from modules import script_callbacks
 from lib_comfyui import async_comfyui_loader
@@ -21,7 +22,7 @@ def start():
     if sys_path_to_add not in sys.path:
         sys.path.insert(0, sys_path_to_add)
     global thread
-    thread = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, ), daemon=True)
+    thread = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, shared.opts.comfyui_install_location), daemon=True)
     thread.start()
 
 

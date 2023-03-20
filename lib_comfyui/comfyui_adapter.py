@@ -1,7 +1,10 @@
-import sys, os
+import sys
+import os
+import importlib
 from torch import multiprocessing
 from modules import script_callbacks
 from lib_comfyui import async_comfyui_loader
+importlib.reload(async_comfyui_loader)
 
 
 thread = None

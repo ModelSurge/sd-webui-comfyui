@@ -1,8 +1,11 @@
 import os
+import importlib
 import gradio as gr
 from modules import shared
 import install_comfyui
 from lib_comfyui import comfyui_adapter
+importlib.reload(install_comfyui)
+importlib.reload(comfyui_adapter)
 
 
 comfyui_install_instructions_markdown = f'''

@@ -1,17 +1,19 @@
 import importlib
+import os.path
+
 from modules import script_callbacks
-from lib_comfyui import comfyui_adapter, comfyui_tab, comfyui_settings
+from lib_comfyui import comfyui_adapter, webui_tab, webui_settings
 importlib.reload(comfyui_adapter)
-importlib.reload(comfyui_tab)
-importlib.reload(comfyui_settings)
+importlib.reload(webui_tab)
+importlib.reload(webui_settings)
 
 
 def on_ui_tabs():
-    return comfyui_tab.generate_gradio_component()
+    return webui_tab.create_tab()
 
 
 def on_ui_settings():
-    return comfyui_settings.add_settings()
+    return webui_settings.create_section()
 
 
 def on_app_started(_gr_root, _fast_api):

@@ -1,9 +1,9 @@
 import os
+import sys
 import git
-import modules.scripts as scripts
 
 
-default_install_location = os.path.join(scripts.basedir(), 'lib_comfyui', 'ComfyUI')
+default_install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib_comfyui', 'ComfyUI')
 
 
 def main(install_location):
@@ -13,4 +13,8 @@ def main(install_location):
 
 
 if __name__ == '__main__':
-    main(default_install_location)
+    install_location = default_install_location
+    if len(sys.argv) > 1:
+        inistall_location = sys.argv[1]
+
+    main(install_location)

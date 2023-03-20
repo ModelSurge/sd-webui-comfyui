@@ -1,13 +1,13 @@
 import os
 import git
+import modules.scripts as scripts
 
 
-def main():
+def main(install_location):
     git_repo_url = 'https://github.com/comfyanonymous/ComfyUI.git'
-    install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib_comfyui', 'ComfyUI')
     os.mkdir(install_location)
     git.Repo.clone_from(git_repo_url, install_location)
 
 
 if __name__ == '__main__':
-    main()
+    main(os.path.join(scripts.basedir(), 'lib_comfyui', 'ComfyUI'))

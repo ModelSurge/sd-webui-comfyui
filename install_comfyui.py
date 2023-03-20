@@ -13,4 +13,4 @@ def main(install_location):
 
 
 if __name__ == '__main__':
-    main(os.path.join(scripts.basedir(), 'lib_comfyui', 'ComfyUI'))
+    main(automatic_install_location)

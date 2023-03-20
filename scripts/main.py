@@ -7,6 +7,7 @@ sys.path.append(base_dir)
 
 from modules import script_callbacks
 from lib_comfyui import comfy_adapter
+from modules import shared
 
 
 class ComfyUIScript(scripts.Script):
@@ -21,7 +22,11 @@ class ComfyUIScript(scripts.Script):
 
 
 def on_ui_tabs():
-    root = gr.HTML(f"""<div id="comfyui_webui_container"><object data="http://127.0.0.1:7861" id="comfyui_webui_root"></object></div>""")
+    root = gr.HTML(f"""
+<div id="comfyui_webui_container">
+    <object data="http://127.0.0.1:{shared.cmd_opts.comfyui_port}" id="comfyui_webui_root"></object>
+</div>
+""")
     return [(root, 'ComfyUI', 'comfyui_webui_root')]
 
 

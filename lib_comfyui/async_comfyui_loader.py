@@ -8,13 +8,12 @@ from lib_comfyui import argv_conversion
 importlib.reload(argv_conversion)
 
 
-def main(model_name_queue):
+def main(model_name_queue, comfyui_path):
     start_update_loop(model_name_queue)
-    start_comfyui()
+    start_comfyui(comfyui_path)
 
 
-def start_comfyui():
-    comfyui_path = shared.opts.comfyui_install_location
+def start_comfyui(comfyui_path):
     sys.path.insert(0, comfyui_path)
     argv_conversion.set_comfyui_argv()
     runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')

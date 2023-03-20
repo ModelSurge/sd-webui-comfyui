@@ -14,7 +14,9 @@ script_callbacks.on_model_loaded(on_model_loaded)
 
 
 def start():
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    if sys_path_to_add not in sys.path:
+        sys.path.insert(0, sys_path_to_add)
     global thread
     thread = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, ), daemon=True)
     thread.start()

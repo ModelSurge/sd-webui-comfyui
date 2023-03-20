@@ -20,8 +20,8 @@ comfyui_app_html = f"""
 
 
 def automatic_install_comfyui():
-    install_comfyui.main(install_comfyui.automatic_install_location)
-    shared.opts.comfyui_install_location = install_comfyui.automatic_install_location
+    install_comfyui.main(install_comfyui.default_install_location)
+    shared.opts.comfyui_install_location = install_comfyui.default_install_location
     comfyui_adapter.start()
 
 
@@ -36,8 +36,8 @@ def generate_gradio_component():
         automatic_install_button = gr.Button('Install ComfyUI')
         automatic_install_button.click(automatic_install_comfyui, inputs=[], outputs=[], show_progress=True)
         automatic_install_button.visible = False
-        if verify_comfyui_installation(install_comfyui.automatic_install_location):
-            shared.opts.comfyui_install_location = install_comfyui.automatic_install_location
+        if verify_comfyui_installation(install_comfyui.default_install_location):
+            shared.opts.comfyui_install_location = install_comfyui.default_install_location
         if not verify_comfyui_installation(shared.opts.comfyui_install_location):
             html_component.visible = False
             default_text.visible = True

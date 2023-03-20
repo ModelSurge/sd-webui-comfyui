@@ -3,7 +3,7 @@ import git
 import modules.scripts as scripts
 
 
-automatic_install_location = os.path.join(scripts.basedir(), 'lib_comfyui', 'ComfyUI')
+default_install_location = os.path.join(scripts.basedir(), 'lib_comfyui', 'ComfyUI')
 
 
 def main(install_location):
@@ -13,4 +13,4 @@ def main(install_location):
 
 
 if __name__ == '__main__':
-    main(automatic_install_location)
+    main(default_install_location)

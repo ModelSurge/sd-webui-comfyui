@@ -1,5 +1,4 @@
 import importlib
-import os.path
 
 from modules import script_callbacks
 from lib_comfyui import comfyui_adapter, webui_tab, webui_settings

@@ -13,8 +13,6 @@ thread = None
 
 
 def start():
-    global thread
-
     install_location = webui_settings.get_install_location()
     if not os.path.exists(install_location):
         return
@@ -31,6 +29,7 @@ def start():
 
 
 def start_comfyui_process(model_queue, install_location):
+    global thread
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 

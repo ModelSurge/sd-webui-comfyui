@@ -1,7 +1,5 @@
 div#tab_comfyui_webui_root {
     border: none;
-    height: -999999px;
-    overflow-y: hidden;
 }
 
 div#comfyui_webui_container {
@@ -12,9 +10,9 @@ div#comfyui_webui_container {
 }
 
 object#comfyui_webui_root {
+    position: fixed;
     width: 100%;
     height: 100%;
-    z-index: 1;
 }
 
 #tabs:has( > div#tab_comfyui_webui_root[style*="display: block;"]) ~ #footer {

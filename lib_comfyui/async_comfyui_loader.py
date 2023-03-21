@@ -4,7 +4,7 @@ import runpy
 import importlib
 from modules import shared
 import threading
-from lib_comfyui import argv_conversion, webui_settings
+from lib_comfyui import argv_conversion
 importlib.reload(argv_conversion)
 
 

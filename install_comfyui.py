@@ -1,13 +1,20 @@
 import os
+import sys
 import git
 
 
-def main():
+default_install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib_comfyui', 'ComfyUI')
+
+
+def main(install_location):
     git_repo_url = 'https://github.com/comfyanonymous/ComfyUI.git'
-    install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib_comfyui', 'ComfyUI')
     os.mkdir(install_location)
     git.Repo.clone_from(git_repo_url, install_location)
 
 
 if __name__ == '__main__':
-    main()
+    install_location = default_install_location
+    if len(sys.argv) > 1:
+        inistall_location = sys.argv[1]
+
+    main(install_location)

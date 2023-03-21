@@ -1,12 +1,13 @@
 import sys
 from modules import shared
+from lib_comfyui import webui_settings
 
 
 COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 
 def set_comfyui_argv():
-    sys.argv = sys.argv[:1] + extract_comfyui_argv()
+    sys.argv = sys.argv[:1] + webui_settings.get_additional_argv() + extract_comfyui_argv()
 
 
 def extract_comfyui_argv():

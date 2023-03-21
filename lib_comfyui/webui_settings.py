@@ -5,12 +5,18 @@ importlib.reload(install_comfyui)
 
 
 def create_section():
-    section = ('comfy_ui', "ComfyUI")
+    section = ('comfyui', "ComfyUI")
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
         install_comfyui.default_install_location, "ComfyUI install location", section=section))
+    shared.opts.add_option("comfyui_additional_args", shared.OptionInfo(
+        '', "Additional cli arguments to pass to ComfyUI (requires reload UI)", section=section))
 
 
 def get_install_location():
     install_location = install_comfyui.default_install_location
     install_location = shared.opts.data.get('comfyui_install_location', install_location).strip()
     return install_location
+
+
+def get_additional_argv():
+    return [arg.strip() for arg in shared.opts.data.get('comfyui_additional_args', '').split()]

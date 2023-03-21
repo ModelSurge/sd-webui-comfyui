@@ -40,7 +40,7 @@ def automatic_install_comfyui(install_location):
     if not install_location:
         install_location = install_comfyui.default_install_location
 
-    if cannot_install_at(install_location):
+    if not can_install_at(install_location):
         message = 'Error! The provided ComfyUI path already exists. Please provide a path to an empty or non-existing directory.'
         print(message, file=sys.stderr)
         return gr.Markdown.update(message)
@@ -51,10 +51,9 @@ def automatic_install_comfyui(install_location):
     return gr.Markdown.update('Installed! Now please reload the UI.')
 
 
-def cannot_install_at(path):
+def can_install_at(path):
     is_empty_dir = os.path.isdir(path) and not os.listdir(path)
-    can_install = not os.path.exists(path) or is_empty_dir
-    return not can_install
+    return not os.path.exists(path) or is_empty_dir
 
 
 comfyui_install_instructions_markdown = '''

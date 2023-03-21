@@ -44,7 +44,7 @@ def on_create_local_tunnel_wrapper(*args):
 
         wait_for_comfyui_started(int(port))
 
-        print("Launching localtunnel...")
+        print("[ComfyUI] Launching localtunnel...")
         npx_process = subprocess.Popen(
             [npx_executable, 'lt', "--port", port, "--local-host", '127.0.0.1'],
             cwd=extension_root,
@@ -53,7 +53,7 @@ def on_create_local_tunnel_wrapper(*args):
             line = line.decode()
             if line.startswith('your url is:'):
                 webui_settings.set_comfyui_url(line.split('your url is:')[1].strip())
-            print(line, end='')
+            print(f'[ComfyUI] {line}')
 
     threading.Thread(target=on_create_local_tunnel, args=args, daemon=True).start()
     loop = asyncio.get_event_loop()

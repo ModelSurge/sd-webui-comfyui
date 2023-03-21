@@ -58,10 +58,10 @@ def can_install_at(path):
 
 comfyui_install_instructions_markdown = '''
 ### ComfyUI extension
-It looks like your ComfyUI installation isn't set up yet!  
-Go to `Settings > ComfyUI`, and set the proper install location.  
+It looks like your ComfyUI installation isn't set up yet!
+Go to `Settings > ComfyUI`, and set the proper install location.
 
-Alternatively, if you don't have a ComfyUI install yet, you can just click this button to install it automatically: 
+Alternatively, if you don't have a ComfyUI install yet, just click this button and it will be installed automatically:
 '''
 
 

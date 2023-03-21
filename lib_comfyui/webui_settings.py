@@ -30,7 +30,7 @@ def get_url():
 def get_port():
     webui_argv = get_additional_argv()
     port_index = webui_argv.index('--port') if '--port' in webui_argv else -1
-    settings_port = webui_argv[port_index + 1] if 0 <= port_index < len(webui_argv) - 1 else None
+    settings_port = webui_argv[port_index + 1] if port_index in range(len(webui_argv)) else None
     return settings_port or shared.cmd_opts.comfyui_port
 
 

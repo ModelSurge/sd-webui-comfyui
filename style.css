@@ -10,7 +10,7 @@ div#comfyui_webui_container {
     top: 116px;
 }
 
-object#comfyui_webui_root {
+iframe#comfyui_webui_root {
     width: 100%;
     height: 100%;
 }

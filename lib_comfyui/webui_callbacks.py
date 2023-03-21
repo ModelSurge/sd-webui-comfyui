@@ -15,7 +15,7 @@ def on_ui_settings():
     return webui_settings.create_section()
 
 
-def on_app_started(_gr_root, _fast_api):
+def on_app_started(*_):
     comfyui_adapter.start()
 
 
@@ -26,5 +26,5 @@ def on_script_unloaded():
 def register_callbacks():
     script_callbacks.on_ui_tabs(on_ui_tabs)
     script_callbacks.on_ui_settings(on_ui_settings)
-    script_callbacks.on_app_started(on_app_started)
+    script_callbacks.on_before_ui(on_app_started)
     script_callbacks.on_script_unloaded(on_script_unloaded)

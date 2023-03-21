@@ -15,7 +15,7 @@ def create_tab():
     install_location = webui_settings.get_install_location()
     with gr.Blocks() as tab:
         if os.path.exists(install_location):
-            gr.HTML(comfyui_app_html)
+            gr.HTML(get_comfyui_app_html())
         else:
             with gr.Row():
                 gr.Markdown(comfyui_install_instructions_markdown)
@@ -65,8 +65,9 @@ Alternatively, if you don't have a ComfyUI install yet, you can (literally) just
 '''
 
 
-comfyui_app_html = f'''
-<div id="comfyui_webui_container">
-    <object data="http://127.0.0.1:{webui_settings.get_port()}" id="comfyui_webui_root"></object>
-</div>
-'''
+def get_comfyui_app_html():
+    return f'''
+        <div id="comfyui_webui_container">
+            <iframe src="{webui_settings.html_object_url}" id="comfyui_webui_root"></iframe>
+        </div>
+    '''

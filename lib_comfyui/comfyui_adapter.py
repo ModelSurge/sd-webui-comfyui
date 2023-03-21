@@ -48,12 +48,12 @@ def start_comfyui_process(model_queue, install_location):
 
 
 def stop():
+    if should_share:
+        comfyui_reverse_proxy.stop()
+
     global process
     if process is None:
         return
-
-    if should_share:
-        comfyui_reverse_proxy.stop()
 
     process.terminate()
     process = None

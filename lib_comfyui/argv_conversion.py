@@ -8,7 +8,7 @@ COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 def set_comfyui_argv():
     sys.argv = sys.argv[:1] + webui_settings.get_additional_argv() + extract_comfyui_argv()
-    filter_comfyui_duplicates(sys.argv)
+    deduplicate_comfyui_args(sys.argv)
 
 
 def extract_comfyui_argv():
@@ -29,7 +29,7 @@ def as_argv_list(k, v):
     return result
 
 
-def filter_comfyui_duplicates(argv):
+def deduplicate_comfyui_args(argv):
     seen_args = set()
     i = 0
     while i < len(argv):

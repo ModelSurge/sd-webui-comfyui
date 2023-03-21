@@ -45,10 +45,10 @@ def start():
         url_thread.start()
 
 
-def on_create_local_tunnel_wrapper(*args):
+def on_create_local_tunnel_wrapper(npx_executable, port, url_queue):
     npx_process = None
-    def on_create_local_tunnel(npx_executable, port, url_queue):
-        nonlocal npx_process
+    def on_create_local_tunnel():
+        nonlocal npx_process, npx_executable, port, url_queue
         if npx_process is not None:
             return
 
@@ -65,7 +65,7 @@ def on_create_local_tunnel_wrapper(*args):
                 url_queue.put(line.split('your url is:')[1].strip())
             print(f'[ComfyUI] {line}')
 
-    threading.Thread(target=on_create_local_tunnel, args=args, daemon=True).start()
+    threading.Thread(target=on_create_local_tunnel, daemon=True).start()
     loop = asyncio.get_event_loop()
     try:
         loop.run_forever()

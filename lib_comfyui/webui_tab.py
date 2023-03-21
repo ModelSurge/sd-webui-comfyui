@@ -52,8 +52,8 @@ def automatic_install_comfyui(install_location):
 
 
 def cannot_install_at(path):
-    is_dir = not os.path.isdir(path) or os.listdir(path)
-    return os.path.exists(path) and is_dir
+    is_non_empty_dir = os.path.isdir(path) and os.listdir(path)
+    return os.path.exists(path) and not is_non_empty_dir
 
 
 comfyui_install_instructions_markdown = '''

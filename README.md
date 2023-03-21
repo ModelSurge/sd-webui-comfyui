@@ -5,7 +5,7 @@ sd-webui-comfyui is an extension for [Automatic1111](https://github.com/AUTOMATI
 ![ezgif com-video-to-gif(1)](https://user-images.githubusercontent.com/34081873/226529347-23e61102-cf83-457e-b94c-89337fd38c4d.gif)
 
 ## Known issues
-- Models between ComfyUI and webui aren't shared (see https://github.com/ModelSurge/sd-webui-comfyui/issues/5)
+- Models aren't shared between ComfyUI and webui (see https://github.com/ModelSurge/sd-webui-comfyui/issues/5)
 - Firefox is not supported at the moment (see https://github.com/ModelSurge/sd-webui-comfyui/issues/10)
 - 
 

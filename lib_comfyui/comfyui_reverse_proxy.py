@@ -15,10 +15,11 @@ importlib.reload(webui_settings)
 
 extension_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 process = None
+url_thread = None
 
 
 def start():
-    global process
+    global process, url_thread
     comfyui_argv = list(sys.argv)
     argv_conversion.set_comfyui_argv(comfyui_argv)
     port = comfyui_argv[comfyui_argv.index('--port') + 1]
@@ -27,17 +28,26 @@ def start():
     if npx_executable is None:
         return
 
-    process = multiprocessing.Process(target=on_create_local_tunnel_wrapper, args=(port, npx_executable, ))
+    url_queue = multiprocessing.Queue()
+    process = multiprocessing.Process(target=on_create_local_tunnel_wrapper, args=(npx_executable, port, url_queue, ), daemon=False)
     sys.path.insert(0, extension_root)
     try:
         process.start()
     finally:
         sys.path.pop(0)
 
+    def update_url():
+        while True:
+            webui_settings.set_comfyui_url(url_queue.get())
+
+    if url_thread is None:
+        url_thread = threading.Thread(target=update_url, daemon=True)
+        url_thread.start()
+
 
 def on_create_local_tunnel_wrapper(*args):
     npx_process = None
-    def on_create_local_tunnel(port, npx_executable):
+    def on_create_local_tunnel(npx_executable, port, url_queue):
         nonlocal npx_process
         if npx_process is not None:
             return
@@ -52,7 +62,7 @@ def on_create_local_tunnel_wrapper(*args):
         for line in npx_process.stdout:
             line = line.decode()
             if line.startswith('your url is:'):
-                webui_settings.set_comfyui_url(line.split('your url is:')[1].strip())
+                url_queue.put(line.split('your url is:')[1].strip())
             print(f'[ComfyUI] {line}')
 
     threading.Thread(target=on_create_local_tunnel, args=args, daemon=True).start()

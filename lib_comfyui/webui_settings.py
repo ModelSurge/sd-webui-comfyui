@@ -22,6 +22,11 @@ def get_additional_argv():
     return [arg.strip() for arg in shared.opts.data.get('comfyui_additional_args', '').split()]
 
 
+def get_url():
+    global html_object_url
+    return html_object_url if html_object_url else f'http://127.0.0.1:{get_port()}'
+
+
 def get_port():
     webui_argv = get_additional_argv()
     port_index = webui_argv.index('--port') if '--port' in webui_argv else -1

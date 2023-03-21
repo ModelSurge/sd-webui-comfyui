@@ -61,13 +61,13 @@ comfyui_install_instructions_markdown = '''
 It looks like your ComfyUI installation isn't set up yet!  
 Go to `Settings > ComfyUI`, and set the proper install location.  
 
-Alternatively, if you don't have a ComfyUI install yet, you can (literally) just clic this button to install it automatically: 
+Alternatively, if you don't have a ComfyUI install yet, you can just click this button to install it automatically: 
 '''
 
 
 def get_comfyui_app_html():
     return f'''
         <div id="comfyui_webui_container">
-            <iframe src="{webui_settings.html_object_url}" id="comfyui_webui_root"></iframe>
+            <iframe src="{webui_settings.get_url()}" id="comfyui_webui_root"></iframe>
         </div>
     '''

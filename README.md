@@ -13,10 +13,10 @@ sd-webui-comfyui is an extension for Automatic1111's webui. It's designed to emb
 
 We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:
 
-Fork the repository and create a new branch for your feature or bug fix.
-Implement your changes, adding any necessary documentation and tests.
-Submit a pull request.
-We will review your contribution as soon as possible and provide feedback.
+1) Fork the repository and create a new branch for your feature or bug fix.
+2) Implement your changes, adding any necessary documentation and tests.
+3) Submit a pull request.
+4) We will review your contribution as soon as possible and provide feedback.
 
 ## License
 MIT

@@ -8,6 +8,7 @@ COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 def set_comfyui_argv():
     sys.argv = sys.argv[:1] + webui_settings.get_additional_argv() + extract_comfyui_argv()
+    filter_comfyui_duplicates(sys.argv)
 
 
 def extract_comfyui_argv():
@@ -26,6 +27,23 @@ def as_argv_list(k, v):
         if is_paired_argv(k, v):
             result.append(str(v))
     return result
+
+
+def filter_comfyui_duplicates(argv):
+    seen_args = set()
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg in seen_args:
+            if arg in ('--port',):
+                len_to_remove = 2
+            else:
+                len_to_remove = 1
+            argv[i:i + len_to_remove] = ()
+        else:
+            if arg.startswith('--'):
+                seen_args.add(arg)
+            i += 1
 
 
 def _items(cmd_opts):

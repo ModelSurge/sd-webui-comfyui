@@ -1,6 +1,6 @@
 def preload(parser):
     parser.add_argument("--comfyui-listen", action='store_true', default=None)
-    parser.add_argument("--comfyui-port", type=int, default=8188)
+    parser.add_argument("--comfyui-port", type=int, default=None)
     parser.add_argument("--comfyui-dont-upcast-attention", action='store_true', default=None)
     parser.add_argument("--comfyui-use-split-cross-attention", action='store_true', default=None)
     parser.add_argument("--comfyui-use-pytorch-cross-attention", action='store_true', default=None)

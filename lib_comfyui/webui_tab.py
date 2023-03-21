@@ -67,6 +67,6 @@ Alternatively, if you don't have a ComfyUI install yet, you can (literally) just
 
 comfyui_app_html = f'''
 <div id="comfyui_webui_container">
-    <object data="http://127.0.0.1:{shared.cmd_opts.comfyui_port}" id="comfyui_webui_root"></object>
+    <object data="http://127.0.0.1:{webui_settings.get_port()}" id="comfyui_webui_root"></object>
 </div>
 '''

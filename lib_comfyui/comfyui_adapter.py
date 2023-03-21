@@ -19,20 +19,8 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    original_sys_path = list(sys.path)
-    sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    try:
-        sys.path.insert(0, sys_path_to_add)
-
-        model_queue = multiprocessing.Queue()
-        thread = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
-        thread.start()
-
-    finally:
-        sys.path.clear()
-        sys.path.extend(original_sys_path)
-
-    del original_sys_path
+    model_queue = multiprocessing.Queue()
+    start_comfyui_process(model_queue, install_location)
 
     def on_model_loaded(model):
         model_queue.put(model.sd_model_checkpoint)
@@ -40,6 +28,19 @@ def start():
     script_callbacks.on_model_loaded(on_model_loaded)
     if shared.sd_model is not None:
         on_model_loaded(shared.sd_model)
+
+
+def start_comfyui_process(model_queue, install_location):
+    original_sys_path = list(sys.path)
+    sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+    try:
+        sys.path.insert(0, sys_path_to_add)
+        thread = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
+        thread.start()
+    finally:
+        sys.path.clear()
+        sys.path.extend(original_sys_path)
 
 
 def stop():

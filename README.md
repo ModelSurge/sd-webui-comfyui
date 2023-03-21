@@ -4,8 +4,11 @@ sd-webui-comfyui is an extension for Automatic1111's webui. It's designed to emb
   
 ![ezgif com-video-to-gif(1)](https://user-images.githubusercontent.com/34081873/226529347-23e61102-cf83-457e-b94c-89337fd38c4d.gif)
 
-## Contributing
+## Known issues
+- Models between ComfyUI and webui aren't shared
+- 
 
+## Contributing
 We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:
 
 1) Fork the repository and create a new branch for your feature or bug fix.

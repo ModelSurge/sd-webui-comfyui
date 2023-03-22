@@ -57,7 +57,7 @@ def can_install_at(path):
 
 
 comfyui_install_instructions_markdown = '''
-### ComfyUI extension
+# ComfyUI extension
 It looks like your ComfyUI installation isn't set up yet!  
 Go to `Settings > ComfyUI`, and set the proper install location.  
 

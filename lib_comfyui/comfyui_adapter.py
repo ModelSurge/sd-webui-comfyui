@@ -3,9 +3,6 @@ import os
 import importlib
 from modules import shared
 from torch import multiprocessing
-torch_method = 'spawn'
-if multiprocessing.get_start_method(allow_none=True) != torch_method:
-    multiprocessing.set_start_method(torch_method)
 from modules import script_callbacks
 from lib_comfyui import async_comfyui_loader, webui_settings
 importlib.reload(webui_settings)
@@ -38,7 +35,8 @@ def start_comfyui_process(model_queue, install_location):
 
     try:
         sys.path.insert(0, sys_path_to_add)
-        thread = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
+        multiprocessing_context = multiprocessing.get_context('spawn')
+        thread = multiprocessing_context.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
         thread.start()
     finally:
         sys.path.clear()

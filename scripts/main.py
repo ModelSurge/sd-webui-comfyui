@@ -2,8 +2,10 @@ import modules.scripts as scripts
 import sys
 import importlib
 
+
 base_dir = scripts.basedir()
 sys.path.append(base_dir)
+
 
 from lib_comfyui import webui_callbacks
 importlib.reload(webui_callbacks)

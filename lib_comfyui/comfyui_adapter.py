@@ -3,6 +3,10 @@ import os
 import importlib
 from modules import shared
 from torch import multiprocessing
+try:
+    multiprocessing.set_start_method('spawn')
+except RuntimeError:
+    pass
 from modules import script_callbacks
 from lib_comfyui import async_comfyui_loader, webui_settings
 importlib.reload(webui_settings)

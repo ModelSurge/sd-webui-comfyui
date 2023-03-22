@@ -8,7 +8,7 @@ from lib_comfyui import async_comfyui_loader, webui_settings, comfyui_reverse_pr
 importlib.reload(webui_settings)
 importlib.reload(async_comfyui_loader)
 importlib.reload(comfyui_reverse_proxy)
-should_share = '--share' in sys.argv or '--ngrok' in sys.argv
+should_share = shared.cmd_opts.localtunnel_comfyui
 
 
 process = None

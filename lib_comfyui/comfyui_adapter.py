@@ -3,6 +3,9 @@ import os
 import importlib
 from modules import shared
 from torch import multiprocessing
+torch_method = 'spawn'
+if multiprocessing.get_start_method(allow_none=True) != torch_method:
+    multiprocessing.set_start_method(torch_method)
 from modules import script_callbacks
 from lib_comfyui import async_comfyui_loader, webui_settings
 importlib.reload(webui_settings)

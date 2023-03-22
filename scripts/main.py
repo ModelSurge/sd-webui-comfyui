@@ -1,11 +1,11 @@
 import modules.scripts as scripts
 import sys
 import importlib
-from torch import multiprocessing
-multiprocessing.set_start_method('spawn')
+
 
 base_dir = scripts.basedir()
 sys.path.append(base_dir)
+
 
 from lib_comfyui import webui_callbacks
 importlib.reload(webui_callbacks)

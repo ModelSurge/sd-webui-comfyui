@@ -22,8 +22,9 @@ def start():
     if should_share:
         comfyui_reverse_proxy.start()
 
-    model_queue = multiprocessing.Queue()
-    start_comfyui_process(model_queue, install_location)
+    multiprocessing_spawn = multiprocessing.get_context('spawn')
+    model_queue = multiprocessing_spawn.Queue()
+    start_comfyui_process(multiprocessing_spawn, model_queue, install_location)
 
     def on_model_loaded(model):
         model_queue.put(model.sd_model_checkpoint)
@@ -33,14 +34,14 @@ def start():
         on_model_loaded(shared.sd_model)
 
 
-def start_comfyui_process(model_queue, install_location):
-    global process
+def start_comfyui_process(multiprocessing_spawn, model_queue, install_location):
+    global thread
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     try:
         sys.path.insert(0, sys_path_to_add)
-        process = multiprocessing.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
+        process = multiprocessing_spawn.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
         process.start()
     finally:
         sys.path.clear()

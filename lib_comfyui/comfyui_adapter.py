@@ -9,7 +9,6 @@ importlib.reload(webui_settings)
 importlib.reload(async_comfyui_loader)
 
 
-multiprocessing_spawn = multiprocessing.get_context('spawn')
 thread = None
 
 
@@ -18,8 +17,9 @@ def start():
     if not os.path.exists(install_location):
         return
 
+    multiprocessing_spawn = multiprocessing.get_context('spawn')
     model_queue = multiprocessing_spawn.Queue()
-    start_comfyui_process(model_queue, install_location)
+    start_comfyui_process(multiprocessing_spawn, model_queue, install_location)
 
     def on_model_loaded(model):
         model_queue.put(model.sd_model_checkpoint)
@@ -29,7 +29,7 @@ def start():
         on_model_loaded(shared.sd_model)
 
 
-def start_comfyui_process(model_queue, install_location):
+def start_comfyui_process(multiprocessing_spawn, model_queue, install_location):
     global thread
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

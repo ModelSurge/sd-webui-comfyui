@@ -5,10 +5,12 @@ from lib_comfyui import webui_settings
 COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 
-def set_comfyui_argv(argv):
+def get_comfyui_args(argv):
+    argv = list(argv)
     argv[1:] = ()
     argv.extend(webui_settings.get_additional_argv() + extract_comfyui_argv())
     deduplicate_comfyui_args(argv)
+    return argv
 
 
 def extract_comfyui_argv():

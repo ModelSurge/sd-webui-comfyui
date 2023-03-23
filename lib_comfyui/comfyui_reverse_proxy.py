@@ -16,12 +16,12 @@ importlib.reload(webui_settings)
 extension_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 process = None
 url_thread = None
+url_queue = None
 
 
 def start():
-    global process, url_thread
-    comfyui_argv = list(sys.argv)
-    argv_conversion.set_comfyui_argv(comfyui_argv)
+    global process, url_thread, url_queue
+    comfyui_argv = argv_conversion.get_comfyui_args(sys.argv)
     port = comfyui_argv[comfyui_argv.index('--port') + 1]
 
     npx_executable = shutil.which('npx')
@@ -37,6 +37,7 @@ def start():
         sys.path.pop(0)
 
     def update_url():
+        global url_queue
         while True:
             webui_settings.set_comfyui_url(url_queue.get())
 
@@ -45,10 +46,13 @@ def start():
         url_thread.start()
 
 
-def on_create_local_tunnel_wrapper(npx_executable, port, url_queue):
+def on_create_local_tunnel_wrapper(npx_executable, port):
+    global url_queue
     npx_process = None
+
     def on_create_local_tunnel():
-        nonlocal npx_process, npx_executable, port, url_queue
+        global url_queue
+        nonlocal npx_process, npx_executable, port
         if npx_process is not None:
             return
 
@@ -89,9 +93,10 @@ def wait_for_comfyui_started(port):
 
 
 def stop():
-    global process
+    global process, url_queue
     if process is None:
         return
 
     process.terminate()
     process = None
+    url_queue = None

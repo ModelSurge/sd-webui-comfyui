@@ -4,6 +4,13 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 
 ![ezgif com-video-to-gif(1)](https://user-images.githubusercontent.com/34081873/226529347-23e61102-cf83-457e-b94c-89337fd38c4d.gif)
 
+## Installation
+1) Go to Extensions > Install from URL
+2) Paste `https://github.com/ModelSurge/sd-webui-comfyui` in the `URL for extension's git repository` text field
+3) Click the `Install` button
+4) Restart the webui
+5) Go to the `ComfyUI` tab, and follow the instructions
+
 ## Known issues
 - Models between ComfyUI and webui aren't shared (see https://github.com/ModelSurge/sd-webui-comfyui/issues/5)
 - Firefox is not supported at the moment (see https://github.com/ModelSurge/sd-webui-comfyui/issues/10)

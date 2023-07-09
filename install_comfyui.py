@@ -3,7 +3,7 @@ import sys
 import git
 
 
-default_install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib_comfyui', 'ComfyUI')
+default_install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ComfyUI')
 
 
 def main(install_location):

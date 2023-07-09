@@ -9,7 +9,7 @@ def create_section():
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
         install_comfyui.default_install_location, "ComfyUI install location", section=section))
     shared.opts.add_option("comfyui_additional_args", shared.OptionInfo(
-        '', "Additional cli arguments to pass to ComfyUI (requires reload UI)", section=section))
+        '', "Additional cli arguments to pass to ComfyUI (requires reload UI. Do NOT prepend `--comfyui-`, these are literally forwarded to comfyui)", section=section))
 
 
 def get_install_location():

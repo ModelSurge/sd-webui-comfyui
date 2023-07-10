@@ -1,17 +1,23 @@
-function computeComfyuiElementHeight() {
-    function getRecursiveParentNode(el, n) {
-        if(n <= 0) return el;
-        if(el === null || el.parentNode === null) return el;
-        return getRecursiveParentNode(el.parentNode, n-1);
-    }
+const TAB_OFFSET_PADDING = 5;
 
-    const parentDistance = 7;
+function getRecursiveParentNode(el, n) {
+    if(n <= 0) return el;
+    if(el === null || el.parentNode === null) return el;
+    return getRecursiveParentNode(el.parentNode, n-1);
+}
+
+const getDynamicElementFromContainer = (container) => {
+    const webuiParentDepth = 7;
+    return getRecursiveParentNode(container, webuiParentDepth);
+}
+
+function computeComfyuiElementHeight() {
     const container = document.getElementById("comfyui_webui_container");
-    const dynamicElement = getRecursiveParentNode(container, parentDistance);
+    const dynamicElement = getDynamicElementFromContainer(container);
 
     if(dynamicElement !== null) {
         const height = dynamicElement.offsetHeight;
-        container.style.height = `calc(100% - ${height-5}px)`;
+        container.style.height = `calc(100% - ${height-TAB_OFFSET_PADDING}px)`;
     }
 
     // polling ew

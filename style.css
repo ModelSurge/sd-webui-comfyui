@@ -18,3 +18,7 @@ object#comfyui_webui_root {
 #tabs:has( > div#tab_comfyui_webui_root[style*="display: block;"]) ~ #footer {
     display: none;
 }
+
+.comfyui-remove-display {
+    display: none;
+}

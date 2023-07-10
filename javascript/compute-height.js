@@ -12,6 +12,7 @@ const getDynamicElementFromContainer = (container) => {
 }
 
 function computeComfyuiElementHeight() {
+    const tab = document.getElementById("tab_comfyui_webui_root");
     const container = document.getElementById("comfyui_webui_container");
     const footerToRemove = document.querySelector('#footer');
     const dynamicElement = getDynamicElementFromContainer(container);
@@ -19,12 +20,23 @@ function computeComfyuiElementHeight() {
     if(dynamicElement !== null) {
         const height = dynamicElement.offsetHeight;
         container.style.height = `calc(100% - ${height-TAB_OFFSET_PADDING}px)`;
-        footerToRemove.style.display = 'none';
+        updateFooterStyle(tab.style.display, footerToRemove);
     }
 
     // polling ew
     setTimeout(computeComfyuiElementHeight, 200);
 }
+
+
+function updateFooterStyle(tabDisplay, footer) {
+    if(tabDisplay === 'block') {
+        footer.classList.add('comfyui-remove-display');
+    }
+    else {
+        footer.classList.remove('comfyui-remove-display');
+    }
+}
+
 
 document.addEventListener("DOMContentLoaded", (e) => {
     computeComfyuiElementHeight();

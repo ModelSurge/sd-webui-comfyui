@@ -13,11 +13,13 @@ const getDynamicElementFromContainer = (container) => {
 
 function computeComfyuiElementHeight() {
     const container = document.getElementById("comfyui_webui_container");
+    const footerToRemove = document.querySelector('#footer');
     const dynamicElement = getDynamicElementFromContainer(container);
 
     if(dynamicElement !== null) {
         const height = dynamicElement.offsetHeight;
         container.style.height = `calc(100% - ${height-TAB_OFFSET_PADDING}px)`;
+        footerToRemove.style.display = 'none';
     }
 
     // polling ew

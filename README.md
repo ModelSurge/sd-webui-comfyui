@@ -13,7 +13,6 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 
 ## Known issues
 - Models between ComfyUI and webui aren't shared (see https://github.com/ModelSurge/sd-webui-comfyui/issues/5)
-- Firefox is not supported at the moment (see https://github.com/ModelSurge/sd-webui-comfyui/issues/10)
 
 ## Contributing
 We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:

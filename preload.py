@@ -1,5 +1,5 @@
 def preload(parser):
-    parser.add_argument("--comfyui-listen", type=str, default=None)
+    parser.add_argument("--comfyui-listen", type=str, default='127.0.0.1', nargs='?', const='0.0.0.0')
     parser.add_argument("--comfyui-port", type=int, default=8188)
     parser.add_argument("--comfyui-dont-upcast-attention", action='store_true', default=None)
     parser.add_argument("--comfyui-use-split-cross-attention", action='store_true', default=None)

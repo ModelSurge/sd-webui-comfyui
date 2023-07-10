@@ -22,8 +22,16 @@ def get_additional_argv():
     return [arg.strip() for arg in shared.opts.data.get('comfyui_additional_args', '').split()]
 
 
-def get_port():
+def get_setting_value(setting_key):
     webui_argv = get_additional_argv()
-    port_index = webui_argv.index('--port') if '--port' in webui_argv else -1
-    settings_port = webui_argv[port_index + 1] if 0 <= port_index < len(webui_argv) - 1 else None
-    return settings_port or shared.cmd_opts.comfyui_port
+    index = webui_argv.index(setting_key) if setting_key in webui_argv else -1
+    setting_value = webui_argv[index + 1] if 0 <= index < len(webui_argv) - 1 else None
+    return setting_value
+
+
+def get_port():
+    return get_setting_value('--port') or shared.cmd_opts.comfyui_port
+
+
+def get_comfyui_client_url():
+    return f'http://127.0.0.1:{get_port()}/'

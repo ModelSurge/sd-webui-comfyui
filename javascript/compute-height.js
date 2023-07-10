@@ -27,7 +27,6 @@ function computeComfyuiElementHeight() {
     setTimeout(computeComfyuiElementHeight, 200);
 }
 
-
 function updateFooterStyle(tabDisplay, footer) {
     if(tabDisplay === 'block') {
         footer.classList.add('comfyui-remove-display');
@@ -36,7 +35,6 @@ function updateFooterStyle(tabDisplay, footer) {
         footer.classList.remove('comfyui-remove-display');
     }
 }
-
 
 document.addEventListener("DOMContentLoaded", (e) => {
     computeComfyuiElementHeight();

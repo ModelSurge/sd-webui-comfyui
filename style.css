@@ -15,10 +15,7 @@ object#comfyui_webui_root {
     height: 100%;
 }
 
-#tabs:has( > div#tab_comfyui_webui_root[style*="display: block;"]) ~ #footer {
-    display: none;
-}
-
+#tabs:has( > div#tab_comfyui_webui_root[style*="display: block;"]) ~ #footer,
 .comfyui-remove-display {
     display: none;
 }

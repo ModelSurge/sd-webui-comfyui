@@ -28,6 +28,7 @@ jobs:
           cache-dependency-path: |
             **/requirements*txt
             stable-diffusion-webui/requirements*txt
+            launch.py
             
       - run: |
           cd stable-diffusion-webui && IGNORE_CMD_ARGS_ERRORS=1 python launch.py --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test --api --tests ./extensions/sd-webui-comfyui/tests

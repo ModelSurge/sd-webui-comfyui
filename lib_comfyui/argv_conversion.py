@@ -37,6 +37,9 @@ def deduplicate_comfyui_args(argv):
         if arg in seen_args:
             if arg in ('--port',):
                 len_to_remove = 2
+            elif arg in ('--listen',):
+                has_value = i + 1 < len(argv) and not argv[i + 1].startswith('--')
+                len_to_remove = 1 + int(has_value)
             else:
                 len_to_remove = 1
             argv[i:i + len_to_remove] = ()

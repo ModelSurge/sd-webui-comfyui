@@ -5,7 +5,7 @@ import importlib.util
 # Get the module name and file name from the global directory path
 module_name = 'utils'
 file_name = 'utils.py'
-global_dir = os.path.abspath('tests/utils.py')
+global_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), file_name))
 
 # Load the module from the file path
 spec = importlib.util.spec_from_file_location(module_name, global_dir)

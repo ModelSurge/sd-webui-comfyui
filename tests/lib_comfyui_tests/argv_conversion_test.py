@@ -1,5 +1,6 @@
+import sys
 import unittest
-
+print(sys.path)
 from lib_comfyui import argv_conversion
 
 

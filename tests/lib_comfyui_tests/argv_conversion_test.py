@@ -1,7 +1,9 @@
+import os
 import sys
 import unittest
-print(sys.path)
-from lib_comfyui import argv_conversion
+file_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib_comfyui')
+sys.path.append(file_dir)
+import argv_conversion
 
 
 class DeduplicateArgvTest(unittest.TestCase):

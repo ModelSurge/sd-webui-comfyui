@@ -27,7 +27,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
-            launch.py
+            stable-diffusion-webui/launch.py
       - name: Install test dependencies
         run:
           cd stable-diffusion-webui

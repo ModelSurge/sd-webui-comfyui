@@ -34,7 +34,7 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"
       - name: Setup environment
-        run: python launch.py --skip-torch-cuda-test --exit
+        run: python stable-diffusion-webui/launch.py --skip-torch-cuda-test --exit
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"
@@ -45,7 +45,7 @@ jobs:
         run: >
           python -m coverage run
           --data-file=.coverage.server
-          launch.py
+          stable-diffusion-webui/launch.py
           --skip-prepare-environment
           --skip-torch-cuda-test
           --test-server

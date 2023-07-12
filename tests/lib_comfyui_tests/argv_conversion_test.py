@@ -1,9 +1,19 @@
 import os
-import sys
 import unittest
-file_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib_comfyui')
-sys.path.append(file_dir)
-import argv_conversion
+import importlib.util
+
+# Get the module name and file name from the global directory path
+module_name = 'utils'
+file_name = 'utils.py'
+global_dir = os.path.abspath('../tests/utils.py')
+
+# Load the module from the file path
+spec = importlib.util.spec_from_file_location(module_name, global_dir)
+utils = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(utils)
+utils.setup_test_env()
+
+from lib_comfyui import argv_conversion
 
 
 class DeduplicateArgvTest(unittest.TestCase):

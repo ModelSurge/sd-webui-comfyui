@@ -1,8 +1,9 @@
+import os
+import sys
 import unittest
-import importlib
-importlib.import_module('extensions.sd-webui-comfyui.tests.utils', 'utils').setup_test_env()
-
-from lib_comfyui import argv_conversion
+file_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib_comfyui')
+sys.path.append(file_dir)
+import argv_conversion
 
 
 class DeduplicateArgvTest(unittest.TestCase):

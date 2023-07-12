@@ -1,8 +1,9 @@
 name: Run extension tests on CPU
-
 on:
-  - push
-  - pull_request
+  push:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
@@ -10,16 +11,16 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        with: 
+        with:
           repository: 'AUTOMATIC1111/stable-diffusion-webui'
           path: 'stable-diffusion-webui'
-          
+
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           repository: 'ModelSurge/sd-webui-comfyui'
           path: 'stable-diffusion-webui/extensions/sd-webui-comfyui'
-          
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
@@ -28,6 +29,16 @@ jobs:
           cache-dependency-path: |
             **/requirements*txt
             stable-diffusion-webui/requirements*txt
-            
-      - run: |
-          cd stable-diffusion-webui && IGNORE_CMD_ARGS_ERRORS=1 python launch.py --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test --api --tests ./extensions/sd-webui-comfyui/tests
+
+      - name: Install dependencies
+        run: |
+          cd stable-diffusion-webui/extensions/sd-webui-comfyui
+          pip install -r requirements.txt
+          cd ../..
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        run: |
+          cd stable-diffusion-webui/extensions/sd-webui-comfyui
+          pytest

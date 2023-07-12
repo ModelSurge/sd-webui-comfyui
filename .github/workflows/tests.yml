@@ -1,21 +1,20 @@
-name: Run extension tests on CPU
+name: Run basic features tests on CPU with empty SD model
+
 on:
-  push:
-  pull_request:
-    branches:
-      - main
+  - push
+  - pull_request
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout stable-diffusion-webui
         uses: actions/checkout@v3
         with:
           repository: 'AUTOMATIC1111/stable-diffusion-webui'
           path: 'stable-diffusion-webui'
 
-      - name: Checkout Code
+      - name: Checkout sd-webui-comfyui
         uses: actions/checkout@v3
         with:
           repository: 'ModelSurge/sd-webui-comfyui'
@@ -28,17 +27,55 @@ jobs:
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
-            stable-diffusion-webui/requirements*txt
-
-      - name: Install dependencies
-        run: |
-          cd stable-diffusion-webui/extensions/sd-webui-comfyui
-          pip install -r requirements.txt
-          cd ../..
-          pip install -r requirements.txt
-          pip install pytest
-
+            launch.py
+      - name: Install test dependencies
+        run: pip install wait-for-it -r requirements-test.txt
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+          PIP_PROGRESS_BAR: "off"
+      - name: Setup environment
+        run: python launch.py --skip-torch-cuda-test --exit
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+          PIP_PROGRESS_BAR: "off"
+          TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
+          WEBUI_LAUNCH_LIVE_OUTPUT: "1"
+          PYTHONUNBUFFERED: "1"
+      - name: Start test server
+        run: >
+          python -m coverage run
+          --data-file=.coverage.server
+          launch.py
+          --skip-prepare-environment
+          --skip-torch-cuda-test
+          --test-server
+          --no-half
+          --disable-opt-split-attention
+          --use-cpu all
+          --add-stop-route
+          2>&1 | tee output.txt &
       - name: Run tests
         run: |
+          wait-for-it --service 127.0.0.1:7860 -t 600
           cd stable-diffusion-webui/extensions/sd-webui-comfyui
-          pytest
+          python -m pytest
+      - name: Kill test server
+        if: always()
+        run: curl -vv -XPOST http://127.0.0.1:7860/_stop && sleep 10
+      - name: Show coverage
+        run: |
+          python -m coverage combine .coverage*
+          python -m coverage report -i
+          python -m coverage html -i
+      - name: Upload main app output
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: output
+          path: output.txt
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: htmlcov
+          path: htmlcov

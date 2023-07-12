@@ -1,6 +1,4 @@
 import unittest
-import importlib.util
-importlib.import_module('extensions.sd-webui-comfyui.tests.utils', 'utils').setup_test_env()
 from lib_comfyui import argv_conversion
 
 

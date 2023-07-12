@@ -40,5 +40,5 @@ jobs:
 
       - name: Run tests
         run: |
-          cd stable-diffusion-webui/extensions/sd-webui-comfyui/tests
+          cd stable-diffusion-webui/extensions/sd-webui-comfyui
           pytest

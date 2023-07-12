@@ -1,18 +1,6 @@
-import os
 import unittest
 import importlib.util
-
-# Get the module name and file name from the global directory path
-module_name = 'utils'
-file_name = 'utils.py'
-global_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), file_name))
-
-# Load the module from the file path
-spec = importlib.util.spec_from_file_location(module_name, global_dir)
-utils = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(utils)
-utils.setup_test_env()
-
+importlib.import_module('extensions.sd-webui-comfyui.tests.utils', 'utils').setup_test_env()
 from lib_comfyui import argv_conversion
 
 

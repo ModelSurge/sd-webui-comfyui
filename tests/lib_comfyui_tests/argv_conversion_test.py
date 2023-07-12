@@ -1,5 +1,5 @@
 import unittest
-from test.utils import setup_test_env
+from tests.utils import setup_test_env
 setup_test_env()
 from lib_comfyui import argv_conversion
 

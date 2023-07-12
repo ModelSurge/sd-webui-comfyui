@@ -30,14 +30,14 @@ jobs:
             stable-diffusion-webui/launch.py
       - name: Install test dependencies
         run:
-          cd stable-diffusion-webui
+          cd stable-diffusion-webui &&
           pip install wait-for-it -r requirements-test.txt
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"
       - name: Setup environment
         run:
-          cd stable-diffusion-webui
+          cd stable-diffusion-webui &&
           launch.py --skip-torch-cuda-test --exit
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -47,14 +47,12 @@ jobs:
           PYTHONUNBUFFERED: "1"
       - name: Start test server
         run:
-          cd stable-diffusion-webui
+          cd stable-diffusion-webui &&
           python -m coverage run --data-file=.coverage.server launch.py --skip-prepare-environment --skip-torch-cuda-test --test-server --no-half --disable-opt-split-attention --use-cpu all --add-stop-route 2>&1 | tee output.txt &
       - name: Run tests
         run: |
-          cd stable-diffusion-webui
-          wait-for-it --service 127.0.0.1:7860 -t 600
-          cd extensions/sd-webui-comfyui
-          python -m pytest
+          cd stable-diffusion-webui/extensions/sd-webui-comfyui &&
+          wait-for-it --service 127.0.0.1:7860 -t 600 python -m pytest
       - name: Kill test server
         if: always()
         run: curl -vv -XPOST http://127.0.0.1:7860/_stop && sleep 10

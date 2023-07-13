@@ -20,9 +20,9 @@ def start_comfyui(comfyui_path):
     runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')
 
 
-def start_update_loop(model_name_queue):
+def start_update_loop(model_state_dict_queue):
     def update_queue():
         while True:
-            shared.sd_model_ckpt_name = model_name_queue.get()
+            shared.sd_model_state_dict = model_state_dict_queue.get()
 
     threading.Thread(target=update_queue, daemon=True).start()

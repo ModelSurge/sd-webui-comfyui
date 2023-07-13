@@ -3,7 +3,6 @@ import os
 import importlib
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
-from fastapi.staticfiles import StaticFiles
 importlib.reload(webui_settings)
 importlib.reload(async_comfyui_loader)
 

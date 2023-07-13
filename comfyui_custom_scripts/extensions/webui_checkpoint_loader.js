@@ -53,7 +53,6 @@ const ext = {
 	async getCustomWidgets(app) {
 		// Return custom widget types
 		// See ComfyWidgets for widget examples
-		console.log("[Test]", "provide custom widgets");
 
         const webuiModelChangedEvent = {
             onWebuiModelChanged: (func) => {

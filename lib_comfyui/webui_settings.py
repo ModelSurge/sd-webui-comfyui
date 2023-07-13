@@ -1,3 +1,6 @@
+import sys
+import textwrap
+
 from modules import shared
 import importlib
 import install_comfyui
@@ -9,7 +12,10 @@ def create_section():
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
         install_comfyui.default_install_location, "ComfyUI install location", section=section))
     shared.opts.add_option("comfyui_additional_args", shared.OptionInfo(
-        '', "Additional cli arguments to pass to ComfyUI (requires reload UI)", section=section))
+        '', "Additional cli arguments to pass to ComfyUI (requires reload UI. Do NOT prepend --comfyui-, these are directly forwarded to comfyui)", section=section))
+    shared.opts.add_option("comfyui_client_address", shared.OptionInfo(
+        '', 'Address of the ComfyUI server as seen from the webui. Only used by the extension to load the ComfyUI iframe (requires reload UI)',
+        component_args={'placeholder': 'Leave empty to use the --listen address of the ComfyUI server'}, section=section))
 
 
 def get_install_location():
@@ -22,8 +28,27 @@ def get_additional_argv():
     return [arg.strip() for arg in shared.opts.data.get('comfyui_additional_args', '').split()]
 
 
-def get_port():
+def get_setting_value(setting_key):
     webui_argv = get_additional_argv()
-    port_index = webui_argv.index('--port') if '--port' in webui_argv else -1
-    settings_port = webui_argv[port_index + 1] if 0 <= port_index < len(webui_argv) - 1 else None
-    return settings_port or shared.cmd_opts.comfyui_port
+    index = webui_argv.index(setting_key) if setting_key in webui_argv else -1
+    setting_value = webui_argv[index + 1] if 0 <= index < len(webui_argv) - 1 else None
+    return setting_value
+
+
+def get_port():
+    return get_setting_value('--port') or shared.cmd_opts.comfyui_port
+
+
+def get_comfyui_client_url():
+    loopback_address = '127.0.0.1'
+    server_url = get_setting_value('--listen') or shared.cmd_opts.comfyui_listen or loopback_address
+    client_url = getattr(shared.opts.data, 'comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
+    if client_url == '0.0.0.0':
+        print(textwrap.dedent(f"""
+            [ComfyUI extension] changing the ComfyUI client address from {client_url} to {loopback_address}
+            This does not change the --listen address passed to ComfyUI, but instead the address used by the extension to load the iframe
+            To override this behavior, navigate to the extension settings or use the --webui-comfyui-client-address <address> cli argument
+        """), sys.stderr)
+        client_url = loopback_address
+
+    return f'http://{client_url}:{get_port()}/'

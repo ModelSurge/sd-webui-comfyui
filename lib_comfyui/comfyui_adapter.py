@@ -3,6 +3,7 @@ import os
 import importlib
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
+from fastapi.staticfiles import StaticFiles
 importlib.reload(webui_settings)
 importlib.reload(async_comfyui_loader)
 
@@ -33,7 +34,6 @@ def start_comfyui_process(install_location):
     global thread
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
     try:
         sys.path.insert(0, sys_path_to_add)
         thread = multiprocessing_spawn.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)

@@ -11,9 +11,10 @@ def get_extension_paths_to_load():
     for path in active_paths:
         root_nodes = os.path.join(path, 'comfyui_custom_nodes')
         root_scripts = os.path.join(path, 'comfyui_custom_scripts')
+        root_scripts_extensions = os.path.join(path, 'comfyui_custom_scripts', 'extensions')
         if os.path.exists(root_nodes):
             root_node_paths.append(root_nodes)
-        if os.path.exists(root_scripts):
+        if os.path.exists(root_scripts) and os.path.exists(root_scripts_extensions):
             root_script_paths.append(root_scripts)
 
     return root_node_paths, root_script_paths

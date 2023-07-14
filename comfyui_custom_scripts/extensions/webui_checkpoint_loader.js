@@ -38,7 +38,7 @@ function addHiddenMultilineWidget(node, name, app) {
 
 const ext = {
 	// Unique name for the extension
-	name: "WebuiCheckpointLoader",
+	name: "sd-webui-comfyui",
 	async init(app) {
 		// Any initial setup to run as soon as the page loads
 	},

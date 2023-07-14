@@ -1,15 +1,24 @@
 import sys
 import os
 import importlib
-from modules import shared
 from torch import multiprocessing
-from modules import script_callbacks
 from lib_comfyui import async_comfyui_loader, webui_settings
 importlib.reload(webui_settings)
 importlib.reload(async_comfyui_loader)
 
 
 thread = None
+multiprocessing_spawn = multiprocessing.get_context('spawn')
+model_queue = multiprocessing_spawn.Queue()
+
+
+def on_model_loaded(sd_model):
+    sd_model.share_memory()
+    state_dict = sd_model.state_dict()
+    patched_sd = {}
+    for k, v in state_dict.items():
+        patched_sd[k] = v.cpu()
+    model_queue.put(patched_sd)
 
 
 def start():
@@ -17,23 +26,13 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    multiprocessing_spawn = multiprocessing.get_context('spawn')
-    model_queue = multiprocessing_spawn.Queue()
-    start_comfyui_process(multiprocessing_spawn, model_queue, install_location)
-
-    def on_model_loaded(model):
-        model_queue.put(model.sd_model_checkpoint)
-
-    script_callbacks.on_model_loaded(on_model_loaded)
-    if shared.sd_model is not None:
-        on_model_loaded(shared.sd_model)
+    start_comfyui_process(install_location)
 
 
-def start_comfyui_process(multiprocessing_spawn, model_queue, install_location):
+def start_comfyui_process(install_location):
     global thread
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
     try:
         sys.path.insert(0, sys_path_to_add)
         thread = multiprocessing_spawn.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)

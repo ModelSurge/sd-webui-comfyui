@@ -1,10 +1,5 @@
-import importlib
-
 from modules import script_callbacks
 from lib_comfyui import comfyui_adapter, webui_tab, webui_settings
-importlib.reload(comfyui_adapter)
-importlib.reload(webui_tab)
-importlib.reload(webui_settings)
 
 
 def on_ui_tabs():

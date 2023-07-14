@@ -2,9 +2,7 @@ import sys
 import textwrap
 
 from modules import shared
-import importlib
 import install_comfyui
-importlib.reload(install_comfyui)
 
 
 def create_section():

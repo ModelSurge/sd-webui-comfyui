@@ -1,15 +1,10 @@
 import os
-import importlib
 import sys
 import textwrap
-
 import gradio as gr
 from modules import shared
 import install_comfyui
 from lib_comfyui import comfyui_adapter, webui_settings
-importlib.reload(install_comfyui)
-importlib.reload(comfyui_adapter)
-importlib.reload(webui_settings)
 
 
 def create_tab():

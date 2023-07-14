@@ -1,6 +1,16 @@
 import os
+import sys
 import importlib
 from modules import sd_models, paths, shared, modelloader
+
+controlnet_path = os.path.join(shared.extensions_dir, 'sd-webui-controlnet')
+try:
+    sys.path.insert(0, controlnet_path)
+    controlnet = importlib.import_module('extensions.sd-webui-controlnet.scripts.external_code', 'external_code')
+except:
+    controlnet = None
+finally:
+    sys.path.pop(sys.path.index(controlnet_path))
 
 
 def get_folder_paths() -> dict:
@@ -11,6 +21,7 @@ def get_folder_paths() -> dict:
         'loras': [shared.cmd_opts.lora_dir],
         'hypernetworks': [shared.cmd_opts.hypernetwork_dir],
         'upscale_models': get_upscaler_paths(),
+        'controlnet': get_controlnet_paths()
     }
 
 
@@ -55,3 +66,18 @@ def get_upscaler_paths():
             upscaler_paths.add(scaler_path)
 
     return upscaler_paths
+
+
+# see https://github.com/Mikubill/sd-webui-controlnet/blob/07bed6ccf8a468a45b2833cfdadc749927cbd575/scripts/global_state.py#L205
+def get_controlnet_paths():
+    if controlnet is None:
+        return []
+
+    ext_dirs = (shared.opts.data.get("control_net_models_path", None), getattr(shared.cmd_opts, 'controlnet_dir', None))
+    extra_lora_paths = (extra_lora_path for extra_lora_path in ext_dirs
+                        if extra_lora_path is not None and os.path.exists(extra_lora_path))
+    return [
+        controlnet.global_state.cn_models_dir,
+        controlnet.global_state.cn_models_dir_old,
+        *extra_lora_paths
+    ]

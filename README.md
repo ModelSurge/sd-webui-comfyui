@@ -6,10 +6,10 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 
 ## Features
 - [x] Load comfyui directly into the webui
-- [x] Support for loading custom nodes from other webui extensions
-- [x] `Load Webui Checkpoint` node
-- [ ] `Latent Webui Noise Generator` node
-- [ ] `Webui Prompt Parser` node
+- [x] Support for [loading custom nodes from other webui extensions](https://github.com/ModelSurge/sd-webui-comfyui/wiki/Loading-custom-nodes-from-other-webui-extensions)
+- [x] Webui node: [`Load Webui Checkpoint`](https://github.com/ModelSurge/sd-webui-comfyui/wiki/Webui-Nodes)
+- [ ] Webui node: `Latent Webui Noise Generator`
+- [ ] Webui node: `Webui Prompt Parser`
 
 For a full overview of all the advantageous features this extension adds to ComfyUI, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
 

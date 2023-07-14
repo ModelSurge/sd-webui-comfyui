@@ -20,14 +20,15 @@ def register_custom_nodes():
 def register_custom_scripts():
     import server
 
-    m = ast.parse(source(server.PromptServer))
-    patch_prompt_server_init(m)
-    patch_prompt_server_add_routes(m)
-    exec(compile(m, '<string>', 'exec'), server.__dict__)
+    parsed_module = ast.parse(source(server.PromptServer))
+    parsed_class = parsed_module.body[0]
+    patch_prompt_server_init(parsed_class)
+    patch_prompt_server_add_routes(parsed_class)
+    exec(compile(parsed_module, '<string>', 'exec'), server.__dict__)
 
 
-def patch_prompt_server_init(m):
-    init_ast_function = get_ast_function(m.body[0], '__init__')
+def patch_prompt_server_init(parsed_class: ast.ClassDef):
+    init_ast_function = get_ast_function(parsed_class, '__init__')
     function_to_patch = get_ast_function(init_ast_function, 'get_extensions')
     extra_code = ast.parse(textwrap.dedent(rf'''
         files.extend(
@@ -37,14 +38,14 @@ def patch_prompt_server_init(m):
     function_to_patch.body[1:1] = extra_code.body
 
 
-def patch_prompt_server_add_routes(m):
-    add_routes_ast_function = get_ast_function(m.body[0], 'add_routes')
+def patch_prompt_server_add_routes(parsed_class: ast.ClassDef):
+    add_routes_ast_function = get_ast_function(parsed_class, 'add_routes')
     extra_line_of_code = ast.parse(rf'web.static("/webui_scripts/sd-webui-comfyui", r"{webui_custom_scripts_path}", follow_symlinks=True)')
     add_routes_ast_function.body[1].value.args[0].elts.insert(0, extra_line_of_code.body[0].value)
 
 
-def get_ast_function(m, function_name):
-    res = [exp for exp in m.body if getattr(exp, 'name', None) == function_name]
+def get_ast_function(parsed_object, function_name: str):
+    res = [exp for exp in parsed_object.body if getattr(exp, 'name', None) == function_name]
 
     if not res:
         raise RuntimeError(f'Cannot find function {function_name} in parsed ast')

@@ -3,8 +3,10 @@ import inspect
 import ast
 import textwrap
 
+
 webui_custom_nodes_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'comfyui_custom_nodes')
 webui_custom_scripts_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'comfyui_custom_scripts')
+webui_extensions_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
 def register_webui_extensions():

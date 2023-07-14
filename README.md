@@ -7,9 +7,9 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 ## Features
 - [x] Load comfyui directly into the webui
 - [x] Support for loading custom nodes from other webui extensions
-- [x] Load Webui Checkpoint node
-- [ ] Latent Webui Noise Generator node
-- [ ] Webui Prompt Parser node
+- [x] `Load Webui Checkpoint` node
+- [ ] `Latent Webui Noise Generator` node
+- [ ] `Webui Prompt Parser` node
 
 For a full overview of all the advantageous features this extension adds to ComfyUI, check out the wiki page. 
 

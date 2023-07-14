@@ -22,6 +22,7 @@ def register_custom_nodes(custom_nodes_path_list):
 def register_custom_scripts(custom_scripts_path_list):
     if not custom_scripts_path_list:
         return
+
     import server
     parsed_module = ast.parse(inspect.getsource(server.PromptServer))
     parsed_class = parsed_module.body[0]
@@ -34,6 +35,9 @@ def patch_prompt_server_init(parsed_class: ast.ClassDef, custom_scripts_path_lis
     init_ast_function = get_ast_function(parsed_class, '__init__')
     function_to_patch = get_ast_function(init_ast_function, 'get_extensions')
     for custom_scripts_path in custom_scripts_path_list:
+        if not os.path.exists(os.path.join(custom_scripts_path, 'extensions')):
+            continue
+
         code_patch = generate_prompt_server_init_code_patch(custom_scripts_path)
         code_patch = textwrap.dedent(code_patch)
         extra_code = ast.parse(code_patch)
@@ -42,7 +46,7 @@ def patch_prompt_server_init(parsed_class: ast.ClassDef, custom_scripts_path_lis
 
 def generate_prompt_server_init_code_patch(custom_scripts_path):
     return rf'''
-        files.extend(os.path.join(self.web_root, "webui-scripts", "{os.path.basename(os.path.dirname(custom_scripts_path))}", os.path.relpath(f, r"{custom_scripts_path}")) 
+        files.extend(os.path.join(self.web_root, "webui_scripts", "{os.path.basename(os.path.dirname(custom_scripts_path))}", os.path.relpath(f, r"{custom_scripts_path}")) 
         for f in glob.glob(r"{custom_scripts_path}/extensions/**/*.js", recursive=True))
     '''
 
@@ -56,11 +60,12 @@ def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_pa
 
 
 def generate_prompt_server_add_routes_code_patch(custom_scripts_path):
-    return rf'web.static("/webui-scripts/{os.path.basename(os.path.dirname(custom_scripts_path))}", r"{custom_scripts_path}", follow_symlinks=True)'
+    return rf'web.static("/webui_scripts/{os.path.basename(os.path.dirname(custom_scripts_path))}", r"{custom_scripts_path}", follow_symlinks=True)'
 
 
 def get_ast_function(parsed_object, function_name):
     res = [exp for exp in parsed_object.body if getattr(exp, 'name', None) == function_name]
     if not res:
         raise RuntimeError(f'Cannot find function {function_name} in parsed ast')
+
     return res[0]

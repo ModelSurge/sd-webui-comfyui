@@ -11,7 +11,7 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 - [ ] `Latent Webui Noise Generator` node
 - [ ] `Webui Prompt Parser` node
 
-For a full overview of all the advantageous features this extension adds to ComfyUI, check out the wiki page. 
+For a full overview of all the advantageous features this extension adds to ComfyUI, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
 
 ## Installation
 1) Go to Extensions > Install from URL

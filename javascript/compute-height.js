@@ -4,7 +4,6 @@ function computeComfyuiElementHeight() {
     const footerToRemove = document.querySelector('#footer');
     const tabs = document.getElementById("tabs") ?? null;
     const tab_nav = tabs ? tabs.querySelector(".tab-nav") : null;
-    console.log(tab_nav)
 
     if(tab_nav !== null) {
         const height = tab_nav.getBoundingClientRect().bottom;

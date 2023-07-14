@@ -4,6 +4,13 @@ import importlib
 from modules import sd_models, paths, shared, modelloader
 
 
+def share_webui_folder_paths(folder_paths: dict):
+    from folder_paths import add_model_folder_path
+    for folder_id, folder_paths in folder_paths.items():
+        for folder_path in folder_paths:
+            add_model_folder_path(folder_id, folder_path)
+
+
 def get_folder_paths() -> dict:
     return {
         'checkpoints': [sd_models.model_path] + ([shared.cmd_opts.ckpt_dir] if shared.cmd_opts.ckpt_dir else []),
@@ -14,13 +21,6 @@ def get_folder_paths() -> dict:
         'upscale_models': get_upscaler_paths(),
         'controlnet': get_controlnet_paths()
     }
-
-
-def share_webui_folder_paths(folder_paths: dict):
-    from folder_paths import add_model_folder_path
-    for folder_id, folder_paths in folder_paths.items():
-        for folder_path in folder_paths:
-            add_model_folder_path(folder_id, folder_path)
 
 
 # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/f865d3e11647dfd6c7b2cdf90dde24680e58acd8/modules/modelloader.py#L137

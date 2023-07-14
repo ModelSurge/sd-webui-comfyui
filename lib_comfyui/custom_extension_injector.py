@@ -17,6 +17,8 @@ def register_custom_nodes():
     add_model_folder_path('custom_nodes', webui_custom_nodes_path)
 
 
+# This patching code was highly inspired by this article:
+# Source: https://medium.com/@chipiga86/python-monkey-patching-like-a-boss-87d7ddb8098e
 def register_custom_scripts():
     import server
 

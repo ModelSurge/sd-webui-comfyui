@@ -22,7 +22,7 @@ def register_custom_nodes():
 def register_custom_scripts():
     import server
 
-    parsed_module = ast.parse(source(server.PromptServer))
+    parsed_module = ast.parse(textwrap.dedent(inspect.getsource(server.PromptServer)))
     parsed_class = parsed_module.body[0]
     patch_prompt_server_init(parsed_class)
     patch_prompt_server_add_routes(parsed_class)
@@ -53,9 +53,3 @@ def get_ast_function(parsed_object, function_name: str):
         raise RuntimeError(f'Cannot find function {function_name} in parsed ast')
 
     return res[0]
-
-
-def source(o):
-    s = inspect.getsource(o).split('\n')
-    indent = len(s[0]) - len(s[0].lstrip())
-    return '\n'.join(i[indent:] for i in s)

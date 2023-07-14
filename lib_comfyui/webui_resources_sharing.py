@@ -15,6 +15,7 @@ def get_folder_paths() -> dict:
     return {
         'checkpoints': [sd_models.model_path] + ([shared.cmd_opts.ckpt_dir] if shared.cmd_opts.ckpt_dir else []),
         'vae': [os.path.join(paths.models_path, 'VAE')] + ([shared.cmd_opts.vae_dir] if shared.cmd_opts.vae_dir else []),
+        'vae_approx': [os.path.join(paths.models_path, "VAE-approx")],
         'embeddings': [shared.cmd_opts.embeddings_dir],
         'loras': [shared.cmd_opts.lora_dir],
         'hypernetworks': [shared.cmd_opts.hypernetwork_dir],

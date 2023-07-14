@@ -22,18 +22,21 @@ def register_custom_nodes(custom_nodes_path_list):
         add_model_folder_path('custom_nodes', custom_nodes_path)
 
 
+# This patching code was highly inspired by this article:
+# Source: https://medium.com/@chipiga86/python-monkey-patching-like-a-boss-87d7ddb8098e
 def register_custom_scripts(custom_scripts_path_list):
     if not custom_scripts_path_list:
         return
     import server
-    m = ast.parse(source(server.PromptServer))
-    patch_prompt_server_init(m, custom_scripts_path_list)
-    patch_prompt_server_add_routes(m, custom_scripts_path_list)
-    exec(compile(m, '<string>', 'exec'), server.__dict__)
+    parsed_module = ast.parse(source(server.PromptServer))
+    parsed_class = parsed_module.body[0]
+    patch_prompt_server_init(parsed_class, custom_scripts_path_list)
+    patch_prompt_server_add_routes(parsed_class, custom_scripts_path_list)
+    exec(compile(parsed_module, '<string>', 'exec'), server.__dict__)
 
 
-def patch_prompt_server_init(m, custom_scripts_path_list):
-    init_ast_function = get_ast_function(m.body[0], '__init__')
+def patch_prompt_server_init(parsed_class: ast.ClassDef, custom_scripts_path_list):
+    init_ast_function = get_ast_function(parsed_class, '__init__')
     function_to_patch = get_ast_function(init_ast_function, 'get_extensions')
     code_patch = generate_prompt_server_init_code_patch(custom_scripts_path_list)
     extra_code = ast.parse(textwrap.dedent(code_patch))
@@ -50,8 +53,8 @@ def generate_prompt_server_init_code_patch(custom_scripts_path_list):
             for custom_scripts_path in custom_scripts_path_list])
 
 
-def patch_prompt_server_add_routes(m, custom_scripts_path_list):
-    add_routes_ast_function = get_ast_function(m.body[0], 'add_routes')
+def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_path_list):
+    add_routes_ast_function = get_ast_function(parsed_class, 'add_routes')
     code_patch = generate_prompt_server_add_routes_code_patch(custom_scripts_path_list)
     extra_line_of_code = ast.parse(code_patch)
     add_routes_ast_function.body[1].value.args[0].elts.insert(0, extra_line_of_code.body[0].value)
@@ -63,12 +66,10 @@ def generate_prompt_server_add_routes_code_patch(custom_scripts_path_list):
             for custom_scripts_path in custom_scripts_path_list])
 
 
-def get_ast_function(m, function_name):
-    res = [exp for exp in m.body if getattr(exp, 'name', None) == function_name]
-
+def get_ast_function(parsed_object, function_name):
+    res = [exp for exp in parsed_object.body if getattr(exp, 'name', None) == function_name]
     if not res:
         raise RuntimeError(f'Cannot find function {function_name} in parsed ast')
-
     return res[0]
 
 

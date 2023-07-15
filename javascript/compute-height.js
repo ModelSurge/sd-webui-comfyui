@@ -10,10 +10,10 @@ function comfyuiTabUpdateLoopInit() {
         return;
     }
 
-    comfyui_document.onerror = () => {
+    comfyui_document.addEventListener("error", () => {
         // reload the object tag
         comfyui_document.data = comfyui_document.data;
-    };
+    });
 
     // polling eww
     setTimeout(updateComfyuiTab, POLLING_TIMEOUT);

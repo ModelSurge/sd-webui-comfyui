@@ -16,7 +16,6 @@ function initComfyuiTabUpdateLoop() {
         }, POLLING_TIMEOUT);
     });
 
-    // polling eww
     updateComfyuiTab();
 }
 
@@ -29,7 +28,7 @@ function updateComfyuiTab() {
     const tab_nav_bottom = getTabNav().getBoundingClientRect().bottom;
     container.style.height = `calc(100% - ${tab_nav_bottom}px)`;
 
-    // polling ewww
+    // polling eww
     setTimeout(updateComfyuiTab, POLLING_TIMEOUT);
 }
 

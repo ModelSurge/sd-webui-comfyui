@@ -2,8 +2,7 @@ const POLLING_TIMEOUT = 500;
 
 function comfyuiTabLoopInit() {
     const comfyui_document = document.getElementById("comfyui_webui_root");
-    const tabs = document.getElementById("tabs") ?? null;
-    const tab_nav = tabs ? tabs.querySelector(".tab-nav") : null;
+    const tab_nav = getTabNav();
 
     if (tab_nav === null) {
         // polling ew
@@ -22,14 +21,12 @@ function comfyuiTabLoopInit() {
 
 function updateComfyuiTab() {
     const tab = document.getElementById("tab_comfyui_webui_root");
-    const container = document.getElementById("comfyui_webui_container");
     const footerToRemove = document.querySelector('#footer');
-    const tabs = document.getElementById("tabs") ?? null;
-    const tab_nav = tabs ? tabs.querySelector(".tab-nav") : null;
-
-    const height = tab_nav.getBoundingClientRect().bottom;
-    container.style.height = `calc(100% - ${height}px)`;
     updateFooterStyle(tab.style.display, footerToRemove);
+
+    const container = document.getElementById("comfyui_webui_container");
+    const tab_nav_bottom = getTabNav().getBoundingClientRect().bottom;
+    container.style.height = `calc(100% - ${tab_nav_bottom}px)`;
 
     // polling ewww
     setTimeout(updateComfyuiTab, POLLING_TIMEOUT);
@@ -43,6 +40,11 @@ function updateFooterStyle(tabDisplay, footer) {
     else {
         footer.classList.remove('comfyui-remove-display');
     }
+}
+
+function getTabNav() {
+    const tabs = document.getElementById("tabs") ?? null;
+    return tabs ? tabs.querySelector(".tab-nav") : null;
 }
 
 document.addEventListener("DOMContentLoaded", (e) => {

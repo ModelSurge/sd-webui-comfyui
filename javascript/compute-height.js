@@ -1,12 +1,12 @@
 const POLLING_TIMEOUT = 500;
 
-function comfyuiTabUpdateLoopInit() {
+function initComfyuiTabUpdateLoop() {
     const comfyui_document = document.getElementById("comfyui_webui_root");
     const tab_nav = getTabNav();
 
     if (tab_nav === null) {
         // polling ew
-        setTimeout(comfyuiTabUpdateLoopInit, POLLING_TIMEOUT);
+        setTimeout(initComfyuiTabUpdateLoop, POLLING_TIMEOUT);
         return;
     }
 
@@ -51,5 +51,5 @@ function reloadObjectElementData(objectElement) {
 }
 
 document.addEventListener("DOMContentLoaded", (e) => {
-    comfyuiTabUpdateLoopInit();
+    initComfyuiTabUpdateLoop();
 });

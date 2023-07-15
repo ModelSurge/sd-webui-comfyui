@@ -9,14 +9,14 @@ class CheckpointLoaderPatched:
 
     def __enter__(self):
         self.original_loader = utils.load_torch_file
-        utils.load_torch_file = CheckpointLoaderPatched.load_torch_file_hijack
+        utils.load_torch_file = CheckpointLoaderPatched.load_torch_file_patch
         return self
 
     def __exit__(self, type, value, traceback):
         utils.load_torch_file = self.original_loader
 
     @staticmethod
-    def load_torch_file_hijack(state_dict, safe_load=False):
+    def load_torch_file_patch(state_dict, safe_load=False):
         return state_dict.copy()
 
     def load(self):

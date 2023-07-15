@@ -48,7 +48,7 @@ function getTabNav() {
     return tabs ? tabs.querySelector(".tab-nav") : null;
 }
 
-function reloadObjectElementData(objectElement) {
+function reloadObjectElement(objectElement) {
     objectElement.data = objectElement.data;
 }
 

@@ -1,18 +1,35 @@
-function computeComfyuiElementHeight() {
-    const tab = document.getElementById("tab_comfyui_webui_root");
-    const container = document.getElementById("comfyui_webui_container");
-    const footerToRemove = document.querySelector('#footer');
-    const tabs = document.getElementById("tabs") ?? null;
-    const tab_nav = tabs ? tabs.querySelector(".tab-nav") : null;
+const POLLING_TIMEOUT = 500;
 
-    if(tab_nav !== null) {
-        const height = tab_nav.getBoundingClientRect().bottom;
-        container.style.height = `calc(100% - ${height}px)`;
-        updateFooterStyle(tab.style.display, footerToRemove);
+function initComfyuiTabUpdateLoop() {
+    const comfyui_document = document.getElementById("comfyui_webui_root") ?? null;
+    const tab_nav = getTabNav();
+
+    if (comfyui_document === null || tab_nav === null) {
+        // webui not yet ready, try again in a bit
+        setTimeout(initComfyuiTabUpdateLoop, POLLING_TIMEOUT);
+        return;
     }
 
+    comfyui_document.addEventListener("error", () => {
+        setTimeout(() => {
+            reloadObjectElement(comfyui_document);
+        }, POLLING_TIMEOUT);
+    });
+
+    updateComfyuiTab();
+}
+
+function updateComfyuiTab() {
+    const tab = document.getElementById("tab_comfyui_webui_root");
+    const footerToRemove = document.querySelector('#footer');
+    updateFooterStyle(tab.style.display, footerToRemove);
+
+    const container = document.getElementById("comfyui_webui_container");
+    const tab_nav_bottom = getTabNav().getBoundingClientRect().bottom;
+    container.style.height = `calc(100% - ${tab_nav_bottom}px)`;
+
     // polling ew
-    setTimeout(computeComfyuiElementHeight, 200);
+    setTimeout(updateComfyuiTab, POLLING_TIMEOUT);
 }
 
 function updateFooterStyle(tabDisplay, footer) {
@@ -25,6 +42,15 @@ function updateFooterStyle(tabDisplay, footer) {
     }
 }
 
+function getTabNav() {
+    const tabs = document.getElementById("tabs") ?? null;
+    return tabs ? tabs.querySelector(".tab-nav") : null;
+}
+
+function reloadObjectElement(objectElement) {
+    objectElement.data = objectElement.data;
+}
+
 document.addEventListener("DOMContentLoaded", (e) => {
-    computeComfyuiElementHeight();
+    initComfyuiTabUpdateLoop();
 });

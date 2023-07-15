@@ -1,17 +1,19 @@
 const POLLING_TIMEOUT = 500;
 
 function initComfyuiTabUpdateLoop() {
-    const comfyui_document = document.getElementById("comfyui_webui_root");
+    const comfyui_document = document.getElementById("comfyui_webui_root") ?? null;
     const tab_nav = getTabNav();
 
-    if (tab_nav === null) {
+    if (comfyui_document === null || tab_nav === null) {
         // polling ew
         setTimeout(initComfyuiTabUpdateLoop, POLLING_TIMEOUT);
         return;
     }
 
     comfyui_document.addEventListener("error", () => {
-        reloadObjectElementData(comfyui_document);
+        setTimeout(() => {
+            reloadObjectElementData(comfyui_document);
+        }, POLLING_TIMEOUT);
     });
 
     // polling eww
@@ -47,7 +49,7 @@ function getTabNav() {
 }
 
 function reloadObjectElementData(objectElement) {
-    comfyui_document.data = comfyui_document.data;
+    objectElement.data = objectElement.data;
 }
 
 document.addEventListener("DOMContentLoaded", (e) => {

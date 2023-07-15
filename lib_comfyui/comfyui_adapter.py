@@ -16,11 +16,11 @@ def on_model_loaded(sd_model):
 
 
 def unwrap_cpu_state_dict(state_dict: dict) -> dict:
-    model_keys = ('cond_stage_model', 'first_stage_model', 'model.diffusion_model')
+    model_key_prefixes = ('cond_stage_model', 'first_stage_model', 'model.diffusion_model')
     return {
         k.replace('.wrapped.', '.'): v.cpu()
         for k, v in state_dict.items()
-        if k.startswith(model_keys)
+        if k.startswith(model_key_prefixes)
     }
 
 

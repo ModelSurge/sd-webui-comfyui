@@ -17,7 +17,7 @@ function initComfyuiTabUpdateLoop() {
     });
 
     // polling eww
-    setTimeout(updateComfyuiTab, POLLING_TIMEOUT);
+    updateComfyuiTab();
 }
 
 function updateComfyuiTab() {

@@ -12,7 +12,7 @@ function initComfyuiTabUpdateLoop() {
 
     comfyui_document.addEventListener("error", () => {
         setTimeout(() => {
-            reloadObjectElementData(comfyui_document);
+            reloadObjectElement(comfyui_document);
         }, POLLING_TIMEOUT);
     });
 

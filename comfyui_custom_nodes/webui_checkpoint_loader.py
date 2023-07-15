@@ -3,13 +3,13 @@ from comfy.sd import load_checkpoint_guess_config
 from comfy import utils
 
 
-class CheckpointLoaderHijack:
+class CheckpointLoaderPatcher:
     def __init__(self, state_dict):
         self.state_dict = state_dict
 
     def __enter__(self):
         self.original_loader = utils.load_torch_file
-        utils.load_torch_file = CheckpointLoaderHijack.load_torch_file_hijack
+        utils.load_torch_file = CheckpointLoaderPatcher.load_torch_file_hijack
         return self
 
     def __exit__(self, type, value, traceback):
@@ -37,7 +37,7 @@ class WebuiCheckpointLoader:
     CATEGORY = "loaders"
 
     def load_checkpoint(self, _void):
-        with CheckpointLoaderHijack(shared.sd_model_state_dict) as patched_loader:
+        with CheckpointLoaderPatcher(shared.sd_model_state_dict) as patched_loader:
             return patched_loader.load()
 
 

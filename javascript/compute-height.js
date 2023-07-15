@@ -11,8 +11,7 @@ function comfyuiTabUpdateLoopInit() {
     }
 
     comfyui_document.addEventListener("error", () => {
-        // reload the object tag
-        comfyui_document.data = comfyui_document.data;
+        reloadObjectElementData(comfyui_document);
     });
 
     // polling eww
@@ -45,6 +44,10 @@ function updateFooterStyle(tabDisplay, footer) {
 function getTabNav() {
     const tabs = document.getElementById("tabs") ?? null;
     return tabs ? tabs.querySelector(".tab-nav") : null;
+}
+
+function reloadObjectElementData(objectElement) {
+    comfyui_document.data = comfyui_document.data;
 }
 
 document.addEventListener("DOMContentLoaded", (e) => {

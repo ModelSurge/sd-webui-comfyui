@@ -44,3 +44,7 @@ class WebuiCheckpointLoader:
 NODE_CLASS_MAPPINGS = {
     "WebuiCheckpointLoader": WebuiCheckpointLoader,
 }
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "WebuiCheckpointLoader": 'Load Webui Checkpoint',
+}

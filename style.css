@@ -6,7 +6,6 @@ div#comfyui_webui_container {
     position: fixed;
     left: 0px;
     width: 100%;
-    height: calc(100% - 125px);
     bottom: 0px;
 }
 
@@ -15,7 +14,6 @@ object#comfyui_webui_root {
     height: 100%;
 }
 
-#tabs:has( > div#tab_comfyui_webui_root[style*="display: block;"]) ~ #footer,
 .comfyui-remove-display {
     display: none;
 }

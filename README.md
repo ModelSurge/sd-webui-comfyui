@@ -4,15 +4,21 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 
 ![ezgif com-video-to-gif(1)](https://user-images.githubusercontent.com/34081873/226529347-23e61102-cf83-457e-b94c-89337fd38c4d.gif)
 
+## Features
+- [x] Load comfyui directly into the webui
+- [x] Support for [loading custom nodes from other webui extensions](https://github.com/ModelSurge/sd-webui-comfyui/wiki/Developing-custom-nodes-from-webui-extensions)
+- [x] Webui node: [`Load Webui Checkpoint`](https://github.com/ModelSurge/sd-webui-comfyui/wiki/Webui-Nodes)
+- [ ] Webui node: `Latent Webui Noise Generator`
+- [ ] Webui node: `Webui Prompt Parser`
+
+For a full overview of all the advantageous features this extension adds to ComfyUI, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
+
 ## Installation
 1) Go to Extensions > Install from URL
 2) Paste `https://github.com/ModelSurge/sd-webui-comfyui` in the `URL for extension's git repository` text field
 3) Click the `Install` button
 4) Restart the webui
 5) Go to the `ComfyUI` tab, and follow the instructions
-
-## Known issues
-- Models between ComfyUI and webui aren't shared (see https://github.com/ModelSurge/sd-webui-comfyui/issues/5)
 
 ## Contributing
 We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:

@@ -1,30 +1,35 @@
-const TAB_OFFSET_PADDING = 5;
+const POLLING_TIMEOUT = 500;
 
-function getRecursiveParentNode(el, n) {
-    if(n <= 0) return el;
-    if(el === null || el.parentNode === null) return el;
-    return getRecursiveParentNode(el.parentNode, n-1);
-}
+function initComfyuiTabUpdateLoop() {
+    const comfyui_document = document.getElementById("comfyui_webui_root") ?? null;
+    const tab_nav = getTabNav();
 
-const getDynamicElementFromContainer = (container) => {
-    const webuiParentDepth = 7;
-    return getRecursiveParentNode(container, webuiParentDepth);
-}
-
-function computeComfyuiElementHeight() {
-    const tab = document.getElementById("tab_comfyui_webui_root");
-    const container = document.getElementById("comfyui_webui_container");
-    const footerToRemove = document.querySelector('#footer');
-    const dynamicElement = getDynamicElementFromContainer(container);
-
-    if(dynamicElement !== null) {
-        const height = dynamicElement.offsetHeight;
-        container.style.height = `calc(100% - ${height-TAB_OFFSET_PADDING}px)`;
-        updateFooterStyle(tab.style.display, footerToRemove);
+    if (comfyui_document === null || tab_nav === null) {
+        // webui not yet ready, try again in a bit
+        setTimeout(initComfyuiTabUpdateLoop, POLLING_TIMEOUT);
+        return;
     }
 
+    comfyui_document.addEventListener("error", () => {
+        setTimeout(() => {
+            reloadObjectElement(comfyui_document);
+        }, POLLING_TIMEOUT);
+    });
+
+    updateComfyuiTab();
+}
+
+function updateComfyuiTab() {
+    const tab = document.getElementById("tab_comfyui_webui_root");
+    const footerToRemove = document.querySelector('#footer');
+    updateFooterStyle(tab.style.display, footerToRemove);
+
+    const container = document.getElementById("comfyui_webui_container");
+    const tab_nav_bottom = getTabNav().getBoundingClientRect().bottom;
+    container.style.height = `calc(100% - ${tab_nav_bottom}px)`;
+
     // polling ew
-    setTimeout(computeComfyuiElementHeight, 200);
+    setTimeout(updateComfyuiTab, POLLING_TIMEOUT);
 }
 
 function updateFooterStyle(tabDisplay, footer) {
@@ -37,6 +42,15 @@ function updateFooterStyle(tabDisplay, footer) {
     }
 }
 
+function getTabNav() {
+    const tabs = document.getElementById("tabs") ?? null;
+    return tabs ? tabs.querySelector(".tab-nav") : null;
+}
+
+function reloadObjectElement(objectElement) {
+    objectElement.data = objectElement.data;
+}
+
 document.addEventListener("DOMContentLoaded", (e) => {
-    computeComfyuiElementHeight();
+    initComfyuiTabUpdateLoop();
 });

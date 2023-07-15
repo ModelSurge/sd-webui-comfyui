@@ -2,9 +2,7 @@ import sys
 import textwrap
 
 from modules import shared
-import importlib
 import install_comfyui
-importlib.reload(install_comfyui)
 
 
 def create_section():
@@ -36,12 +34,12 @@ def get_setting_value(setting_key):
 
 
 def get_port():
-    return get_setting_value('--port') or shared.cmd_opts.comfyui_port
+    return get_setting_value('--port') or getattr(shared.cmd_opts, 'comfyui_port', 8188)
 
 
 def get_comfyui_client_url():
     loopback_address = '127.0.0.1'
-    server_url = get_setting_value('--listen') or shared.cmd_opts.comfyui_listen or loopback_address
+    server_url = get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)
     client_url = getattr(shared.opts.data, 'comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
     if client_url == '0.0.0.0':
         print(textwrap.dedent(f"""

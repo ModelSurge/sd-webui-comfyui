@@ -5,7 +5,7 @@ function initComfyuiTabUpdateLoop() {
     const tab_nav = getTabNav();
 
     if (comfyui_document === null || tab_nav === null) {
-        // polling ew
+        // webui not yet ready, try again in a bit
         setTimeout(initComfyuiTabUpdateLoop, POLLING_TIMEOUT);
         return;
     }
@@ -28,7 +28,7 @@ function updateComfyuiTab() {
     const tab_nav_bottom = getTabNav().getBoundingClientRect().bottom;
     container.style.height = `calc(100% - ${tab_nav_bottom}px)`;
 
-    // polling eww
+    // polling ew
     setTimeout(updateComfyuiTab, POLLING_TIMEOUT);
 }
 

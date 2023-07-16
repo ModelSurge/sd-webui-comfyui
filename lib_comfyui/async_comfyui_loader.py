@@ -7,9 +7,10 @@ from torch import multiprocessing
 from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing
 
 
-def main(state_dict_queue, comfyui_path):
+def main(state_dict_queue, opts_outdirs_queue, comfyui_path):
     sys.modules["webui_process"] = WebuiProcessModule(
         state_dict_queue=state_dict_queue,
+        opts_outdirs_queue=opts_outdirs_queue,
     )
     start_comfyui(comfyui_path)
 
@@ -29,3 +30,4 @@ def start_comfyui(comfyui_path):
 @dataclasses.dataclass
 class WebuiProcessModule(types.ModuleType):
     state_dict_queue: multiprocessing.Queue
+    opts_outdirs_queue: multiprocessing.Queue

@@ -1,11 +1,8 @@
 import os
-
-from modules.paths import data_path
-
+import webui_process
 from torchvision.transforms.functional import to_pil_image
-
 from modules.images import save_image
-from modules.shared import opts
+from modules.paths import data_path
 
 
 class WebuiSaveImage:
@@ -25,12 +22,13 @@ class WebuiSaveImage:
     OUTPUT_NODE = True
 
     def save_image(self, location, images):
+        opts = webui_process.opts_outdirs_queue.get()
         if 'txt2img' in location:
-            output_dir = opts.outdir_samples or opts.outdir_txt2img_samples if 'images' in location else opts.outdir_grids or opts.outdir_txt2img_grids
+            output_dir = opts['outdir_samples'] or opts['outdir_txt2img_samples'] if 'images' in location else opts['outdir_grids'] or opts['outdir_txt2img_grids']
         elif 'img2img' in location:
-            output_dir = opts.outdir_samples or opts.outdir_img2img_samples if 'images' in location else opts.outdir_grids or opts.outdir_img2img_grids
+            output_dir = opts['outdir_samples'] or opts['outdir_img2img_samples'] if 'images' in location else opts['outdir_grids'] or opts['outdir_img2img_grids']
         else:
-            output_dir = opts.outdir_samples or opts.outdir_extras_samples
+            output_dir = opts['outdir_samples'] or opts['outdir_extras_samples']
 
         for image in images:
             pil_image = to_pil_image(image.permute(2, 0, 1))

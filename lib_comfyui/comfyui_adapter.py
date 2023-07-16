@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 from torch import multiprocessing
@@ -20,15 +21,7 @@ def unwrap_cpu_state_dict(state_dict: dict) -> dict:
 
 
 def get_opts_outdirs():
-    return {
-        'outdir_samples': shared.opts.outdir_samples,
-        'outdir_grids': shared.opts.outdir_grids,
-        'outdir_txt2img_samples': shared.opts.outdir_txt2img_samples,
-        'outdir_img2img_samples': shared.opts.outdir_img2img_samples,
-        'outdir_extras_samples': shared.opts.outdir_extras_samples,
-        'outdir_txt2img_grids': shared.opts.outdir_txt2img_grids,
-        'outdir_img2img_grids': shared.opts.outdir_img2img_grids,
-    }
+    return json.loads(shared.opts.dumpjson())
 
 
 comfyui_process = None

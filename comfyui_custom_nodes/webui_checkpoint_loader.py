@@ -1,4 +1,4 @@
-from modules import shared
+import webui_process
 from comfy.sd import load_checkpoint_guess_config
 from comfy import utils
 
@@ -37,7 +37,8 @@ class WebuiCheckpointLoader:
     CATEGORY = "loaders"
 
     def load_checkpoint(self, void):
-        with CheckpointLoaderPatched(shared.sd_model_state_dict) as patched_loader:
+        state_dict = webui_process.state_dict_queue.get()
+        with CheckpointLoaderPatched(state_dict) as patched_loader:
             return patched_loader.load()
 
 

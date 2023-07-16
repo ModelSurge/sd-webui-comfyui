@@ -2,16 +2,12 @@ import sys
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
+from lib_comfyui.parallel_utils import StoppableThread, SynchronizingQueue
+from modules import shared
 
 
-thread = None
-multiprocessing_spawn = multiprocessing.get_context('spawn')
-model_queue = multiprocessing_spawn.Queue()
-
-
-def on_model_loaded(sd_model):
-    state_dict = unwrap_cpu_state_dict(sd_model.state_dict())
-    model_queue.put(state_dict)
+def get_cpu_state_dict():
+    return unwrap_cpu_state_dict(shared.sd_model.state_dict())
 
 
 def unwrap_cpu_state_dict(state_dict: dict) -> dict:
@@ -23,31 +19,68 @@ def unwrap_cpu_state_dict(state_dict: dict) -> dict:
     }
 
 
+comfyui_process = None
+state_dict_thread = None
+multiprocessing_spawn = multiprocessing.get_context('spawn')
+state_dict_queue = SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn)
+
+
 def start():
     install_location = webui_settings.get_install_location()
     if not os.path.exists(install_location):
         return
 
+    start_state_dict_thread()
     start_comfyui_process(install_location)
 
 
 def start_comfyui_process(install_location):
-    global thread
+    global comfyui_process
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     try:
         sys.path.insert(0, sys_path_to_add)
-        thread = multiprocessing_spawn.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
-        thread.start()
+        comfyui_process = multiprocessing_spawn.Process(
+            target=async_comfyui_loader.main,
+            args=(state_dict_queue, install_location),
+            daemon=True,
+        )
+        comfyui_process.start()
     finally:
         sys.path.clear()
         sys.path.extend(original_sys_path)
 
 
+def start_state_dict_thread():
+    global state_dict_thread
+
+    def thread_loop():
+        global state_dict_thread, state_dict_queue
+        while state_dict_thread.is_running():
+            state_dict_queue.attend_consumer(timeout=1)
+
+    state_dict_thread = StoppableThread(target=thread_loop, daemon=True)
+    state_dict_thread.start()
+
+
 def stop():
-    global thread
-    if thread is None:
+    stop_comfyui_process()
+    stop_state_dict_thread()
+
+
+def stop_comfyui_process():
+    global comfyui_process
+    if comfyui_process is None:
         return
 
-    thread.terminate()
-    thread = None
+    comfyui_process.terminate()
+    comfyui_process = None
+
+
+def stop_state_dict_thread():
+    global state_dict_thread
+    if state_dict_thread is None:
+        return
+
+    state_dict_thread.join()
+    state_dict_thread = None

@@ -8,7 +8,7 @@ from lib_comfyui import argv_conversion, custom_extension_injector, webui_resour
 
 
 def main(state_dict_queue, comfyui_path):
-    sys.modules["webui_process"] = WebuiProcessData(
+    sys.modules["webui_process"] = WebuiProcessModule(
         state_dict_queue=state_dict_queue,
     )
     start_comfyui(comfyui_path)
@@ -27,5 +27,5 @@ def start_comfyui(comfyui_path):
 
 
 @dataclasses.dataclass
-class WebuiProcessData(types.ModuleType):
+class WebuiProcessModule(types.ModuleType):
     state_dict_queue: multiprocessing.Queue

@@ -37,7 +37,9 @@ class WebuiCheckpointLoader:
     CATEGORY = "loaders"
 
     def load_checkpoint(self, void):
-        with CheckpointLoaderPatched(shared.sd_model_state_dict) as patched_loader:
+        shared.send_state_dict_event.set()
+        state_dict = shared.state_dict_queue.get()
+        with CheckpointLoaderPatched(state_dict) as patched_loader:
             return patched_loader.load()
 
 

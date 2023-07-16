@@ -10,12 +10,17 @@ model_queue = multiprocessing_spawn.Queue()
 
 
 def on_model_loaded(sd_model):
-    sd_model.share_memory()
-    state_dict = sd_model.state_dict()
-    patched_sd = {}
-    for k, v in state_dict.items():
-        patched_sd[k] = v.cpu()
-    model_queue.put(patched_sd)
+    state_dict = unwrap_cpu_state_dict(sd_model.state_dict())
+    model_queue.put(state_dict)
+
+
+def unwrap_cpu_state_dict(state_dict: dict) -> dict:
+    model_key_prefixes = ('cond_stage_model', 'first_stage_model', 'model.diffusion_model')
+    return {
+        k.replace('.wrapped.', '.'): v.cpu().share_memory_()
+        for k, v in state_dict.items()
+        if k.startswith(model_key_prefixes)
+    }
 
 
 def start():

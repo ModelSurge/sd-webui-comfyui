@@ -14,19 +14,28 @@ function onComfyuiTabLoaded(callback) {
         return;
     }
 
+    callback();
+}
+
+function setupComfyuiTabEvents() {
+    setupReloadOnErrorEvent();
+    setupResizeTabEvent();
+    setupToggleFooterEvent();
+
+    updateComfyuiTabHeight();
+}
+
+function setupReloadOnErrorEvent() {
+    const comfyui_document = getComfyuiContainer();
     comfyui_document.addEventListener("error", () => {
         setTimeout(() => {
             reloadObjectElement(comfyui_document);
         }, POLLING_TIMEOUT);
     });
-
-    callback();
 }
 
-function setupComfyuiTabEvents() {
-    updateComfyuiTabHeight();
+function setupResizeTabEvent() {
     window.addEventListener("resize", updateComfyuiTabHeight);
-    setupToggleFooterEvent();
 }
 
 function setupToggleFooterEvent() {

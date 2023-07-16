@@ -4,6 +4,9 @@ import ast
 import textwrap
 from lib_comfyui.find_extensions import get_extension_paths_to_load
 
+# This patching code was highly inspired by Sergei's monkey patch article.
+# Source: https://medium.com/@chipiga86/python-monkey-patching-like-a-boss-87d7ddb8098e
+
 
 def register_webui_extensions():
     node_paths, script_paths = get_extension_paths_to_load()
@@ -17,8 +20,6 @@ def register_custom_nodes(custom_nodes_path_list):
         add_model_folder_path('custom_nodes', custom_nodes_path)
 
 
-# This patching code was highly inspired by this article:
-# Source: https://medium.com/@chipiga86/python-monkey-patching-like-a-boss-87d7ddb8098e
 def register_custom_scripts(custom_scripts_path_list):
     if not custom_scripts_path_list:
         return
@@ -31,7 +32,19 @@ def register_custom_scripts(custom_scripts_path_list):
     exec(compile(parsed_module, '<string>', 'exec'), server.__dict__)
 
 
+# patch for https://github.com/comfyanonymous/ComfyUI/blob/490771b7f495c95fb52875cf234fffc367162c7e/server.py#L123
 def patch_prompt_server_init(parsed_class: ast.ClassDef, custom_scripts_path_list):
+    """
+    ComfyUI/serever.py
+
+    ...
+        @routes.get("/extensions")
+        async def get_extensions(request):
+            files = glob.glob(os.path.join(self.web_root, 'extensions/**/*.js'), recursive=True)
+                <- add code right there
+            return web.json_response(list(map(lambda f: "/" + os.path.relpath(f, self.web_root).replace("\\", "/"), files)))
+    ...
+    """
     init_ast_function = get_ast_function(parsed_class, '__init__')
     function_to_patch = get_ast_function(init_ast_function, 'get_extensions')
     for custom_scripts_path in custom_scripts_path_list:
@@ -51,7 +64,20 @@ def generate_prompt_server_init_code_patch(custom_scripts_path):
     '''
 
 
+# patch for https://github.com/comfyanonymous/ComfyUI/blob/490771b7f495c95fb52875cf234fffc367162c7e/server.py#L487
 def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_path_list):
+    """
+    ComfyUI/serever.py
+
+    ...
+        def add_routes(self):
+            self.app.add_routes(self.routes)
+            self.app.add_routes([
+                    <- add code right there in the list
+                web.static('/', self.web_root, follow_symlinks=True),
+            ])
+    ...
+    """
     add_routes_ast_function = get_ast_function(parsed_class, 'add_routes')
     for custom_scripts_path in custom_scripts_path_list:
         code_patch = generate_prompt_server_add_routes_code_patch(custom_scripts_path)

@@ -15,11 +15,12 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 For a full overview of all the advantageous features this extension adds to ComfyUI, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
 
 ## Installation
-1) Go to Extensions > Install from URL
-2) Paste `https://github.com/ModelSurge/sd-webui-comfyui` in the `URL for extension's git repository` text field
-3) Click the `Install` button
-4) Restart the webui
-5) Go to the `ComfyUI` tab, and follow the instructions
+1) Go to Extensions > Available
+2) Click the `Load from:` button
+3) Enter "ComfyUI" in the search bar
+4) Click the `Install` button of the ComfyUI Tab cell
+5) Restart the webui
+6) Go to the `ComfyUI` tab, and follow the instructions
 
 ## Contributing
 We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:

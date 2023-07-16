@@ -78,7 +78,7 @@ def stop_comfyui_process():
 
 
 def stop_state_dict_thread():
-    global state_dict_thread, state_dict_queue
+    global state_dict_thread
     if state_dict_thread is None:
         return
 

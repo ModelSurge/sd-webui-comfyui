@@ -1,13 +1,16 @@
+import dataclasses
+import types
 import sys
 import os
 import runpy
-from modules import shared
-import threading
+from torch import multiprocessing
 from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing
 
 
-def main(model_name_queue, comfyui_path):
-    start_update_loop(model_name_queue)
+def main(state_dict_queue, comfyui_path):
+    sys.modules["webui_process"] = WebuiProcessModule(
+        state_dict_queue=state_dict_queue,
+    )
     start_comfyui(comfyui_path)
 
 
@@ -23,9 +26,6 @@ def start_comfyui(comfyui_path):
     runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')
 
 
-def start_update_loop(model_state_dict_queue):
-    def update_queue():
-        while True:
-            shared.sd_model_state_dict = model_state_dict_queue.get()
-
-    threading.Thread(target=update_queue, daemon=True).start()
+@dataclasses.dataclass
+class WebuiProcessModule(types.ModuleType):
+    state_dict_queue: multiprocessing.Queue

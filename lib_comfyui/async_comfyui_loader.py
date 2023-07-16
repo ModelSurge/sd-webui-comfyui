@@ -20,7 +20,7 @@ def start_comfyui(comfyui_path):
     webui_resources_sharing.share_webui_folder_paths(folder_paths)
     custom_extension_injector.register_webui_extensions()
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
-    runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')
+    runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')
 
 
 def start_update_loop(model_state_dict_queue):

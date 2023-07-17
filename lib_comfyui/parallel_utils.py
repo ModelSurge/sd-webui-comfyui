@@ -37,8 +37,7 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         try:
             self.put(self._producer(*args, **kwargs))
         except Exception as e:
-            traceback.print_exc()
-            self.put(e)
+            self.put(RemoteError(e))
 
     def _wait_for_consumer(self, timeout: float = None):
         consumer_ready = self._consumer_ready_event.wait(timeout)
@@ -49,8 +48,10 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         self._args_stack.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
         res = super(SynchronizingQueue, self).get(*base_args, **base_kwargs)
-        if isinstance(res, Exception): raise res
-        else: return res
+        if isinstance(res, RemoteError):
+            raise res.error from res
+        else:
+            return res
 
     def __getstate__(self):
         return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer, self._args_stack)
@@ -79,3 +80,8 @@ class ProducerHandler:
 
         self.producer_thread.join()
         self.producer_thread = None
+
+
+class RemoteError(Exception):
+    def __init__(self, error):
+        self.error = error

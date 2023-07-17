@@ -104,9 +104,6 @@ class WebuiModel:
         if item in self.__dict__:
             return self.__dict__[item]
 
-        if item == 'concat_keys':
-            raise AttributeError
-
         res = webui_process.fetch_model_attribute(item)
         if isinstance(res, torch.Tensor):
             return res.to(device=self.device)

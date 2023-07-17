@@ -3,7 +3,7 @@ import sys
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
-from lib_comfyui.parallel_utils import SynchronizingQueue, AsyncProducerHandler
+from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerThreadHandler
 from modules import shared
 
 
@@ -26,8 +26,8 @@ def get_opts_outdirs():
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-state_dict_producer = AsyncProducerHandler(SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn))
-shared_opts_producer = AsyncProducerHandler(SynchronizingQueue(get_opts_outdirs, ctx=multiprocessing_spawn))
+state_dict_producer = ProducerThreadHandler(SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn))
+shared_opts_producer = ProducerThreadHandler(SynchronizingQueue(get_opts_outdirs, ctx=multiprocessing_spawn))
 
 
 def start():

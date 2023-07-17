@@ -29,7 +29,7 @@ def patch_server_routes():
         async def get_custom_route_test(request):
             global mp_event, button_event
             await button_event.wait()
-            asyncio.get_running_loop().call_soon_threadsafe(button_event.clear)
+            button_event.clear()
             return web.json_response({'promptQueue': True, 'batchSize': 1})
 
     server.PromptServer.__init__ = patched_PromptServer__init__

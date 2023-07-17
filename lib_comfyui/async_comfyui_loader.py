@@ -41,5 +41,4 @@ class WebuiProcessModule(types.ModuleType):
         return self.model_apply_queue.get(args=args, kwargs=kwargs)
 
     def fetch_shared_opts(self):
-        self.shared_opts_queue.put(())
         return types.SimpleNamespace(**json.loads(self.shared_opts_queue.get()))

@@ -1,6 +1,7 @@
 import torch
-import webui_process
 import comfy
+import webui_process
+from lib_comfyui import torch_utils
 
 
 class WebuiCheckpointLoader:
@@ -74,22 +75,10 @@ class WebuiModel:
         return False
 
     def apply_model(self, *args, **kwargs):
-        args = list(args)
+        args = torch_utils.deep_to(args, 'cpu')
         del kwargs['transformer_options']
-
-        for k, v in enumerate(args):
-            if isinstance(v, torch.Tensor):
-                args[k] = v.cpu()
-
-        for k, v in kwargs.items():
-            if isinstance(v, torch.Tensor):
-                kwargs[k] = v.cpu()
-            elif isinstance(v, list):
-                for i, vv in enumerate(v):
-                    if isinstance(vv, torch.Tensor):
-                        v[i] = vv.cpu()
-
-        return webui_process.apply_model(*args, **kwargs).to(self.device)
+        kwargs = torch_utils.deep_to(kwargs, 'cpu')
+        return webui_process.apply_model(*args, **kwargs).to(device=self.device)
 
     def __getattr__(self, item):
         if item in self.__dict__:

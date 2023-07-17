@@ -2,7 +2,7 @@ import sys
 import os
 import torch
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings
+from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared, devices
 
@@ -16,20 +16,8 @@ def sd_model_getattr(item):
 
 
 def sd_model_apply(*args, **kwargs):
-    args = list(args)
-
-    for i, arg in enumerate(args):
-        if isinstance(arg, torch.Tensor):
-            args[i] = arg.to(device=shared.sd_model.device, dtype=shared.sd_model.dtype)
-
-    for k, v in kwargs.items():
-        if isinstance(v, torch.Tensor):
-            kwargs[k] = v.to(device=shared.sd_model.device, dtype=shared.sd_model.dtype)
-        elif isinstance(v, list):
-            for i, vv in enumerate(v):
-                if isinstance(vv, torch.Tensor):
-                    v[i] = vv.to(device=shared.sd_model.device, dtype=shared.sd_model.dtype)
-
+    args = torch_utils.deep_to(args, shared.sd_model.device)
+    kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
     with devices.autocast(), torch.no_grad():
         return shared.sd_model.model(*args, **kwargs).cpu()
 

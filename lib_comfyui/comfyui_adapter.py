@@ -1,8 +1,9 @@
+import json
 import sys
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
-from lib_comfyui.parallel_utils import StoppableThread, SynchronizingQueue
+from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared
 
 
@@ -19,10 +20,14 @@ def unwrap_cpu_state_dict(state_dict: dict) -> dict:
     }
 
 
+def get_opts_outdirs():
+    return shared.opts.dumpjson()
+
+
 comfyui_process = None
-state_dict_thread = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-state_dict_queue = SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn)
+state_dict_producer = ProducerHandler(SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn))
+shared_opts_producer = ProducerHandler(SynchronizingQueue(get_opts_outdirs, ctx=multiprocessing_spawn))
 
 
 def start():
@@ -30,7 +35,8 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    start_state_dict_thread()
+    state_dict_producer.start()
+    shared_opts_producer.start()
     start_comfyui_process(install_location)
 
 
@@ -42,7 +48,7 @@ def start_comfyui_process(install_location):
         sys.path.insert(0, sys_path_to_add)
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
-            args=(state_dict_queue, install_location),
+            args=(state_dict_producer.queue, shared_opts_producer.queue, install_location),
             daemon=True,
         )
         comfyui_process.start()
@@ -51,21 +57,10 @@ def start_comfyui_process(install_location):
         sys.path.extend(original_sys_path)
 
 
-def start_state_dict_thread():
-    global state_dict_thread
-
-    def thread_loop():
-        global state_dict_thread, state_dict_queue
-        while state_dict_thread.is_running():
-            state_dict_queue.attend_consumer(timeout=1)
-
-    state_dict_thread = StoppableThread(target=thread_loop, daemon=True)
-    state_dict_thread.start()
-
-
 def stop():
     stop_comfyui_process()
-    stop_state_dict_thread()
+    state_dict_producer.stop()
+    shared_opts_producer.stop()
 
 
 def stop_comfyui_process():
@@ -75,12 +70,3 @@ def stop_comfyui_process():
 
     comfyui_process.terminate()
     comfyui_process = None
-
-
-def stop_state_dict_thread():
-    global state_dict_thread
-    if state_dict_thread is None:
-        return
-
-    state_dict_thread.join()
-    state_dict_thread = None

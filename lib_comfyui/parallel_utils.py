@@ -27,6 +27,7 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         super(SynchronizingQueue, self).__init__(*args, ctx=ctx, **kwargs)
         self._consumer_ready_event = multiprocessing.Event()
         self._producer = producer
+        self.state_dict_thread = None
 
     def attend_consumer(self, timeout: float = None):
         consumer_ready = self._wait_for_consumer(timeout)
@@ -48,3 +49,24 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
     def __setstate__(self, state):
         *state, self._consumer_ready_event, self._producer = state
         return super(SynchronizingQueue, self).__setstate__(state)
+
+
+class ProducerHandler:
+    def __init__(self, queue: SynchronizingQueue):
+        self.queue = queue
+        self.producer_thread = None
+
+    def start(self):
+        def thread_loop():
+            while self.producer_thread.is_running():
+                self.queue.attend_consumer(timeout=1)
+
+        self.producer_thread = StoppableThread(target=thread_loop, daemon=True)
+        self.producer_thread.start()
+
+    def stop(self):
+        if self.producer_thread is None:
+            return
+
+        self.producer_thread.join()
+        self.producer_thread = None

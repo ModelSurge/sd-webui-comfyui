@@ -16,15 +16,15 @@ def create_tab():
             with gr.Row():
                 gr.Markdown(comfyui_install_instructions_markdown)
 
-            with gr.Row():
-                with gr.Column():
+            with gr.Column():
+                with gr.Row():
+                    install_path = gr.Textbox(placeholder=f'Leave empty to install at {install_comfyui.default_install_location}', label='Installation path')
+
+                with gr.Row():
                     install_button = gr.Button('Install ComfyUI', variant='primary')
 
-                with gr.Column(scale=2):
-                    install_path = gr.Textbox(placeholder=f'Leave empty to install at {install_comfyui.default_install_location}')
-
-            with gr.Row():
-                installed_feedback = gr.Markdown()
+                with gr.Row():
+                    installed_feedback = gr.Markdown()
 
             install_button.click(automatic_install_comfyui, inputs=[install_path], outputs=[installed_feedback], show_progress=True)
 
@@ -37,7 +37,7 @@ def automatic_install_comfyui(install_location):
         install_location = install_comfyui.default_install_location
 
     if not can_install_at(install_location):
-        message = 'Error! The provided ComfyUI path already exists. Please provide a path to an empty or non-existing directory.'
+        message = 'Error! The provided path already exists. Please provide a path to an empty or non-existing directory.'
         print(message, file=sys.stderr)
         return gr.Markdown.update(message)
 
@@ -53,11 +53,11 @@ def can_install_at(path):
 
 
 comfyui_install_instructions_markdown = '''
-### ComfyUI extension
+## ComfyUI extension
 It looks like your ComfyUI installation isn't set up yet!  
-Go to `Settings > ComfyUI`, and set the proper install location.  
-
-Alternatively, if you don't have a ComfyUI install yet, you can (literally) just clic this button to install it automatically: 
+If you already have ComfyUI installed on your computer, go to `Settings > ComfyUI`, and set the proper install location.  
+  
+Alternatively, if you don't have ComfyUI installed, you can install it with this button:
 '''
 
 

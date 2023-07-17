@@ -2,6 +2,7 @@ import yaml
 import textwrap
 import torch
 from lib_comfyui import torch_utils
+from modules import shared, devices, sd_models, sd_models_config
 
 
 class WebuiModelPatcher:
@@ -30,9 +31,11 @@ class WebuiModelPatcher:
 
 
 class WebuiModel:
+    CONFIG_PATH_ATTRIBUTE = 'config_path'
+
     def get_comfy_model_config(self):
         import comfy
-        with open(self.config_path) as f:
+        with open(getattr(self, WebuiModel.CONFIG_PATH_ATTRIBUTE)) as f:
             config_dict = yaml.safe_load(f)
 
         unet_config = config_dict['model']['params']['unet_config']['params']
@@ -58,7 +61,8 @@ class WebuiModel:
         return self
 
     def is_adm(self):
-        return self.get_comfy_model_config().unet_config.get('adm_in_channels', None) is not None
+        adm_in_channels = self.get_comfy_model_config().unet_config.get('adm_in_channels', None) or 0
+        return adm_in_channels > 0
 
     def encode_adm(self, *args, **kwargs):
         raise NotImplementedError
@@ -82,20 +86,18 @@ class WebuiModel:
         return res
 
 
-def sd_model_getattr(item):
-    from modules import shared, sd_models, sd_models_config
-    if item == 'config_path':
-        return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
-
-    res = getattr(shared.sd_model, item)
-    res = torch_utils.deep_to(res, 'cpu')
-    return res
-
-
 def sd_model_apply(*args, **kwargs):
-    from modules import shared, devices
     args = torch_utils.deep_to(args, shared.sd_model.device)
     kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
     with devices.autocast(), torch.no_grad():
         res = shared.sd_model.model(*args, **kwargs)
         return res.detach().cpu().share_memory_()
+
+
+def sd_model_getattr(item):
+    if item == WebuiModel.CONFIG_PATH_ATTRIBUTE:
+        return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
+
+    res = getattr(shared.sd_model, item)
+    res = torch_utils.deep_to(res, 'cpu')
+    return res

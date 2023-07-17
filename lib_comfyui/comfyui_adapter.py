@@ -4,19 +4,15 @@ import torch
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
-from modules import shared, devices, sd_models_config
+from modules import shared, devices, sd_models, sd_models_config
 
 
 def sd_model_getattr(item):
-    if item == 'sd_model_type':
-        current_config = sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), None)
-        for k, v in sd_models_config.__dict__.items():
-            if current_config is getattr(sd_models_config, k):
-                return k[len('config_'):]
+    if item == 'config_path':
+        return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
 
     res = getattr(shared.sd_model, item)
     res = torch_utils.deep_to(res, 'cpu')
-
     return res
 
 
@@ -24,7 +20,8 @@ def sd_model_apply(*args, **kwargs):
     args = torch_utils.deep_to(args, shared.sd_model.device)
     kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
     with devices.autocast(), torch.no_grad():
-        return shared.sd_model.model(*args, **kwargs).cpu()
+        res = shared.sd_model.model(*args, **kwargs)
+        return res.detach().cpu().share_memory_()
 
 
 def get_opts():

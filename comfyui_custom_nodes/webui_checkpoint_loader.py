@@ -1,3 +1,4 @@
+import yaml
 import textwrap
 
 import torch
@@ -59,9 +60,18 @@ class WebuiModelPatcher:
 
 
 class WebuiModel:
+    def get_comfy_config(self):
+        with open(self.config_path) as f:
+            config_dict = yaml.safe_load(f)
+
+        unet_config = config_dict['model']['params']['unet_config']['params']
+        unet_config['use_linear_in_transformer'] = unet_config.get('use_linear_in_transformer', False)
+        unet_config['adm_in_channels'] = unet_config.get('adm_in_channels', None)
+        return comfy.model_detection.model_config_from_unet_config(unet_config)
+
     @property
     def latent_format(self):
-        return comfy.latent_formats.SD15()
+        return self.get_comfy_config().latent_format
 
     def process_latent_in(self, latent):
         return self.latent_format.process_in(latent)
@@ -77,27 +87,15 @@ class WebuiModel:
         return self
 
     def is_adm(self):
-        model_type = self.sd_model_type
-        return {
-            'default': False,
-            'sd2': False,
-            'sd2v': False,
-            'sd2_inpainting': False,
-            'depth_model': False,
-            'unclip': True,
-            'unopenclip': True,
-            'inpainting': False,
-            'instruct_pix2pix': False,
-            'alt_diffusion': False,
-        }[model_type]
+        return self.get_comfy_config().unet_config.get('adm_in_channels', None) is not None
 
     def encode_adm(self, *args, **kwargs):
         raise NotImplementedError
 
     def apply_model(self, *args, **kwargs):
-        args = torch_utils.deep_to(args, 'cpu')
+        args = torch_utils.deep_to(args, device='cpu', dtype=torch.half)
         del kwargs['transformer_options']
-        kwargs = torch_utils.deep_to(kwargs, 'cpu')
+        kwargs = torch_utils.deep_to(kwargs, device='cpu', dtype=torch.half)
         return webui_process.apply_model(*args, **kwargs).to(device=self.device)
 
     def __getattr__(self, item):

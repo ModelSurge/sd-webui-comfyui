@@ -1,6 +1,7 @@
 import threading
 from torch import multiprocessing
 import multiprocessing.queues
+import traceback
 
 
 class StoppableThread(threading.Thread):
@@ -27,27 +28,35 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         super(SynchronizingQueue, self).__init__(*args, ctx=ctx, **kwargs)
         self._consumer_ready_event = multiprocessing.Event()
         self._producer = producer
-        self.state_dict_thread = None
+        self._args_stack = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
 
     def attend_consumer(self, timeout: float = None):
         consumer_ready = self._wait_for_consumer(timeout)
         if not consumer_ready: return
-        self.put(self._producer())
+        args, kwargs = self._args_stack.get()
+        try:
+            self.put(self._producer(*args, **kwargs))
+        except Exception as e:
+            traceback.print_exc()
+            self.put(e)
 
     def _wait_for_consumer(self, timeout: float = None):
         consumer_ready = self._consumer_ready_event.wait(timeout)
         self._consumer_ready_event.clear()
         return consumer_ready
 
-    def get(self, *args, **kwargs):
+    def get(self, *base_args, args=None, kwargs=None, **base_kwargs):
+        self._args_stack.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
-        return super(SynchronizingQueue, self).get(*args, **kwargs)
+        res = super(SynchronizingQueue, self).get(*base_args, **base_kwargs)
+        if isinstance(res, Exception): raise res
+        else: return res
 
     def __getstate__(self):
-        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer)
+        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer, self._args_stack)
 
     def __setstate__(self, state):
-        *state, self._consumer_ready_event, self._producer = state
+        *state, self._consumer_ready_event, self._producer, self._args_stack = state
         return super(SynchronizingQueue, self).__setstate__(state)
 
 

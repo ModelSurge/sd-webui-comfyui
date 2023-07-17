@@ -1,33 +1,48 @@
-import json
 import sys
 import os
+import torch
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
-from modules import shared
+from modules import shared, devices
 
 
-def get_cpu_state_dict():
-    return unwrap_cpu_state_dict(shared.sd_model.state_dict())
+def sd_model_getattr(item):
+    res = getattr(shared.sd_model, item)
+    if isinstance(res, torch.Tensor):
+        res = res.cpu()
+
+    return res
 
 
-def unwrap_cpu_state_dict(state_dict: dict) -> dict:
-    model_key_prefixes = ('cond_stage_model', 'first_stage_model', 'model.diffusion_model')
-    return {
-        k.replace('.wrapped.', '.'): v.cpu().share_memory_()
-        for k, v in state_dict.items()
-        if k.startswith(model_key_prefixes)
-    }
+def sd_model_apply(*args, **kwargs):
+    args = list(args)
+
+    for i, arg in enumerate(args):
+        if isinstance(arg, torch.Tensor):
+            args[i] = arg.to(device=shared.sd_model.device, dtype=shared.sd_model.dtype)
+
+    for k, v in kwargs.items():
+        if isinstance(v, torch.Tensor):
+            kwargs[k] = v.to(device=shared.sd_model.device, dtype=shared.sd_model.dtype)
+        elif isinstance(v, list):
+            for i, vv in enumerate(v):
+                if isinstance(vv, torch.Tensor):
+                    v[i] = vv.to(device=shared.sd_model.device, dtype=shared.sd_model.dtype)
+
+    with devices.autocast(), torch.no_grad():
+        return shared.sd_model.model(*args, **kwargs).cpu()
 
 
-def get_opts_outdirs():
+def get_opts():
     return shared.opts.dumpjson()
 
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-state_dict_producer = ProducerHandler(SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn))
-shared_opts_producer = ProducerHandler(SynchronizingQueue(get_opts_outdirs, ctx=multiprocessing_spawn))
+model_attribute_handler = ProducerHandler(SynchronizingQueue(sd_model_getattr, ctx=multiprocessing_spawn))
+shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
+model_apply_handler = ProducerHandler(SynchronizingQueue(sd_model_apply, ctx=multiprocessing_spawn))
 
 
 def start():
@@ -35,8 +50,9 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    state_dict_producer.start()
-    shared_opts_producer.start()
+    model_attribute_handler.start()
+    model_apply_handler.start()
+    shared_opts_handler.start()
     start_comfyui_process(install_location)
 
 
@@ -48,7 +64,7 @@ def start_comfyui_process(install_location):
         sys.path.insert(0, sys_path_to_add)
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
-            args=(state_dict_producer.queue, shared_opts_producer.queue, install_location),
+            args=(model_attribute_handler.queue, model_apply_handler.queue, shared_opts_handler.queue, install_location),
             daemon=True,
         )
         comfyui_process.start()
@@ -59,8 +75,9 @@ def start_comfyui_process(install_location):
 
 def stop():
     stop_comfyui_process()
-    state_dict_producer.stop()
-    shared_opts_producer.stop()
+    model_apply_handler.stop()
+    model_attribute_handler.stop()
+    shared_opts_handler.stop()
 
 
 def stop_comfyui_process():

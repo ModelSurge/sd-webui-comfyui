@@ -4,13 +4,13 @@ import types
 import sys
 import os
 import runpy
-from torch import multiprocessing
-from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing
+from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing, parallel_utils
 
 
-def main(state_dict_queue, shared_opts_queue, comfyui_path):
+def main(model_attribute_queue, model_apply_queue, shared_opts_queue, comfyui_path):
     sys.modules["webui_process"] = WebuiProcessModule(
-        state_dict_queue=state_dict_queue,
+        model_attribute_queue=model_attribute_queue,
+        model_apply_queue=model_apply_queue,
         shared_opts_queue=shared_opts_queue,
     )
     start_comfyui(comfyui_path)
@@ -30,11 +30,16 @@ def start_comfyui(comfyui_path):
 
 @dataclasses.dataclass
 class WebuiProcessModule(types.ModuleType):
-    state_dict_queue: multiprocessing.Queue
-    shared_opts_queue: multiprocessing.Queue
+    model_attribute_queue: parallel_utils.SynchronizingQueue
+    model_apply_queue: parallel_utils.SynchronizingQueue
+    shared_opts_queue: parallel_utils.SynchronizingQueue
 
-    def fetch_model_state_dict(self):
-        return self.state_dict_queue.get()
+    def fetch_model_attribute(self, item):
+        return self.model_attribute_queue.get(args=(item,))
+
+    def apply_model(self, *args, **kwargs):
+        return self.model_apply_queue.get(args=args, kwargs=kwargs)
 
     def fetch_shared_opts(self):
+        self.shared_opts_queue.put(())
         return types.SimpleNamespace(**json.loads(self.shared_opts_queue.get()))

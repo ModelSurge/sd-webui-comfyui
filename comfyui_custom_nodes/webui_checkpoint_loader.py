@@ -1,3 +1,5 @@
+import textwrap
+
 import torch
 import comfy
 import webui_process
@@ -40,7 +42,7 @@ class WebuiModelPatcher:
         return 0
 
     def model_dtype(self):
-        return torch.half
+        return self.model.dtype
 
     def model_patches_to(self, device):
         return
@@ -68,11 +70,29 @@ class WebuiModel:
         return self.latent_format.process_out(latent)
 
     def to(self, device):
-        assert str(device) == str(self.device), f"cannot move the webui checkpoint to a different device. tried to move from {self.device} to {device}"
+        assert str(device) == str(self.device), textwrap.dedent(f"""
+            cannot move the webui unet to a different device
+            comfyui attempted to move it from {self.device} to {device}
+        """)
         return self
 
     def is_adm(self):
-        return False
+        model_type = self.sd_model_type
+        return {
+            'default': False,
+            'sd2': False,
+            'sd2v': False,
+            'sd2_inpainting': False,
+            'depth_model': False,
+            'unclip': True,
+            'unopenclip': True,
+            'inpainting': False,
+            'instruct_pix2pix': False,
+            'alt_diffusion': False,
+        }[model_type]
+
+    def encode_adm(self, *args, **kwargs):
+        raise NotImplementedError
 
     def apply_model(self, *args, **kwargs):
         args = torch_utils.deep_to(args, 'cpu')

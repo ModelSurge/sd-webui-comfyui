@@ -4,13 +4,18 @@ import torch
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
-from modules import shared, devices
+from modules import shared, devices, sd_models_config
 
 
 def sd_model_getattr(item):
+    if item == 'sd_model_type':
+        current_config = sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), None)
+        for k, v in sd_models_config.__dict__.items():
+            if current_config is getattr(sd_models_config, k):
+                return k[len('config_'):]
+
     res = getattr(shared.sd_model, item)
-    if isinstance(res, torch.Tensor):
-        res = res.cpu()
+    res = torch_utils.deep_to(res, 'cpu')
 
     return res
 

@@ -30,7 +30,7 @@ class WebuiModelPatcher:
 
 
 class WebuiModel:
-    def get_comfy_config(self):
+    def get_comfy_model_config(self):
         import comfy
         with open(self.config_path) as f:
             config_dict = yaml.safe_load(f)
@@ -42,7 +42,7 @@ class WebuiModel:
 
     @property
     def latent_format(self):
-        return self.get_comfy_config().latent_format
+        return self.get_comfy_model_config().latent_format
 
     def process_latent_in(self, latent):
         return self.latent_format.process_in(latent)
@@ -58,7 +58,7 @@ class WebuiModel:
         return self
 
     def is_adm(self):
-        return self.get_comfy_config().unet_config.get('adm_in_channels', None) is not None
+        return self.get_comfy_model_config().unet_config.get('adm_in_channels', None) is not None
 
     def encode_adm(self, *args, **kwargs):
         raise NotImplementedError

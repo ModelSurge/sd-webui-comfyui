@@ -8,6 +8,21 @@ base_dir = scripts.basedir()
 sys.path.append(base_dir)
 
 
+def split_list_every(list, n):
+    limit = len(list) // n
+    result = []
+
+    for i in range(limit):
+        lower = i * n
+        upper = (i+1) * n
+        result.append(list[lower:upper])
+    last = limit * n
+    if last < len(list):
+        result.append(list[last:])
+
+    return result
+
+
 class ComfyUIScript(scripts.Script):
     def title(self):
         return "ComfyUI"
@@ -32,11 +47,12 @@ class ComfyUIScript(scripts.Script):
         if not run_comfyui_after_generation:
             return
 
-        batches = [[img] for img in res.images]
+        images = res.images[res.index_of_first_image:]
+        batches = split_list_every(images, res.batch_size)
 
         for batch in batches:
             shared.last_output_images = batch
-            shared.last_batch_length = len(batch)
+            shared.last_batch_count = len(images) // res.batch_size
             queue_prompt_button.send_request()
 
 

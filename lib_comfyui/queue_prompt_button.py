@@ -4,18 +4,21 @@ from threading import Thread
 mp_event = None
 button_event: asyncio.Event = None
 
-
+# webui process
 def send_request():
     global mp_event
     mp_event.set()
 
 
+# webui process context
 def init_multiprocess_button_event(ctx):
     global mp_event
     mp_event = ctx.Event()
 
 
+# comfyui process
 def patch_server_routes():
+    import webui_process
     import server
     from aiohttp import web
 
@@ -30,11 +33,15 @@ def patch_server_routes():
             global mp_event, button_event
             await button_event.wait()
             button_event.clear()
-            return web.json_response({'promptQueue': True, 'batchSize': 1})
+            return web.json_response({
+                'promptQueue': True,
+                'batchSize': webui_process.fetch_last_batch_count()
+            })
 
     server.PromptServer.__init__ = patched_PromptServer__init__
 
 
+# comfyui process
 def init_asyncio_button_event(loop):
     import webui_process
     global button_event

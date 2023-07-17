@@ -1,7 +1,11 @@
-import sys
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, queue_prompt_button
+from lib_comfyui import (
+    async_comfyui_loader,
+    webui_settings,
+    queue_prompt_button,
+)
+from lib_comfyui.comfyui_context import ComfyuiContext
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared
 
@@ -29,9 +33,9 @@ def get_last_output_images():
     return []
 
 
-def get_last_batch_length():
-    if hasattr(shared, 'last_batch_length'):
-        return shared.last_batch_length
+def get_last_batch_count():
+    if hasattr(shared, 'last_batch_count'):
+        return shared.last_batch_count
     return 0
 
 
@@ -41,6 +45,7 @@ producers = [
     ProducerHandler(queue=SynchronizingQueue(producer=get_cpu_state_dict, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_opts_outdirs, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_last_output_images, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_last_batch_count, ctx=multiprocessing_spawn)),
 ]
 
 
@@ -56,19 +61,16 @@ def start():
 
 def start_comfyui_process(install_location):
     global comfyui_process
-    original_sys_path = list(sys.path)
-    sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    try:
-        sys.path.insert(0, sys_path_to_add)
+
+    with ComfyuiContext():
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
-            args=(*[p.queue for p in producers], queue_prompt_button.mp_event, install_location),
+            args=(
+                *[p.queue for p in producers], queue_prompt_button.mp_event,
+                install_location),
             daemon=True,
         )
         comfyui_process.start()
-    finally:
-        sys.path.clear()
-        sys.path.extend(original_sys_path)
 
 
 def stop():

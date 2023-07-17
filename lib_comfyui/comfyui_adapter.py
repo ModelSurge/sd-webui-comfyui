@@ -1,7 +1,7 @@
 import sys
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils, webui_patchers
+from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils, webui_proxies
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared
 
@@ -12,9 +12,9 @@ def get_opts():
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-model_attribute_handler = ProducerHandler(SynchronizingQueue(webui_patchers.sd_model_getattr, ctx=multiprocessing_spawn))
+model_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_getattr, ctx=multiprocessing_spawn))
 shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
-model_apply_handler = ProducerHandler(SynchronizingQueue(webui_patchers.sd_model_apply, ctx=multiprocessing_spawn))
+model_apply_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_apply, ctx=multiprocessing_spawn))
 
 
 def start():

@@ -30,12 +30,12 @@ class WebuiModelPatcher:
         return
 
 
-class WebuiModel:
+class WebuiModelProxy:
     CONFIG_PATH_ATTRIBUTE = 'config_path'
 
     def get_comfy_model_config(self):
         import comfy
-        with open(getattr(self, WebuiModel.CONFIG_PATH_ATTRIBUTE)) as f:
+        with open(getattr(self, WebuiModelProxy.CONFIG_PATH_ATTRIBUTE)) as f:
             config_dict = yaml.safe_load(f)
 
         unet_config = config_dict['model']['params']['unet_config']['params']
@@ -95,7 +95,7 @@ def sd_model_apply(*args, **kwargs):
 
 
 def sd_model_getattr(item):
-    if item == WebuiModel.CONFIG_PATH_ATTRIBUTE:
+    if item == WebuiModelProxy.CONFIG_PATH_ATTRIBUTE:
         return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
 
     res = getattr(shared.sd_model, item)

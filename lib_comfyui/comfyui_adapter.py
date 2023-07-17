@@ -1,27 +1,9 @@
 import sys
 import os
-import torch
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils
+from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils, webui_patchers
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
-from modules import shared, devices, sd_models, sd_models_config
-
-
-def sd_model_getattr(item):
-    if item == 'config_path':
-        return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
-
-    res = getattr(shared.sd_model, item)
-    res = torch_utils.deep_to(res, 'cpu')
-    return res
-
-
-def sd_model_apply(*args, **kwargs):
-    args = torch_utils.deep_to(args, shared.sd_model.device)
-    kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
-    with devices.autocast(), torch.no_grad():
-        res = shared.sd_model.model(*args, **kwargs)
-        return res.detach().cpu().share_memory_()
+from modules import shared
 
 
 def get_opts():
@@ -30,9 +12,9 @@ def get_opts():
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-model_attribute_handler = ProducerHandler(SynchronizingQueue(sd_model_getattr, ctx=multiprocessing_spawn))
+model_attribute_handler = ProducerHandler(SynchronizingQueue(webui_patchers.sd_model_getattr, ctx=multiprocessing_spawn))
 shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
-model_apply_handler = ProducerHandler(SynchronizingQueue(sd_model_apply, ctx=multiprocessing_spawn))
+model_apply_handler = ProducerHandler(SynchronizingQueue(webui_patchers.sd_model_apply, ctx=multiprocessing_spawn))
 
 
 def start():

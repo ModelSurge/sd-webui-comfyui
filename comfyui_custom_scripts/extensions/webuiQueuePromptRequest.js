@@ -2,8 +2,6 @@ import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
 
-console.log('script launched');
-
 async function longPolling() {
     try {
         const response = await api.fetchApi("/webui_request_queue_prompt", { cache: "no-store" });

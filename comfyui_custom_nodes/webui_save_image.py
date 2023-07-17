@@ -5,7 +5,7 @@ from modules.images import save_image
 from modules.paths import data_path
 
 
-class WebuiOutputImage:
+class WebuiSaveImage:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -39,9 +39,9 @@ class WebuiOutputImage:
 
 
 NODE_CLASS_MAPPINGS = {
-    "WebuiTxt2ImgOutput": WebuiOutputImage,
+    "WebuiTxt2ImgOutput": WebuiSaveImage,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WebuiTxt2ImgOutput": 'Webui Output Image',
+    "WebuiTxt2ImgOutput": 'Webui Save Image',
 }

@@ -1,7 +1,7 @@
 import { app } from "/scripts/app.js";
 
 
-function addVoidWidget(node, name) {
+function createVoidWidget(node, name) {
     const widget = {
         i: 0,
         type: "customtext",
@@ -27,7 +27,7 @@ const ext = {
     async getCustomWidgets(app) {
         return {
             VOID(node, inputName) {
-                addVoidWidget(node, inputName);
+                createVoidWidget(node, inputName);
             },
         };
     },

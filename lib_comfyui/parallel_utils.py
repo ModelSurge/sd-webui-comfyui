@@ -1,7 +1,6 @@
 import threading
 from torch import multiprocessing
 import multiprocessing.queues
-import traceback
 
 
 class StoppableThread(threading.Thread):

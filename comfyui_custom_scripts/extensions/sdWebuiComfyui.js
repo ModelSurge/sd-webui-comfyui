@@ -1,5 +1,4 @@
 import { app } from "/scripts/app.js";
-import { api } from "/scripts/api.js";
 
 
 function createVoidWidget(node, name) {

@@ -13,8 +13,8 @@ class WebuiModelPatcher:
         self.model_options = {'transformer_options': {}}
 
     def model_size(self):
-        # comfyui uses this to manage memory
         # returning 0 means to manage the model with VRAMState.NORMAL_VRAM
+        # https://github.com/comfyanonymous/ComfyUI/blob/ee8f8ee07fb141e5a5ce3abf602ed0fa2e50cf7b/comfy/model_management.py#L272-L276
         return 0
 
     def model_dtype(self):

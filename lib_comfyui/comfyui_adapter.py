@@ -2,16 +2,12 @@ import sys
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
+from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
+from modules import shared
 
 
-thread = None
-multiprocessing_spawn = multiprocessing.get_context('spawn')
-model_queue = multiprocessing_spawn.Queue()
-
-
-def on_model_loaded(sd_model):
-    state_dict = unwrap_cpu_state_dict(sd_model.state_dict())
-    model_queue.put(state_dict)
+def get_cpu_state_dict():
+    return unwrap_cpu_state_dict(shared.sd_model.state_dict())
 
 
 def unwrap_cpu_state_dict(state_dict: dict) -> dict:
@@ -23,31 +19,60 @@ def unwrap_cpu_state_dict(state_dict: dict) -> dict:
     }
 
 
+def get_opts_outdirs():
+    return shared.opts.dumpjson()
+
+
+def get_last_output_images():
+    if hasattr(shared, 'last_output_images'):
+        return shared.last_output_images
+    return []
+
+
+comfyui_process = None
+multiprocessing_spawn = multiprocessing.get_context('spawn')
+producers = [
+    ProducerHandler(queue=SynchronizingQueue(producer=get_cpu_state_dict, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_opts_outdirs, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_last_output_images, ctx=multiprocessing_spawn)),
+]
+
+
 def start():
     install_location = webui_settings.get_install_location()
     if not os.path.exists(install_location):
         return
 
+    [p.start() for p in producers]
     start_comfyui_process(install_location)
 
 
 def start_comfyui_process(install_location):
-    global thread
+    global comfyui_process
     original_sys_path = list(sys.path)
     sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     try:
         sys.path.insert(0, sys_path_to_add)
-        thread = multiprocessing_spawn.Process(target=async_comfyui_loader.main, args=(model_queue, install_location), daemon=True)
-        thread.start()
+        comfyui_process = multiprocessing_spawn.Process(
+            target=async_comfyui_loader.main,
+            args=(*[p.queue for p in producers], install_location),
+            daemon=True,
+        )
+        comfyui_process.start()
     finally:
         sys.path.clear()
         sys.path.extend(original_sys_path)
 
 
 def stop():
-    global thread
-    if thread is None:
+    stop_comfyui_process()
+    [p.stop() for p in producers]
+
+
+def stop_comfyui_process():
+    global comfyui_process
+    if comfyui_process is None:
         return
 
-    thread.terminate()
-    thread = None
+    comfyui_process.terminate()
+    comfyui_process = None

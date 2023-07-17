@@ -1,13 +1,19 @@
+import dataclasses
+import json
+import types
 import sys
 import os
 import runpy
-from modules import shared
-import threading
+from torch import multiprocessing
 from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing
 
 
-def main(model_name_queue, comfyui_path):
-    start_update_loop(model_name_queue)
+def main(state_dict_queue, shared_opts_queue, output_images_queue, comfyui_path):
+    sys.modules["webui_process"] = WebuiProcessModule(
+        state_dict_queue=state_dict_queue,
+        shared_opts_queue=shared_opts_queue,
+        output_images_queue=output_images_queue
+    )
     start_comfyui(comfyui_path)
 
 
@@ -20,12 +26,20 @@ def start_comfyui(comfyui_path):
     webui_resources_sharing.share_webui_folder_paths(folder_paths)
     custom_extension_injector.register_webui_extensions()
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
-    runpy.run_path(os.path.join(comfyui_path, "main.py"), {}, '__main__')
+    runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')
 
 
-def start_update_loop(model_state_dict_queue):
-    def update_queue():
-        while True:
-            shared.sd_model_state_dict = model_state_dict_queue.get()
+@dataclasses.dataclass
+class WebuiProcessModule(types.ModuleType):
+    state_dict_queue: multiprocessing.Queue
+    shared_opts_queue: multiprocessing.Queue
+    output_images_queue: multiprocessing.Queue
 
-    threading.Thread(target=update_queue, daemon=True).start()
+    def fetch_model_state_dict(self):
+        return self.state_dict_queue.get()
+
+    def fetch_shared_opts(self):
+        return types.SimpleNamespace(**json.loads(self.shared_opts_queue.get()))
+
+    def fetch_output_images(self):
+        return self.output_images_queue.get()

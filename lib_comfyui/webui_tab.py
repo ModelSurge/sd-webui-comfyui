@@ -64,6 +64,9 @@ Alternatively, if you don't have ComfyUI installed, you can install it with this
 def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
-            <object data="{webui_settings.get_comfyui_client_url()}" id="comfyui_webui_root"></object>
+            <object data="{webui_settings.get_comfyui_client_url()}" id="comfyui_webui_root">
+                Comfyui has not fully started yet.
+                If the window does not appear after about 15 seconds, try to reload the page (F5).
+            </object>
         </div>
     ''')

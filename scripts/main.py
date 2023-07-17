@@ -38,12 +38,13 @@ class ComfyUIScript(scripts.Script):
     def get_alwayson_ui():
         with gr.Row():
             run_comfyui_after_generation = gr.Checkbox(label='Run ComfyUI workflow after generation', elem_id='sd-comfyui-webui-run-after-generate')
-        return run_comfyui_after_generation,
+            queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front')
+        return run_comfyui_after_generation, queue_front
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
 
-    def postprocess(self, p, res, run_comfyui_after_generation):
+    def postprocess(self, p, res, run_comfyui_after_generation, queue_front):
         if not run_comfyui_after_generation:
             return
 
@@ -52,7 +53,8 @@ class ComfyUIScript(scripts.Script):
 
         for batch in batches:
             shared.last_output_images = batch
-            shared.last_batch_count = len(images) // res.batch_size
+            shared.last_batch_count = 1
+            shared.queue_front = queue_front
             queue_prompt_button.send_request()
 
 

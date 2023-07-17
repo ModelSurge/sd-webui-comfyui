@@ -18,11 +18,27 @@ function onComfyuiTabLoaded(callback) {
 }
 
 function setupComfyuiTabEvents() {
+    // starts the comfyui js extension as soon as possible
+    forceLoadObjectElement();
+
     setupReloadOnErrorEvent();
     setupResizeTabEvent();
     setupToggleFooterEvent();
 
     updateComfyuiTabHeight();
+}
+
+function forceLoadObjectElement() {
+    const objectEl = getComfyuiObjectElement();
+    if(objectEl === null) return;
+
+    objectEl.style.visibility = 'hidden';
+    const comfyuiTab = getComfyuiTab();
+    objectEl.addEventListener('load', () => {
+        comfyuiTab.style.display = 'none';
+        objectEl.style.visibility = 'visible';
+    });
+    comfyuiTab.style.display = 'block';
 }
 
 function setupReloadOnErrorEvent() {
@@ -79,6 +95,10 @@ function getComfyuiTab() {
 
 function getComfyuiContainer() {
     return document.getElementById("comfyui_webui_container") ?? null;
+}
+
+function getComfyuiObjectElement() {
+    return document.getElementById("comfyui_webui_root") ?? null;
 }
 
 function getFooter() {

@@ -28,15 +28,12 @@ def patch_server_routes():
         init_asyncio_button_event(loop)
         original_init(self, loop, *args, **kwargs)
 
-        @self.routes.get("/request_press_queue_prompt_button")
+        @self.routes.get("/webui_request_queue_prompt")
         async def get_custom_route_test(request):
             global mp_event, button_event
             await button_event.wait()
             button_event.clear()
-            return web.json_response({
-                'promptQueue': True,
-                'batchSize': webui_process.fetch_last_batch_count()
-            })
+            return web.json_response(webui_process.fetch_queue_prompt_params())
 
     server.PromptServer.__init__ = patched_PromptServer__init__
 

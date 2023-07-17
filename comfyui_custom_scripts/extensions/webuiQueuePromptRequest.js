@@ -2,22 +2,20 @@ import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
 
+console.log('script launched');
+
 async function longPolling() {
     try {
-        console.log('try fetch');
-        const response = await api.fetchApi("/request_press_queue_prompt_button", { cache: "no-store" });
-        console.log(response);
+        const response = await api.fetchApi("/webui_request_queue_prompt", { cache: "no-store" });
         const json = await response.json();
-        console.log(json);
         if (json.promptQueue) {
-            console.log('prompt');
-            app.queuePrompt(0, json.batchSize);
+            app.queuePrompt(json.queueFront ? -1 : 0, json.batchCount);
         }
     }
     catch (e) {
         console.log(e);
     }
-    setTimeout(longPolling, 100);
+    setTimeout(longPolling, 0);
 }
 
 longPolling();

@@ -12,7 +12,7 @@ def main(
         state_dict_queue,
         shared_opts_queue,
         output_images_queue,
-        batch_count_gueue,
+        prompt_params_queue,
         queue_prompt_button_event,
         comfyui_path
 ):
@@ -20,7 +20,7 @@ def main(
         state_dict_queue=state_dict_queue,
         shared_opts_queue=shared_opts_queue,
         output_images_queue=output_images_queue,
-        batch_count_gueue=batch_count_gueue,
+        prompt_params_queue=prompt_params_queue,
         queue_prompt_button_event=queue_prompt_button_event,
     )
     start_comfyui(comfyui_path)
@@ -44,7 +44,7 @@ class WebuiProcessModule(types.ModuleType):
     state_dict_queue: multiprocessing.Queue
     shared_opts_queue: multiprocessing.Queue
     output_images_queue: multiprocessing.Queue
-    batch_count_gueue: multiprocessing.Queue
+    prompt_params_queue: multiprocessing.Queue
     queue_prompt_button_event: multiprocessing.Event
 
     def fetch_model_state_dict(self):
@@ -56,8 +56,8 @@ class WebuiProcessModule(types.ModuleType):
     def fetch_last_output_images(self):
         return self.output_images_queue.get()
 
-    def fetch_last_batch_count(self):
-        return self.batch_count_gueue.get()
+    def fetch_queue_prompt_params(self):
+        return self.prompt_params_queue.get()
 
     def queue_prompt_button_wait(self):
         self.queue_prompt_button_event.wait()

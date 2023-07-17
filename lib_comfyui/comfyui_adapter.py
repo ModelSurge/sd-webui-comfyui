@@ -33,10 +33,12 @@ def get_last_output_images():
     return []
 
 
-def get_last_batch_count():
-    if hasattr(shared, 'last_batch_count'):
-        return shared.last_batch_count
-    return 0
+def get_prompt_queue_params():
+    return {
+        'promptQueue': True,
+        'batchCount': 1,
+        'queueFront': shared.queue_front if hasattr(shared, 'queue_front') else False,
+    }
 
 
 comfyui_process = None
@@ -45,7 +47,7 @@ producers = [
     ProducerHandler(queue=SynchronizingQueue(producer=get_cpu_state_dict, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_opts_outdirs, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_last_output_images, ctx=multiprocessing_spawn)),
-    ProducerHandler(queue=SynchronizingQueue(producer=get_last_batch_count, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_prompt_queue_params, ctx=multiprocessing_spawn)),
 ]
 
 

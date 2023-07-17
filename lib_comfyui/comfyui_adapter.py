@@ -35,8 +35,8 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    state_dict_producer.start_producer_thread_loop()
-    shared_opts_producer.start_producer_thread_loop()
+    state_dict_producer.start()
+    shared_opts_producer.start()
     start_comfyui_process(install_location)
 
 
@@ -59,8 +59,8 @@ def start_comfyui_process(install_location):
 
 def stop():
     stop_comfyui_process()
-    state_dict_producer.stop_producer_thread_loop()
-    shared_opts_producer.stop_producer_thread_loop()
+    state_dict_producer.stop()
+    shared_opts_producer.stop()
 
 
 def stop_comfyui_process():

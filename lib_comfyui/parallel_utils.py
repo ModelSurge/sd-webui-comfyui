@@ -51,7 +51,7 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         return super(SynchronizingQueue, self).__setstate__(state)
 
 
-class AsyncProducerHandler:
+class ProducerThreadHandler:
     def __init__(self, queue: SynchronizingQueue):
         self.queue = queue
         self.producer_thread = None

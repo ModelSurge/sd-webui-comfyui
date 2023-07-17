@@ -1,7 +1,7 @@
 import sys
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings
+from lib_comfyui import async_comfyui_loader, webui_settings, queue_prompt_button
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared
 
@@ -29,6 +29,12 @@ def get_last_output_images():
     return []
 
 
+def get_last_batch_length():
+    if hasattr(shared, 'last_batch_length'):
+        return shared.last_batch_length
+    return 0
+
+
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
 producers = [
@@ -44,6 +50,7 @@ def start():
         return
 
     [p.start() for p in producers]
+    queue_prompt_button.init_multiprocess_button_event(ctx=multiprocessing_spawn)
     start_comfyui_process(install_location)
 
 
@@ -55,7 +62,7 @@ def start_comfyui_process(install_location):
         sys.path.insert(0, sys_path_to_add)
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
-            args=(*[p.queue for p in producers], install_location),
+            args=(*[p.queue for p in producers], queue_prompt_button.mp_event, install_location),
             daemon=True,
         )
         comfyui_process.start()

@@ -1,4 +1,5 @@
 import { app } from "/scripts/app.js";
+import { api } from "/scripts/api.js";
 
 
 function createVoidWidget(node, name) {
@@ -20,7 +21,6 @@ function createVoidWidget(node, name) {
 
     return widget;
 }
-
 
 const ext = {
     name: "sd-webui-comfyui",

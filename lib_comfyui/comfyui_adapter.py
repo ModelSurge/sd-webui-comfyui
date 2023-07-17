@@ -3,7 +3,7 @@ import sys
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings
-from lib_comfyui.parallel_utils import StoppableThread, SynchronizingQueue
+from lib_comfyui.parallel_utils import SynchronizingQueue, AsyncProducerHandler
 from modules import shared
 
 
@@ -21,13 +21,13 @@ def unwrap_cpu_state_dict(state_dict: dict) -> dict:
 
 
 def get_opts_outdirs():
-    return json.loads(shared.opts.dumpjson())
+    return shared.opts.dumpjson()
 
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-state_dict_queue = SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn)
-opts_outdirs_queue = SynchronizingQueue(get_opts_outdirs, ctx=multiprocessing_spawn)
+state_dict_producer = AsyncProducerHandler(SynchronizingQueue(get_cpu_state_dict, ctx=multiprocessing_spawn))
+shared_opts_producer = AsyncProducerHandler(SynchronizingQueue(get_opts_outdirs, ctx=multiprocessing_spawn))
 
 
 def start():
@@ -35,8 +35,8 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    state_dict_queue.start_thread()
-    opts_outdirs_queue.start_thread()
+    state_dict_producer.start_producer_thread_loop()
+    shared_opts_producer.start_producer_thread_loop()
     start_comfyui_process(install_location)
 
 
@@ -48,7 +48,7 @@ def start_comfyui_process(install_location):
         sys.path.insert(0, sys_path_to_add)
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
-            args=(state_dict_queue, opts_outdirs_queue, install_location),
+            args=(state_dict_producer.queue, shared_opts_producer.queue, install_location),
             daemon=True,
         )
         comfyui_process.start()
@@ -59,8 +59,8 @@ def start_comfyui_process(install_location):
 
 def stop():
     stop_comfyui_process()
-    state_dict_queue.stop_thread()
-    opts_outdirs_queue.stop_thread()
+    state_dict_producer.stop_producer_thread_loop()
+    shared_opts_producer.stop_producer_thread_loop()
 
 
 def stop_comfyui_process():

@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import types
 import sys
 import os
@@ -7,10 +8,10 @@ from torch import multiprocessing
 from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing
 
 
-def main(state_dict_queue, opts_outdirs_queue, comfyui_path):
+def main(state_dict_queue, shared_opts_queue, comfyui_path):
     sys.modules["webui_process"] = WebuiProcessModule(
         state_dict_queue=state_dict_queue,
-        opts_outdirs_queue=opts_outdirs_queue,
+        shared_opts_queue=shared_opts_queue,
     )
     start_comfyui(comfyui_path)
 
@@ -30,4 +31,10 @@ def start_comfyui(comfyui_path):
 @dataclasses.dataclass
 class WebuiProcessModule(types.ModuleType):
     state_dict_queue: multiprocessing.Queue
-    opts_outdirs_queue: multiprocessing.Queue
+    shared_opts_queue: multiprocessing.Queue
+
+    def fetch_model_state_dict(self):
+        return self.state_dict_queue.get()
+
+    def fetch_shared_opts(self):
+        return types.SimpleNamespace(**json.loads(self.shared_opts_queue.get()))

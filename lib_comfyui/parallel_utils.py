@@ -50,17 +50,23 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         *state, self._consumer_ready_event, self._producer = state
         return super(SynchronizingQueue, self).__setstate__(state)
 
-    def start_thread(self):
+
+class AsyncProducerHandler:
+    def __init__(self, queue: SynchronizingQueue):
+        self.queue = queue
+        self.producer_thread = None
+
+    def start_producer_thread_loop(self):
         def thread_loop():
-            while self.state_dict_thread.is_running():
-                self.attend_consumer(timeout=1)
+            while self.producer_thread.is_running():
+                self.queue.attend_consumer(timeout=1)
 
-        self.state_dict_thread = StoppableThread(target=thread_loop, daemon=True)
-        self.state_dict_thread.start()
+        self.producer_thread = StoppableThread(target=thread_loop, daemon=True)
+        self.producer_thread.start()
 
-    def stop_thread(self):
-        if self.state_dict_thread is None:
+    def stop_producer_thread_loop(self):
+        if self.producer_thread is None:
             return
 
-        self.state_dict_thread.join()
-        self.state_dict_thread = None
+        self.producer_thread.join()
+        self.producer_thread = None

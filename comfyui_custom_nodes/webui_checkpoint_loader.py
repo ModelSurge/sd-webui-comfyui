@@ -56,7 +56,7 @@ class WebuiModelPatcher:
 
     @property
     def model_options(self):
-        return {"transformer_options": {}}
+        return {'transformer_options': {}}
 
 
 class WebuiModel:
@@ -80,10 +80,10 @@ class WebuiModel:
         return self.latent_format.process_out(latent)
 
     def to(self, device):
-        assert str(device) == str(self.device), textwrap.dedent(f"""
+        assert str(device) == str(self.device), textwrap.dedent(f'''
             cannot move the webui unet to a different device
             comfyui attempted to move it from {self.device} to {device}
-        """)
+        ''')
         return self
 
     def is_adm(self):

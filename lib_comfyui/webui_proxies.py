@@ -1,3 +1,5 @@
+import functools
+
 import yaml
 import textwrap
 import torch
@@ -69,9 +71,9 @@ class WebuiModelProxy:
 
     def apply_model(self, *args, **kwargs):
         import webui_process
-        args = torch_utils.deep_to(args, device='cpu', dtype=torch.half)
+        args = torch_utils.deep_to(args, device='cpu')
         del kwargs['transformer_options']
-        kwargs = torch_utils.deep_to(kwargs, device='cpu', dtype=torch.half)
+        kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return webui_process.apply_model(*args, **kwargs).to(device=self.device)
 
     def __getattr__(self, item):
@@ -91,7 +93,7 @@ def sd_model_apply(*args, **kwargs):
     kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
     with devices.autocast(), torch.no_grad():
         res = shared.sd_model.model(*args, **kwargs)
-        return res.detach().cpu().share_memory_()
+        return res.cpu()
 
 
 def sd_model_getattr(item):
@@ -101,3 +103,81 @@ def sd_model_getattr(item):
     res = getattr(shared.sd_model, item)
     res = torch_utils.deep_to(res, 'cpu')
     return res
+
+
+class WebuiVaeWrapper:
+    def __init__(self, proxy):
+        self.first_stage_model = proxy
+
+    @property
+    def vae_dtype(self):
+        return self.first_stage_model.dtype
+
+    @property
+    def device(self):
+        return self.first_stage_model.device
+
+    @property
+    def offload_device(self):
+        return self.device
+
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return self.__dict__[item]
+
+        import comfy
+        return functools.partial(getattr(comfy.sd.VAE, item), self)
+
+
+class WebuiVaeProxy:
+    def to(self, device):
+        assert str(device) == str(self.device), textwrap.dedent(f'''
+            cannot move the webui unet to a different device
+            comfyui attempted to move it from {self.device} to {device}
+        ''')
+        return self
+
+    def encode(self, *args, **kwargs):
+        import webui_process
+        args = torch_utils.deep_to(args, device='cpu')
+        kwargs = torch_utils.deep_to(kwargs, device='cpu')
+        return webui_process.vae_encode(*args, **kwargs).to(device=self.device)
+
+    def decode(self, *args, **kwargs):
+        import webui_process
+        args = torch_utils.deep_to(args, device='cpu')
+        kwargs = torch_utils.deep_to(kwargs, device='cpu')
+        return webui_process.vae_decode(*args, **kwargs).to(device=self.device)
+
+    def __getattr__(self, item):
+        import webui_process
+        if item in self.__dict__:
+            return self.__dict__[item]
+
+        res = webui_process.fetch_vae_attribute(item)
+        if isinstance(res, torch.Tensor):
+            return res.to(device=self.device)
+
+        return res
+
+
+def sd_vae_getattr(item):
+    res = getattr(shared.sd_model.first_stage_model, item)
+    res = torch_utils.deep_to(res, 'cpu')
+    return res
+
+
+def sd_vae_encode(*args, **kwargs):
+    args = torch_utils.deep_to(args, shared.sd_model.device)
+    kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
+    with devices.autocast(), torch.no_grad():
+        res = shared.sd_model.first_stage_model.encode(*args, **kwargs)
+        return res.cpu()
+
+
+def sd_vae_decode(*args, **kwargs):
+    args = torch_utils.deep_to(args, shared.sd_model.device)
+    kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
+    with devices.autocast(), torch.no_grad():
+        res = shared.sd_model.first_stage_model.decode(*args, **kwargs)
+        return res.cpu()

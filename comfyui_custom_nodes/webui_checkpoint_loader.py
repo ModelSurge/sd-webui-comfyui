@@ -1,4 +1,4 @@
-from lib_comfyui.webui_proxies import WebuiModelPatcher, WebuiModelProxy
+from lib_comfyui.webui_proxies import WebuiModelPatcher, WebuiModelProxy, WebuiVaeWrapper, WebuiVaeProxy
 
 
 class WebuiCheckpointLoader:
@@ -9,13 +9,16 @@ class WebuiCheckpointLoader:
                     "void": ("VOID", ),
             },
         }
-    RETURN_TYPES = ("MODEL",)
+    RETURN_TYPES = ("MODEL", "VAE",)
     FUNCTION = "load_checkpoint"
 
     CATEGORY = "loaders"
 
     def load_checkpoint(self, void):
-        return WebuiModelPatcher(WebuiModelProxy()),
+        return (
+            WebuiModelPatcher(WebuiModelProxy()),
+            WebuiVaeWrapper(WebuiVaeProxy()),
+        )
 
 
 NODE_CLASS_MAPPINGS = {

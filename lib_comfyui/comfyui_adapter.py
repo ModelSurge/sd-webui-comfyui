@@ -13,8 +13,11 @@ def get_opts():
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
 model_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_getattr, ctx=multiprocessing_spawn))
-shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
 model_apply_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_apply, ctx=multiprocessing_spawn))
+vae_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_getattr, ctx=multiprocessing_spawn))
+vae_encode_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_encode, ctx=multiprocessing_spawn))
+vae_decode_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_decode, ctx=multiprocessing_spawn))
+shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
 
 
 def start():
@@ -24,6 +27,9 @@ def start():
 
     model_attribute_handler.start()
     model_apply_handler.start()
+    vae_attribute_handler.start()
+    vae_encode_handler.start()
+    vae_decode_handler.start()
     shared_opts_handler.start()
     start_comfyui_process(install_location)
 
@@ -36,7 +42,15 @@ def start_comfyui_process(install_location):
         sys.path.insert(0, sys_path_to_add)
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
-            args=(model_attribute_handler.queue, model_apply_handler.queue, shared_opts_handler.queue, install_location),
+            args=(
+                model_attribute_handler.queue,
+                model_apply_handler.queue,
+                vae_attribute_handler.queue,
+                vae_encode_handler.queue,
+                vae_decode_handler.queue,
+                shared_opts_handler.queue,
+                install_location,
+            ),
             daemon=True,
         )
         comfyui_process.start()
@@ -49,6 +63,9 @@ def stop():
     stop_comfyui_process()
     model_apply_handler.stop()
     model_attribute_handler.stop()
+    vae_attribute_handler.stop()
+    vae_encode_handler.stop()
+    vae_decode_handler.stop()
     shared_opts_handler.stop()
 
 

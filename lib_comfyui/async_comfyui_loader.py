@@ -37,6 +37,7 @@ def start_comfyui(comfyui_path):
     webui_resources_sharing.share_webui_folder_paths(folder_paths)
     custom_extension_injector.register_webui_extensions()
     comfyui_requests.patch_server_routes()
+    comfyui_requests.patch_prompt_queue()
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
     runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')
 

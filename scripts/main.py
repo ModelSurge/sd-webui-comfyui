@@ -1,5 +1,4 @@
 import gradio as gr
-import torch
 
 import modules.scripts as scripts
 from modules import shared
@@ -25,7 +24,7 @@ class ComfyUIScript(scripts.Script):
     def get_alwayson_ui():
         with gr.Row():
             queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front')
-            output_node_label = gr.Dropdown(label='Output node', choices=['postprocess'], value='postprocess')
+            output_node_label = gr.Dropdown(label='Workflow type', choices=['postprocess'], value='postprocess')
         return queue_front, output_node_label
 
     def show(self, is_img2img):
@@ -40,7 +39,7 @@ class ComfyUIScript(scripts.Script):
             images_batch = images[range_start:range_end]
             shared.last_output_images = images_batch
             shared.queue_front = queue_front
-            shared.expected_node_types = ['WebuiPostprocessOutput']
+            shared.expected_node_types = ['WebuiPostprocessOutput', 'WebuiPostprocessInput']
             results = comfyui_requests.send_request()
 
             if results is None:

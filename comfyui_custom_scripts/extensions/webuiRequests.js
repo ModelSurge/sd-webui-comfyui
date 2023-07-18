@@ -2,6 +2,18 @@ import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
 
+// https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        return v.toString(16);
+    });
+}
+
+
+const clientUuidForWebui = uuidv4();
+var clientResponse = undefined;
+
 const request_map = new Map([
     ['/webui_request_queue_prompt', async (json) => {
         function graphContainsAllNodeTypes(workflow, nodeTypes) {
@@ -16,8 +28,8 @@ const request_map = new Map([
         console.log('worklow');
         if(!json.expectedNodeTypes || graphContainsAllNodeTypes(workflow, json.expectedNodeTypes)) {
             console.log('sending to webui');
-            await api.fetchApi('/webui_prompt_queued', { cache: "no-store" } );
-            app.queuePrompt(json.queueFront ? -1 : 0, 1);
+            await app.queuePrompt(json.queueFront ? -1 : 0, 1);
+            clientResponse = 'queued_prompt_comfyui';
         }
     }],
     ['/send_workflow_to_webui', async (json) => {
@@ -37,7 +49,27 @@ const request_map = new Map([
 async function longPolling() {
     try {
         while(true) {
-            const response = await api.fetchApi("/webui_request", { cache: "no-store" });
+            var body = {};
+            if(clientResponse !== undefined) {
+                body = {
+                    cid: clientUuidForWebui,
+                    request: clientResponse,
+                };
+            }
+            else {
+                body = {
+                    cid: clientUuidForWebui,
+                };
+            }
+            const response = await api.fetchApi("/webui_request", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                cache: "no-store",
+                body: JSON.stringify(body),
+            });
+            clientResponse = undefined;
             const json = await response.json();
             await request_map.get(json.request)(json);
         }

@@ -3,7 +3,7 @@ from torch import multiprocessing
 from lib_comfyui import (
     async_comfyui_loader,
     webui_settings,
-    queue_prompt_button,
+    comfyui_requests,
 )
 from lib_comfyui.comfyui_context import ComfyuiContext
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
@@ -33,10 +33,10 @@ def get_last_output_images():
     return []
 
 
-def get_prompt_queue_params():
+def get_comfyui_request_params():
     return {
-        'promptQueue': True,
-        'batchCount': 1,
+        'request': '/webui_request_queue_prompt',
+        'expectedNodeTypes': shared.expected_node_types if hasattr(shared, 'expected_node_types') else [],
         'queueFront': shared.queue_front if hasattr(shared, 'queue_front') else False,
     }
 
@@ -47,7 +47,7 @@ producers = [
     ProducerHandler(queue=SynchronizingQueue(producer=get_cpu_state_dict, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_opts_outdirs, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_last_output_images, ctx=multiprocessing_spawn)),
-    ProducerHandler(queue=SynchronizingQueue(producer=get_prompt_queue_params, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_comfyui_request_params, ctx=multiprocessing_spawn)),
 ]
 
 
@@ -57,7 +57,7 @@ def start():
         return
 
     [p.start() for p in producers]
-    queue_prompt_button.init_multiprocess_button_event(ctx=multiprocessing_spawn)
+    comfyui_requests.init_multiprocess_request_event(ctx=multiprocessing_spawn)
     start_comfyui_process(install_location)
 
 
@@ -68,7 +68,7 @@ def start_comfyui_process(install_location):
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
             args=(
-                *[p.queue for p in producers], queue_prompt_button.mp_event,
+                *[p.queue for p in producers], comfyui_requests.mp_event, comfyui_requests.comfyui_prompt_finished_queue,
                 install_location),
             daemon=True,
         )

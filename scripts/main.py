@@ -2,25 +2,10 @@ import gradio as gr
 import modules.scripts as scripts
 from modules import shared
 import sys
-from lib_comfyui import webui_callbacks, queue_prompt_button
+from lib_comfyui import webui_callbacks, comfyui_requests
 
 base_dir = scripts.basedir()
 sys.path.append(base_dir)
-
-
-def split_list_every(list, n):
-    limit = len(list) // n
-    result = []
-
-    for i in range(limit):
-        lower = i * n
-        upper = (i+1) * n
-        result.append(list[lower:upper])
-    last = limit * n
-    if last < len(list):
-        result.append(list[last:])
-
-    return result
 
 
 class ComfyUIScript(scripts.Script):
@@ -37,25 +22,29 @@ class ComfyUIScript(scripts.Script):
     @staticmethod
     def get_alwayson_ui():
         with gr.Row():
-            run_comfyui_after_generation = gr.Checkbox(label='Run ComfyUI workflow after generation', elem_id='sd-comfyui-webui-run-after-generate')
             queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front')
-        return run_comfyui_after_generation, queue_front
+            output_node_label = gr.Dropdown(label='Output node', choices=['postprocess'], value='postprocess')
+        return queue_front, output_node_label
 
     def show(self, is_img2img):
         return scripts.AlwaysVisible
 
-    def postprocess(self, p, res, run_comfyui_after_generation, queue_front):
-        if not run_comfyui_after_generation:
+    def postprocess_batch(self, p, queue_front, output_node_label, **kwargs):
+        images = kwargs.get('images', None)
+
+        if images is None:
             return
 
-        images = res.images[res.index_of_first_image:]
-        batches = split_list_every(images, res.batch_size)
+        shared.last_output_images = images
+        shared.queue_front = queue_front
+        shared.expected_node_types = ['WebuiPostprocessOutput']
+        results = comfyui_requests.send_request()
 
-        for batch in batches:
-            shared.last_output_images = batch
-            shared.last_batch_count = 1
-            shared.queue_front = queue_front
-            queue_prompt_button.send_request()
+        if results is None:
+            return
+
+        for i in range(images.shape[0]):
+            images[i] = results[i]
 
 
 webui_callbacks.register_callbacks()

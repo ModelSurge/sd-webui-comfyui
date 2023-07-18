@@ -17,6 +17,9 @@ model_apply_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_
 vae_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_getattr, ctx=multiprocessing_spawn))
 vae_encode_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_encode, ctx=multiprocessing_spawn))
 vae_decode_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_decode, ctx=multiprocessing_spawn))
+clip_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_clip_getattr, ctx=multiprocessing_spawn))
+clip_tokenizer_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_clip_tokenize_with_weights, ctx=multiprocessing_spawn))
+clip_transformer_queue = ProducerHandler(SynchronizingQueue(webui_proxies.sd_clip_encode_token_weights, ctx=multiprocessing_spawn))
 shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
 
 
@@ -30,6 +33,9 @@ def start():
     vae_attribute_handler.start()
     vae_encode_handler.start()
     vae_decode_handler.start()
+    clip_attribute_handler.start()
+    clip_tokenizer_handler.start()
+    clip_transformer_queue.start()
     shared_opts_handler.start()
     start_comfyui_process(install_location)
 
@@ -48,6 +54,9 @@ def start_comfyui_process(install_location):
                 vae_attribute_handler.queue,
                 vae_encode_handler.queue,
                 vae_decode_handler.queue,
+                clip_attribute_handler.queue,
+                clip_tokenizer_handler.queue,
+                clip_transformer_queue.queue,
                 shared_opts_handler.queue,
                 install_location,
             ),
@@ -66,6 +75,9 @@ def stop():
     vae_attribute_handler.stop()
     vae_encode_handler.stop()
     vae_decode_handler.stop()
+    clip_attribute_handler.stop()
+    clip_tokenizer_handler.stop()
+    clip_transformer_queue.stop()
     shared_opts_handler.stop()
 
 

@@ -4,7 +4,7 @@ import yaml
 import textwrap
 import torch
 from lib_comfyui import torch_utils
-from modules import shared, devices, sd_models, sd_models_config, prompt_parser
+from modules import shared, devices, sd_models, sd_models_config
 
 
 class WebuiModelPatcher:

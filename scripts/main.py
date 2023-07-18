@@ -1,4 +1,6 @@
 import gradio as gr
+import torch
+
 import modules.scripts as scripts
 from modules import shared
 import sys
@@ -29,22 +31,22 @@ class ComfyUIScript(scripts.Script):
     def show(self, is_img2img):
         return scripts.AlwaysVisible
 
-    def postprocess_batch(self, p, queue_front, output_node_label, **kwargs):
-        images = kwargs.get('images', None)
+    def postprocess(self, p, res, queue_front, output_node_label, **kwargs):
+        images = res.images[res.index_of_first_image:]
 
-        if images is None:
-            return
+        for i in range(p.n_iter):
+            range_start = i*p.batch_size
+            range_end = (i+1)*p.batch_size
+            images_batch = images[range_start:range_end]
+            shared.last_output_images = images_batch
+            shared.queue_front = queue_front
+            shared.expected_node_types = ['WebuiPostprocessOutput']
+            results = comfyui_requests.send_request()
 
-        shared.last_output_images = images
-        shared.queue_front = queue_front
-        shared.expected_node_types = ['WebuiPostprocessOutput']
-        results = comfyui_requests.send_request()
+            if results is None:
+                continue
 
-        if results is None:
-            return
-
-        for i in range(images.shape[0]):
-            images[i] = results[i]
+            res.images[res.index_of_first_image + range_start:res.index_of_first_image + range_end] = results
 
 
 webui_callbacks.register_callbacks()

@@ -1,5 +1,5 @@
-import webui_process
 from modules import shared
+from torchvision.transforms.functional import to_pil_image
 
 
 class WebuiPostprocessOutput:
@@ -21,7 +21,7 @@ class WebuiPostprocessOutput:
     OUTPUT_NODE = True
 
     def fetch_images(self, images, void):
-        shared.last_output_images = images.permute(0, 3, 1, 2)
+        shared.last_output_images = [to_pil_image(img) for img in images.permute(0, 3, 1, 2)]
         return []
 
 

@@ -24,30 +24,43 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         if ctx is None:
             ctx = multiprocessing.get_context()
 
-        super(SynchronizingQueue, self).__init__(*args, ctx=ctx, **kwargs)
+        super(SynchronizingQueue, self).__init__(1, *args, ctx=ctx, **kwargs)
         self._consumer_ready_event = multiprocessing.Event()
         self._producer = producer
-        self.state_dict_thread = None
+        self._args_stack = multiprocessing.queues.Queue(1, *args, ctx=ctx, **kwargs)
+        self._lock = multiprocessing.Lock()
 
     def attend_consumer(self, timeout: float = None):
         consumer_ready = self._wait_for_consumer(timeout)
         if not consumer_ready: return
-        self.put(self._producer())
+        args, kwargs = self._args_stack.get()
+        try:
+            res = self._producer(*args, **kwargs)
+        except Exception as e:
+            res = RemoteError(e)
+        self.put(res)
 
     def _wait_for_consumer(self, timeout: float = None):
         consumer_ready = self._consumer_ready_event.wait(timeout)
         self._consumer_ready_event.clear()
         return consumer_ready
 
-    def get(self, *args, **kwargs):
+    def get(self, *base_args, args=None, kwargs=None, **base_kwargs):
+        self._lock.acquire()
+        self._args_stack.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
-        return super(SynchronizingQueue, self).get(*args, **kwargs)
+        res = super(SynchronizingQueue, self).get(*base_args, **base_kwargs)
+        self._lock.release()
+        if isinstance(res, RemoteError):
+            raise res.error from res
+        else:
+            return res
 
     def __getstate__(self):
-        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer)
+        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer, self._args_stack, self._lock)
 
     def __setstate__(self, state):
-        *state, self._consumer_ready_event, self._producer = state
+        *state, self._consumer_ready_event, self._producer, self._args_stack, self._lock = state
         return super(SynchronizingQueue, self).__setstate__(state)
 
 
@@ -70,3 +83,8 @@ class ProducerHandler:
 
         self.producer_thread.join()
         self.producer_thread = None
+
+
+class RemoteError(Exception):
+    def __init__(self, error):
+        self.error = error

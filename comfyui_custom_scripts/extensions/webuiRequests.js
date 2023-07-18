@@ -16,8 +16,8 @@ const request_map = new Map([
         console.log('worklow');
         if(!json.expectedNodeTypes || graphContainsAllNodeTypes(workflow, json.expectedNodeTypes)) {
             console.log('sending to webui');
-            await app.queuePrompt(json.queueFront ? -1 : 0, 1);
-            api.fetchApi('/webui_prompt_queued', { cache: "no-store" } );
+            await api.fetchApi('/webui_prompt_queued', { cache: "no-store" } );
+            app.queuePrompt(json.queueFront ? -1 : 0, 1);
         }
     }],
     ['/send_workflow_to_webui', async (json) => {

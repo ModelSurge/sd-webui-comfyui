@@ -198,7 +198,7 @@ class WebuiClipWrapper:
     def layer_idx(self):
         import webui_process
         clip_skip = self.cond_stage_model.config.num_hidden_layers - webui_process.fetch_shared_opts().CLIP_stop_at_last_layers
-        return clip_skip if clip_skip > 1 else None
+        return clip_skip if clip_skip < self.cond_stage_model.config.num_hidden_layers - 1 else None
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -263,4 +263,4 @@ def sd_clip_encode_token_weights(token_weight_pairs_list):
     tokens = [[pair[0] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]
     weights = [[pair[1] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]
     conds = [shared.sd_model.cond_stage_model.process_tokens([tokens], [weights]) for tokens, weights in zip(tokens, weights)]
-    return torch.hstack(conds), None
+    return torch_utils.deep_to(torch.hstack(conds), 'cpu'), None

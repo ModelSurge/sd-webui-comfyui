@@ -8,6 +8,7 @@ from lib_comfyui import (
 from lib_comfyui.comfyui_context import ComfyuiContext
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared
+from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 
 
 def get_cpu_state_dict():
@@ -27,17 +28,15 @@ def get_opts_outdirs():
     return shared.opts.dumpjson()
 
 
-def get_last_output_images():
-    if hasattr(shared, 'last_output_images'):
-        return shared.last_output_images
-    return []
+def get_last_postprocessed_images():
+    return webui_postprocess_input.images
 
 
-def get_comfyui_request_params():
+def get_postprocess_request_params():
     return {
         'request': '/webui_request_queue_prompt',
-        'expectedNodeTypes': shared.expected_node_types if hasattr(shared, 'expected_node_types') else [],
-        'queueFront': shared.queue_front if hasattr(shared, 'queue_front') else False,
+        'expectedNodeTypes': webui_postprocess_output.expected_node_types,
+        'queueFront': webui_postprocess_input.queue_front if hasattr(webui_postprocess_input, 'queue_front') else None,
     }
 
 
@@ -46,8 +45,8 @@ multiprocessing_spawn = multiprocessing.get_context('spawn')
 producers = [
     ProducerHandler(queue=SynchronizingQueue(producer=get_cpu_state_dict, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_opts_outdirs, ctx=multiprocessing_spawn)),
-    ProducerHandler(queue=SynchronizingQueue(producer=get_last_output_images, ctx=multiprocessing_spawn)),
-    ProducerHandler(queue=SynchronizingQueue(producer=get_comfyui_request_params, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_last_postprocessed_images, ctx=multiprocessing_spawn)),
+    ProducerHandler(queue=SynchronizingQueue(producer=get_postprocess_request_params, ctx=multiprocessing_spawn)),
 ]
 
 
@@ -57,7 +56,7 @@ def start():
         return
 
     [p.start() for p in producers]
-    comfyui_requests.init_multiprocess_request_event(ctx=multiprocessing_spawn)
+    comfyui_requests.init_comfyui_postprocess_request_handler(ctx=multiprocessing_spawn)
     start_comfyui_process(install_location)
 
 
@@ -68,7 +67,7 @@ def start_comfyui_process(install_location):
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
             args=(
-                *[p.queue for p in producers], comfyui_requests.mp_event, comfyui_requests.comfyui_prompt_finished_queue,
+                *[p.queue for p in producers], comfyui_requests.webui_postprocess_started_event, comfyui_requests.comfyui_prompt_finished_queue,
                 install_location),
             daemon=True,
         )

@@ -7,22 +7,21 @@ import runpy
 from torch import multiprocessing
 from lib_comfyui import argv_conversion, custom_extension_injector, webui_resources_sharing, comfyui_requests
 
-
 def main(
         state_dict_queue,
         shared_opts_queue,
-        output_images_queue,
-        comfyui_request_queue,
-        queue_prompt_button_event,
+        last_postprocessed_images,
+        comfyui_postprocess_request_params,
+        webui_postprocess_started_event,
         comfyui_prompt_finished_queue,
         comfyui_path
 ):
     sys.modules["webui_process"] = WebuiProcessModule(
         state_dict_queue=state_dict_queue,
         shared_opts_queue=shared_opts_queue,
-        output_images_queue=output_images_queue,
-        comfyui_request_queue=comfyui_request_queue,
-        queue_prompt_button_event=queue_prompt_button_event,
+        last_postprocessed_images=last_postprocessed_images,
+        comfyui_postprocess_request_params=comfyui_postprocess_request_params,
+        webui_postprocess_started_event=webui_postprocess_started_event,
         comfyui_prompt_finished_queue=comfyui_prompt_finished_queue,
     )
     start_comfyui(comfyui_path)
@@ -46,9 +45,9 @@ def start_comfyui(comfyui_path):
 class WebuiProcessModule(types.ModuleType):
     state_dict_queue: multiprocessing.Queue
     shared_opts_queue: multiprocessing.Queue
-    output_images_queue: multiprocessing.Queue
-    comfyui_request_queue: multiprocessing.Queue
-    queue_prompt_button_event: multiprocessing.Event
+    last_postprocessed_images: multiprocessing.Queue
+    comfyui_postprocess_request_params: multiprocessing.Queue
+    webui_postprocess_started_event: multiprocessing.Event
     comfyui_prompt_finished_queue: multiprocessing.Queue
 
     def fetch_model_state_dict(self):
@@ -57,15 +56,15 @@ class WebuiProcessModule(types.ModuleType):
     def fetch_shared_opts(self):
         return types.SimpleNamespace(**json.loads(self.shared_opts_queue.get()))
 
-    def fetch_last_output_images(self):
-        return self.output_images_queue.get()
+    def fetch_last_postprocessed_images(self):
+        return self.last_postprocessed_images.get()
 
-    def fetch_comfyui_request_params(self):
-        return self.comfyui_request_queue.get()
+    def fetch_comfyui_postprocess_params(self):
+        return self.comfyui_postprocess_request_params.get()
 
-    def queue_prompt_button_wait(self):
-        self.queue_prompt_button_event.wait()
-        self.queue_prompt_button_event.clear()
+    def comfyui_postprocess_wait_for_start_signal(self):
+        self.webui_postprocess_started_event.wait()
+        self.webui_postprocess_started_event.clear()
 
     def comfyui_postprocessing_prompt_done(self, images):
         self.comfyui_prompt_finished_queue.put(images)

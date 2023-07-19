@@ -3,6 +3,11 @@ from torch import multiprocessing
 import multiprocessing.queues
 
 
+def clear_queue(queue):
+    while not queue.empty():
+        queue.get()
+
+
 class StoppableThread(threading.Thread):
     def __init__(self, *args, **kwargs):
         super(StoppableThread, self).__init__(*args, **kwargs)

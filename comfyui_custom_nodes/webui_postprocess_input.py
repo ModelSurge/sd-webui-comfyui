@@ -1,5 +1,4 @@
 import torch
-import webui_process
 from torchvision.transforms.functional import to_tensor
 
 
@@ -19,7 +18,8 @@ class WebuiPostprocessInput:
     CATEGORY = "image"
 
     def fetch_images(self, void):
-        return torch.stack([to_tensor(img) for img in webui_process.fetch_last_output_images()]).permute(0, 2, 3, 1),
+        import webui_process
+        return torch.stack([to_tensor(img) for img in webui_process.fetch_last_postprocessed_images()]).permute(0, 2, 3, 1),
 
 
 NODE_CLASS_MAPPINGS = {

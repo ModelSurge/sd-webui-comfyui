@@ -1,10 +1,10 @@
-from modules import shared
 from torchvision.transforms.functional import to_pil_image
 
 
-class WebuiPostprocessOutput:
-    node_id = 0
+expected_node_types = ['WebuiPostprocessInput', 'WebuiPostprocessOutput']
 
+
+class WebuiPostprocessOutput:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -21,7 +21,8 @@ class WebuiPostprocessOutput:
     OUTPUT_NODE = True
 
     def fetch_images(self, images, void):
-        shared.last_output_images = [to_pil_image(img) for img in images.permute(0, 3, 1, 2)]
+        import webui_process
+        webui_process.postprocessed_images = [to_pil_image(img) for img in images.permute(0, 3, 1, 2)]
         return []
 
 

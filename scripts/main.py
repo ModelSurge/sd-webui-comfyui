@@ -1,9 +1,9 @@
 import gradio as gr
 
 import modules.scripts as scripts
-from modules import shared
 import sys
 from lib_comfyui import webui_callbacks, comfyui_requests
+from comfyui_custom_nodes import webui_postprocess_input
 
 base_dir = scripts.basedir()
 sys.path.append(base_dir)
@@ -37,10 +37,10 @@ class ComfyUIScript(scripts.Script):
             range_start = i*p.batch_size
             range_end = (i+1)*p.batch_size
             images_batch = images[range_start:range_end]
-            shared.last_output_images = images_batch
-            shared.queue_front = queue_front
-            shared.expected_node_types = ['WebuiPostprocessOutput', 'WebuiPostprocessInput']
-            results = comfyui_requests.send_request()
+            webui_postprocess_input.images = images_batch
+            webui_postprocess_input.queue_front = queue_front
+            webui_postprocess_input.expected_node_types = ['WebuiPostprocessInput', 'WebuiPostprocessOutput']
+            results = comfyui_requests.send_postprocess_request()
 
             if results is None:
                 continue

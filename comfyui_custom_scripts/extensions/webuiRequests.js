@@ -25,9 +25,7 @@ const request_map = new Map([
 
         // check if the graph contains the node types we want
         // if no node types are specified, run the workflow
-        console.log('worklow');
         if(!json.expectedNodeTypes || graphContainsAllNodeTypes(workflow, json.expectedNodeTypes)) {
-            console.log('sending to webui');
             await app.queuePrompt(json.queueFront ? -1 : 0, 1);
             clientResponse = 'queued_prompt_comfyui';
         }
@@ -49,28 +47,20 @@ const request_map = new Map([
 async function longPolling() {
     try {
         while(true) {
-            var body = {};
-            if(clientResponse !== undefined) {
-                body = {
-                    cid: clientUuidForWebui,
-                    request: clientResponse,
-                };
-            }
-            else {
-                body = {
-                    cid: clientUuidForWebui,
-                };
-            }
             const response = await api.fetchApi("/webui_request", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 cache: "no-store",
-                body: JSON.stringify(body),
+                body: JSON.stringify({
+                    cid: clientUuidForWebui,
+                    request: clientResponse,
+                }),
             });
             clientResponse = undefined;
             const json = await response.json();
+            console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${json.request}`);
             await request_map.get(json.request)(json);
         }
     }
@@ -78,7 +68,7 @@ async function longPolling() {
         console.log(e);
     }
     finally {
-        setTimeout(longPolling, 0);
+        setTimeout(longPolling, 100);
     }
 }
 

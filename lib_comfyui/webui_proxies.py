@@ -137,7 +137,7 @@ class WebuiVaeWrapper:
 
     @property
     def offload_device(self):
-        return self.device
+        return self.first_stage_model.device
 
     def __getattr__(self, item):
         if item in self.__dict__:

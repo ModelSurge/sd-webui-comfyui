@@ -55,7 +55,7 @@ def patch_prompt_queue():
         # wipe_queue
         original_wipe_queue = prompt_queue.wipe_queue
         def patched_wipe_queue(*args, **kwargs):
-            for _, v in server_self, prompt_queue.currently_running:
+            for _, v in prompt_queue.currently_running:
                 if v[0] == server_self.webui_locked_queue_id:
                     return original_wipe_queue(*args, **kwargs)
 
@@ -97,13 +97,13 @@ class LongPollingClientHandler:
         self.client_release_event = asyncio.Event()
         self.request_params = {}
 
-    async def halt_clients(self):
+    async def halt_clients_until_request(self):
         await self.client_release_event.wait()
         self.client_release_event.clear()
 
     def send_request(self, params):
-        self.loop.call_soon_threadsafe(self.client_release_event.set)
         self.request_params = params
+        self.loop.call_soon_threadsafe(self.client_release_event.set)
 
     def handle_response(self, future_server_instance, response):
         print(response)
@@ -151,7 +151,7 @@ def patch_server_routes():
 
             comfy_client_handler.register_new_cid(response['cid'])
             comfy_client_handler.handle_response(self, response)
-            await comfy_client_handler.halt_clients()
+            await comfy_client_handler.halt_clients_until_request()
 
             return web.json_response(comfy_client_handler.request_params)
 

@@ -44,11 +44,11 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         self._consumer_ready_event.clear()
         return consumer_ready
 
-    def get(self, *base_args, args=None, kwargs=None, **base_kwargs):
+    def get(self, *self_args, args=None, kwargs=None, **self_kwargs):
         self._lock.acquire()
         self._args_queue.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
-        res = super(SynchronizingQueue, self).get(*base_args, **base_kwargs)
+        res = super(SynchronizingQueue, self).get(*self_args, **self_kwargs)
         self._lock.release()
         if isinstance(res, RemoteError):
             raise res.error from res

@@ -5,14 +5,15 @@ import multiprocessing.queues
 
 def confine_to(process_id):
     def annotation(function):
-        registered_functions[function.__qualname__] = function
+        registered_functions[function.__module__] = registered_functions.get(function.__module__, {})
+        registered_functions[function.__module__][function.__qualname__] = function
 
         def wrapper(*args, **kwargs):
             global current_process_id
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                return process_queues[process_id].get(args=(function.__qualname__, args, kwargs))
+                return process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
 
         return wrapper
 
@@ -105,8 +106,8 @@ class RemoteError(Exception):
         self.error = error
 
 
-def call_fully_qualified(__qualname__, args, kwargs):
-    return registered_functions[__qualname__](*args, **kwargs)
+def call_fully_qualified(module_name, qualified_name, args, kwargs):
+    return registered_functions[module_name][qualified_name](*args, **kwargs)
 
 
 registered_functions = {}

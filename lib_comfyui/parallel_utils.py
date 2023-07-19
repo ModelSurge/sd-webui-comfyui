@@ -1,3 +1,5 @@
+import importlib
+import sys
 import threading
 from torch import multiprocessing
 import multiprocessing.queues
@@ -5,9 +7,6 @@ import multiprocessing.queues
 
 def confine_to(process_id):
     def annotation(function):
-        registered_functions[function.__module__] = registered_functions.get(function.__module__, {})
-        registered_functions[function.__module__][function.__qualname__] = function
-
         def wrapper(*args, **kwargs):
             global current_process_id
             if process_id == current_process_id:
@@ -107,10 +106,19 @@ class RemoteError(Exception):
 
 
 def call_fully_qualified(module_name, qualified_name, args, kwargs):
-    return registered_functions[module_name][qualified_name](*args, **kwargs)
+    module_parts = module_name.split('.')
+    try:
+        module = sys.modules[module_name.split('.')[0]]
+        for part in module_parts[1:]:
+            module = getattr(module_parts, part)
+    except:
+        source_module = module_parts[-1]
+        module = importlib.import_module(module_name, source_module)
 
-
-registered_functions = {}
+    function = module
+    for name in qualified_name.split('.'):
+        function = getattr(function, name)
+    return function(*args, **kwargs)
 
 
 current_process_id = 'webui'

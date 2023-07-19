@@ -52,24 +52,9 @@ class WebuiModelPatcher:
 
 
 class WebuiModelProxy:
-    def get_comfy_model_config(self):
-        import comfy
-        with open(WebuiModelProxy.sd_model_get_config()) as f:
-            config_dict = yaml.safe_load(f)
-
-        unet_config = config_dict['model']['params']['unet_config']['params']
-        unet_config['use_linear_in_transformer'] = unet_config.get('use_linear_in_transformer', False)
-        unet_config['adm_in_channels'] = unet_config.get('adm_in_channels', None)
-        return comfy.model_detection.model_config_from_unet_config(unet_config)
-
-    @ipc.confine_to('webui')
-    @staticmethod
-    def sd_model_get_config():
-        return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
-
     @property
     def latent_format(self):
-        return self.get_comfy_model_config().latent_format
+        return get_comfy_model_config().latent_format
 
     def process_latent_in(self, latent):
         return self.latent_format.process_in(latent)
@@ -85,7 +70,7 @@ class WebuiModelProxy:
         return self
 
     def is_adm(self):
-        adm_in_channels = self.get_comfy_model_config().unet_config.get('adm_in_channels', None) or 0
+        adm_in_channels = get_comfy_model_config().unet_config.get('adm_in_channels', None) or 0
         return adm_in_channels > 0
 
     def encode_adm(self, *args, **kwargs):
@@ -303,3 +288,30 @@ class WebuiClipProxy:
 def free_webui_memory():
     gc.collect(1)
     torch.cuda.empty_cache()
+
+
+@ipc.confine_to('comfyui')
+def raise_on_unsupported_model_type(config):
+    import comfy
+    if type(config) not in (
+        comfy.supported_models.SD15,
+        comfy.supported_models.SD20,
+    ):
+        raise NotImplementedError(f'Webui model type {type(config).__name__} is not yet supported')
+
+
+@ipc.confine_to('comfyui')
+def get_comfy_model_config():
+    import comfy
+    with open(sd_model_get_config()) as f:
+        config_dict = yaml.safe_load(f)
+
+    unet_config = config_dict['model']['params']['unet_config']['params']
+    unet_config['use_linear_in_transformer'] = unet_config.get('use_linear_in_transformer', False)
+    unet_config['adm_in_channels'] = unet_config.get('adm_in_channels', None)
+    return comfy.model_detection.model_config_from_unet_config(unet_config)
+
+
+@ipc.confine_to('webui')
+def sd_model_get_config():
+    return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())

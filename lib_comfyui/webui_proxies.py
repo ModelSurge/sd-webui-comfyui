@@ -2,7 +2,7 @@ import functools
 import yaml
 import textwrap
 import torch
-from lib_comfyui import webui_settings, parallel_utils, torch_utils
+from lib_comfyui import webui_settings, ipc, torch_utils
 from modules import shared, devices, sd_models, sd_models_config
 
 
@@ -58,7 +58,7 @@ class WebuiModelProxy:
         unet_config['adm_in_channels'] = unet_config.get('adm_in_channels', None)
         return comfy.model_detection.model_config_from_unet_config(unet_config)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_model_get_config():
         return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
@@ -93,7 +93,7 @@ class WebuiModelProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args, **kwargs), device=self.device)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_model_apply(*args, **kwargs):
         args = torch_utils.deep_to(args, shared.sd_model.device)
@@ -115,7 +115,7 @@ class WebuiModelProxy:
 
         return res
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_model_getattr(item):
         res = getattr(shared.sd_model, item)
@@ -153,7 +153,7 @@ class WebuiVaeProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiVaeProxy.sd_vae_encode(*args, **kwargs), device=self.device)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_vae_encode(*args, **kwargs):
         args = torch_utils.deep_to(args, shared.sd_model.device)
@@ -167,7 +167,7 @@ class WebuiVaeProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiVaeProxy.sd_vae_decode(*args, **kwargs), device=self.device)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_vae_decode(*args, **kwargs):
         args = torch_utils.deep_to(args, shared.sd_model.device)
@@ -193,7 +193,7 @@ class WebuiVaeProxy:
 
         return res
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_vae_getattr(item):
         res = getattr(shared.sd_model.first_stage_model, item)
@@ -211,7 +211,7 @@ class WebuiClipWrapper:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiClipWrapper.sd_clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_tokenize_with_weights(text, return_word_ids=False):
         chunks, tokens_count, *_ = shared.sd_model.cond_stage_model.tokenize_line(text)
@@ -250,7 +250,7 @@ class WebuiClipProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiClipProxy.sd_clip_encode_token_weights(*args, **kwargs), device=self.device)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_encode_token_weights(token_weight_pairs_list):
         tokens = [[pair[0] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]
@@ -276,7 +276,7 @@ class WebuiClipProxy:
 
         return res
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_getattr(item):
         res = getattr(shared.sd_model.cond_stage_model.wrapped.transformer, item)

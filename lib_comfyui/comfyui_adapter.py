@@ -1,7 +1,7 @@
 import sys
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, parallel_utils, torch_utils, webui_proxies
+from lib_comfyui import async_comfyui_loader, webui_settings, ipc, torch_utils, webui_proxies
 
 
 comfyui_process = None
@@ -13,7 +13,7 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    parallel_utils.start_process_queues()
+    ipc.start_process_queues()
     start_comfyui_process(install_location)
 
 
@@ -27,7 +27,7 @@ def start_comfyui_process(install_location):
             target=async_comfyui_loader.main,
             args=(
                 install_location,
-                parallel_utils.get_process_queues()
+                ipc.get_process_queues()
             ),
             daemon=True,
         )
@@ -39,7 +39,7 @@ def start_comfyui_process(install_location):
 
 def stop():
     stop_comfyui_process()
-    parallel_utils.stop_process_queues()
+    ipc.stop_process_queues()
 
 
 def stop_comfyui_process():

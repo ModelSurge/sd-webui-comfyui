@@ -1,8 +1,6 @@
 import sys
 import textwrap
-import types
-import json
-from lib_comfyui import parallel_utils
+from lib_comfyui import ipc
 from modules import shared
 import install_comfyui
 
@@ -58,7 +56,7 @@ class WebuiOptions:
     def __getattr__(self, item):
         return WebuiOptions.opts_getattr(item)
 
-    @parallel_utils.confine_to('webui')
+    @ipc.confine_to('webui')
     @staticmethod
     def opts_getattr(item):
         return getattr(shared.opts, item)

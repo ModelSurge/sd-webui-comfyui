@@ -23,10 +23,10 @@ class WebuiModelPatcher:
         return self.model.dtype
 
     def set_model_patch_replace(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('patching a webui resource is not yet supported')
 
     def add_patches(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('patching a webui resource is not yet supported')
 
     def get_key_patches(self, *args, **kwargs):
         return {}
@@ -93,7 +93,7 @@ class WebuiModelProxy:
             return res
 
     def state_dict(self):
-        raise NotImplementedError('applying a LoRA on a webui resource is not yet supported')
+        raise NotImplementedError('applying a LoRA on a webui checkpoint is not yet supported')
 
     def __getattr__(self, item):
         if item in self.__dict__:

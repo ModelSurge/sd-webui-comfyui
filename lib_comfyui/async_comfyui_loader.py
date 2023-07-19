@@ -5,7 +5,7 @@ from lib_comfyui import argv_conversion, custom_extension_injector, webui_paths,
 
 
 def main(comfyui_path, process_queues):
-    ipc.process_queues.update(process_queues)
+    ipc.current_process_queues.update(process_queues)
     ipc.current_process_id = 'comfyui'
     start_comfyui(comfyui_path)
 

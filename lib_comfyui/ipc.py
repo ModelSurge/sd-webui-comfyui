@@ -10,7 +10,7 @@ def confine_to(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                return process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+                return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
 
         return wrapper
 
@@ -34,21 +34,21 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
 
 
 current_process_id = 'webui'
-process_callback_listeners = {
+current_process_callback_listeners = {
     'webui': parallel_utils.ProducerHandler(parallel_utils.SynchronizingQueue(call_fully_qualified)),
 }
-process_queues = {}
+current_process_queues = {}
 
 
-def get_process_queues():
-    return {k: v.queue for k, v in process_callback_listeners.items()}
+def get_current_process_queues():
+    return {k: v.queue for k, v in current_process_callback_listeners.items()}
 
 
 def start_process_queues():
-    for callback_listener in process_callback_listeners.values():
+    for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
 
 
 def stop_process_queues():
-    for callback_listener in process_callback_listeners.values():
+    for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()

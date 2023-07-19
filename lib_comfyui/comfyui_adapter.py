@@ -27,7 +27,7 @@ def start_comfyui_process(install_location):
             target=async_comfyui_loader.main,
             args=(
                 install_location,
-                ipc.get_process_queues()
+                ipc.get_current_process_queues()
             ),
             daemon=True,
         )

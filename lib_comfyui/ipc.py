@@ -44,11 +44,11 @@ def get_current_process_queues():
     return {k: v.queue for k, v in current_process_callback_listeners.items()}
 
 
-def start_process_queues():
+def start_callback_listeners():
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
 
 
-def stop_process_queues():
+def stop_callback_listeners():
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()

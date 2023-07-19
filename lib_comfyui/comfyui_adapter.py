@@ -13,7 +13,7 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    ipc.start_process_queues()
+    ipc.start_callback_listeners()
     start_comfyui_process(install_location)
 
 
@@ -39,7 +39,7 @@ def start_comfyui_process(install_location):
 
 def stop():
     stop_comfyui_process()
-    ipc.stop_process_queues()
+    ipc.stop_callback_listeners()
 
 
 def stop_comfyui_process():

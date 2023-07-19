@@ -2,7 +2,6 @@ import sys
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings, parallel_utils, torch_utils, webui_proxies
-from modules import shared
 
 
 comfyui_process = None

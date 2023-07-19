@@ -54,10 +54,14 @@ def get_comfyui_client_url():
     return f'http://{client_url}:{get_port()}/'
 
 
-def fetch_shared_opts():
-    return types.SimpleNamespace(**json.loads(get_opts()))
+class WebuiOptions:
+    def __getattr__(self, item):
+        return WebuiOptions.opts_getattr(item)
+
+    @parallel_utils.confine_to('webui')
+    @staticmethod
+    def opts_getattr(item):
+        return getattr(shared.opts, item)
 
 
-@parallel_utils.confine_to('webui')
-def get_opts():
-    return shared.opts.dumpjson()
+opts = WebuiOptions()

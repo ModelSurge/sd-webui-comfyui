@@ -39,7 +39,7 @@ class ComfyUIScript(scripts.Script):
             images_batch = images[range_start:range_end]
             webui_postprocess_input.images = images_batch
             results = comfyui_requests.send({
-                'request': '/webui_request_queue_prompt',
+                'request': '/sd-webui-comfyui/webui_request_queue_prompt',
                 'requiredNodeTypes': webui_postprocess_output.expected_node_types,
                 'queueFront': queue_front,
             })

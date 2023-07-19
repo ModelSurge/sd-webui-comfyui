@@ -1,7 +1,7 @@
 from torchvision.transforms.functional import to_pil_image
 
 
-expected_node_types = ['WebuiPostprocessInput', 'WebuiPostprocessOutput']
+expected_node_types = [{'type': 'WebuiPostprocessInput', 'count': 1}, {'type': 'WebuiPostprocessOutput', 'count': 1}]
 
 
 class WebuiPostprocessOutput:

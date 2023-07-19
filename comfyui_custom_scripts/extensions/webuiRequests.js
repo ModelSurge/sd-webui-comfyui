@@ -16,22 +16,32 @@ var clientResponse = 'register_cid';
 
 
 const request_map = new Map([
-    ['/webui_request_queue_prompt', async (json) => {
-        function graphContainsAllNodeTypes(workflow, nodeTypes) {
+    ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
+        function graphContainsPreciselyTheseNodeTypes(workflow, nodeTypes) {
             const workflowTypes = workflow.nodes.map(node => node.type);
-            return nodeTypes.every(nodeType => workflowTypes.includes(nodeType));
+            return nodeTypes.every(nodeType => {
+                const amountInWorkflow = workflowTypes.reduce((accumulator, currentValue) => {
+                    if (currentValue === nodeType.type) {
+                        return accumulator + 1;
+                    }
+                    else {
+                        return accumulator;
+                    }
+                }, 0);
+                return amountInWorkflow == nodeType.count
+            });
         }
 
         const workflow = JSON.parse(localStorage.getItem("workflow"));
 
         // check if the graph contains the node types we want
         // if no node types are specified, run the workflow
-        if(!json.expectedNodeTypes || graphContainsAllNodeTypes(workflow, json.expectedNodeTypes)) {
+        if(!json.requiredNodeTypes || graphContainsPreciselyTheseNodeTypes(workflow, json.requiredNodeTypes)) {
             await app.queuePrompt(json.queueFront ? -1 : 0, 1);
             clientResponse = 'queued_prompt_comfyui';
         }
     }],
-    ['/send_workflow_to_webui', async (json) => {
+    ['/sd-webui-comfyui/send_workflow_to_webui', async (json) => {
         const workflow = localStorage.getItem("workflow");
         await api.fetchApi(json.request, {
             method: "POST",

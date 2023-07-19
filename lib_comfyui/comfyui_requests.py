@@ -37,15 +37,6 @@ def comfyui_postprocess_cancel():
     webui_process.comfyui_postprocessing_prompt_done(None)
 
 
-# webui
-class RemoteComfyui:
-    def queue_prompt(self, queueFront, required_node_types, images, cid):
-        pass
-
-    def get_current_workflow(self, cid):
-        pass
-
-
 # comfyui
 def patch_server_routes():
     import webui_process
@@ -63,13 +54,13 @@ def patch_server_routes():
     original_init = server.PromptServer.__init__
 
     def patched_PromptServer__init__(self, loop: asyncio.AbstractEventLoop, *args, **kwargs):
-        comfy_client_handler = LongPollingClientHandler(loop)
+        comfy_client_handler = LongPollingComfyuiClient(loop)
         init_requests_handler(comfy_client_handler)
         original_init(self, loop, *args, **kwargs)
 
         self.webui_locked_queue_id = None
 
-        @self.routes.post("/webui_request")
+        @self.routes.post("/sd-webui-comfyui/webui_request")
         async def webui_polling_server(request):
             global comfyui_client_long_polling_release_event
             response = await request.json()
@@ -81,7 +72,7 @@ def patch_server_routes():
 
             return web.json_response(comfy_client_handler.get_request_params(response))
 
-        @self.routes.post("/send_workflow_to_webui")
+        @self.routes.post("/sd-webui-comfyui/send_workflow_to_webui")
         async def send_workflow_to_webui(request):
             json_workflow = await request.json()
             workflow = json.loads(json_workflow)
@@ -92,7 +83,7 @@ def patch_server_routes():
 
 
 # comfyui
-class LongPollingClientHandler:
+class LongPollingComfyuiClient:
     def __init__(self, loop):
         self.loop = loop
         self.cids = set()

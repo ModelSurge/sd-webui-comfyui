@@ -22,7 +22,7 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
     try:
         module = sys.modules[module_parts[0]]
         for part in module_parts[1:]:
-            module = getattr(module_parts, part)
+            module = getattr(module, part)
     except AttributeError:
         source_module = module_parts[-1]
         module = importlib.import_module(module_name, source_module)

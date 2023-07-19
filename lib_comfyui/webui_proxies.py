@@ -1,4 +1,5 @@
 import functools
+import gc
 import yaml
 import textwrap
 import torch
@@ -38,6 +39,9 @@ class WebuiModelPatcher:
 
     def unpatch_model(self):
         return
+    #
+    # def model_state_dict(self, *args, **kwargs):
+    #     raise NotImplementedError
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -91,7 +95,8 @@ class WebuiModelProxy:
         args = torch_utils.deep_to(args, device='cpu')
         del kwargs['transformer_options']
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args, **kwargs), device=self.device)
+        res = torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args, **kwargs), device=self.device)
+        return res
 
     @ipc.confine_to('webui')
     @staticmethod
@@ -99,8 +104,10 @@ class WebuiModelProxy:
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
-            res = shared.sd_model.model(*args, **kwargs)
-            return res.cpu()
+            res = shared.sd_model.model(*args, **kwargs).cpu().share_memory_()
+            gc.collect()
+            torch.cuda.empty_cache()
+            return res
 
     def state_dict(self):
         raise NotImplementedError('applying a LoRA on a webui resource is not yet supported')
@@ -110,8 +117,8 @@ class WebuiModelProxy:
             return self.__dict__[item]
 
         res = WebuiModelProxy.sd_model_getattr(item)
-        if isinstance(res, torch.Tensor):
-            return torch_utils.deep_to(res, device=self.device)
+        if item != "device":
+            res = torch_utils.deep_to(res, device=self.device)
 
         return res
 
@@ -159,8 +166,10 @@ class WebuiVaeProxy:
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
-            res = shared.sd_model.first_stage_model.encode(*args, **kwargs)
-            return res.cpu()
+            res = shared.sd_model.first_stage_model.encode(*args, **kwargs).cpu().share_memory_()
+            gc.collect()
+            torch.cuda.empty_cache()
+            return res
 
     def decode(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
@@ -173,8 +182,10 @@ class WebuiVaeProxy:
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
-            res = shared.sd_model.first_stage_model.decode(*args, **kwargs)
-            return res.cpu()
+            res = shared.sd_model.first_stage_model.decode(*args, **kwargs).cpu().share_memory_()
+            gc.collect()
+            torch.cuda.empty_cache()
+            return res
 
     def to(self, device):
         assert str(device) == str(self.device), textwrap.dedent(f'''
@@ -188,8 +199,8 @@ class WebuiVaeProxy:
             return self.__dict__[item]
 
         res = WebuiVaeProxy.sd_vae_getattr(item)
-        if isinstance(res, torch.Tensor):
-            return torch_utils.deep_to(res, device=self.device)
+        if item != "device":
+            res = torch_utils.deep_to(res, device=self.device)
 
         return res
 
@@ -253,11 +264,27 @@ class WebuiClipProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_encode_token_weights(token_weight_pairs_list):
-        tokens = [[pair[0] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]
-        weights = [[pair[1] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]
-        conds = [shared.sd_model.cond_stage_model.process_tokens([tokens], [weights]) for tokens, weights in
-                 zip(tokens, weights)]
-        return torch_utils.deep_to(torch.hstack(conds), 'cpu'), None
+        # nested implementation to clear locals before garbage collection
+        def impl():
+            tokens = [
+                [pair[0] for pair in token_weight_pairs]
+                for token_weight_pairs in token_weight_pairs_list
+            ]
+            weights = [
+                [pair[1] for pair in token_weight_pairs]
+                for token_weight_pairs in token_weight_pairs_list
+            ]
+            conds = [
+                shared.sd_model.cond_stage_model.process_tokens([tokens], [weights])
+                for tokens, weights in zip(tokens, weights)
+            ]
+            return torch.hstack(conds).cpu().share_memory_()
+
+        with devices.autocast(), torch.no_grad():
+            res = impl()
+            gc.collect()
+            torch.cuda.empty_cache()
+            return res, None
 
     def to(self, device):
         assert str(device) == str(self.device), textwrap.dedent(f'''
@@ -271,8 +298,8 @@ class WebuiClipProxy:
             return self.__dict__[item]
 
         res = WebuiClipProxy.sd_clip_getattr(item)
-        if isinstance(res, torch.Tensor):
-            return torch_utils.deep_to(res, device=self.device)
+        if item != "device":
+            res = torch_utils.deep_to(res, device=self.device)
 
         return res
 

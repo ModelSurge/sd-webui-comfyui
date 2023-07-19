@@ -1,30 +1,32 @@
 import asyncio
 import json
 from threading import Thread
-from lib_comfyui.parallel_utils import clear_queue
 
-webui_postprocess_started_event = None
+start_comfyui_queue = None
 comfyui_prompt_finished_queue = None
 
 
 # webui process
-def send_postprocess_request():
-    global webui_postprocess_started_event, comfyui_prompt_finished_queue
+def send(request_params):
+    global start_comfyui_queue, comfyui_prompt_finished_queue
 
-    clear_queue(comfyui_prompt_finished_queue)
-    webui_postprocess_started_event.set()
+    # clear_queue(comfyui_prompt_finished_queue)
+    start_comfyui_queue.put(request_params)
     return comfyui_prompt_finished_queue.get()
 
 
 # webui process context
 def init_comfyui_postprocess_request_handler(ctx):
-    global webui_postprocess_started_event, comfyui_prompt_finished_queue
-    webui_postprocess_started_event = ctx.Event()
+    global start_comfyui_queue, comfyui_prompt_finished_queue
+    start_comfyui_queue = ctx.Queue()
     comfyui_prompt_finished_queue = ctx.Queue()
 
 
 def comfyui_postprocess_done():
     import webui_process
+    images = webui_process.postprocessed_images if hasattr(webui_process, 'postprocessed_images') else None
+    if images is None:
+        return
     webui_process.comfyui_postprocessing_prompt_done(webui_process.postprocessed_images if hasattr(webui_process, 'postprocessed_images') else None)
 
 
@@ -123,11 +125,11 @@ def patch_server_routes():
     import server
     from aiohttp import web
 
-    def init_postprocess_requests_handler(comfy_client_handler):
+    def init_requests_handler(comfy_client_handler):
         def release_long_polling_on_start_signal():
             while True:
-                webui_process.comfyui_postprocess_wait_for_start_signal()
-                comfy_client_handler.send_request(webui_process.fetch_comfyui_postprocess_params())
+                request_params = webui_process.comfyui_wait_for_request()
+                comfy_client_handler.send_request(request_params)
 
         Thread(target=release_long_polling_on_start_signal).start()
 
@@ -135,7 +137,7 @@ def patch_server_routes():
 
     def patched_PromptServer__init__(self, loop: asyncio.AbstractEventLoop, *args, **kwargs):
         comfy_client_handler = LongPollingClientHandler(loop)
-        init_postprocess_requests_handler(comfy_client_handler)
+        init_requests_handler(comfy_client_handler)
         original_init(self, loop, *args, **kwargs)
 
         self.webui_locked_queue_id = None

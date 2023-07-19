@@ -11,8 +11,7 @@ def main(
         state_dict_queue,
         shared_opts_queue,
         last_postprocessed_images,
-        comfyui_postprocess_request_params,
-        webui_postprocess_started_event,
+        start_comfyui_queue,
         comfyui_prompt_finished_queue,
         comfyui_path
 ):
@@ -20,8 +19,7 @@ def main(
         state_dict_queue=state_dict_queue,
         shared_opts_queue=shared_opts_queue,
         last_postprocessed_images=last_postprocessed_images,
-        comfyui_postprocess_request_params=comfyui_postprocess_request_params,
-        webui_postprocess_started_event=webui_postprocess_started_event,
+        start_comfyui_queue=start_comfyui_queue,
         comfyui_prompt_finished_queue=comfyui_prompt_finished_queue,
     )
     start_comfyui(comfyui_path)
@@ -46,8 +44,7 @@ class WebuiProcessModule(types.ModuleType):
     state_dict_queue: multiprocessing.Queue
     shared_opts_queue: multiprocessing.Queue
     last_postprocessed_images: multiprocessing.Queue
-    comfyui_postprocess_request_params: multiprocessing.Queue
-    webui_postprocess_started_event: multiprocessing.Event
+    start_comfyui_queue: multiprocessing.Queue
     comfyui_prompt_finished_queue: multiprocessing.Queue
 
     def fetch_model_state_dict(self):
@@ -59,12 +56,8 @@ class WebuiProcessModule(types.ModuleType):
     def fetch_last_postprocessed_images(self):
         return self.last_postprocessed_images.get()
 
-    def fetch_comfyui_postprocess_params(self):
-        return self.comfyui_postprocess_request_params.get()
-
-    def comfyui_postprocess_wait_for_start_signal(self):
-        self.webui_postprocess_started_event.wait()
-        self.webui_postprocess_started_event.clear()
+    def comfyui_wait_for_request(self):
+        return self.start_comfyui_queue.get()
 
     def comfyui_postprocessing_prompt_done(self, images):
         self.comfyui_prompt_finished_queue.put(images)

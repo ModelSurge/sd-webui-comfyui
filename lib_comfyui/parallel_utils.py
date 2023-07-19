@@ -108,7 +108,7 @@ class RemoteError(Exception):
 def call_fully_qualified(module_name, qualified_name, args, kwargs):
     module_parts = module_name.split('.')
     try:
-        module = sys.modules[module_name.split('.')[0]]
+        module = sys.modules[module_parts[0]]
         for part in module_parts[1:]:
             module = getattr(module_parts, part)
     except:

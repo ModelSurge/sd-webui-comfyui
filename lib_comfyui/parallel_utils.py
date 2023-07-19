@@ -3,6 +3,22 @@ from torch import multiprocessing
 import multiprocessing.queues
 
 
+def confine_to(process_id):
+    def annotation(function):
+        registered_functions[function.__qualname__] = function
+
+        def wrapper(*args, **kwargs):
+            global current_process_id
+            if process_id == current_process_id:
+                return function(*args, **kwargs)
+            else:
+                return process_queues[process_id].get(args=(function.__qualname__, args, kwargs))
+
+        return wrapper
+
+    return annotation
+
+
 class StoppableThread(threading.Thread):
     def __init__(self, *args, **kwargs):
         super(StoppableThread, self).__init__(*args, **kwargs)
@@ -20,21 +36,22 @@ class StoppableThread(threading.Thread):
 
 
 class SynchronizingQueue(multiprocessing.queues.Queue):
-    def __init__(self, producer, *args, ctx=None, **kwargs):
+    def __init__(self, callback, *args, ctx=None, **kwargs):
         if ctx is None:
             ctx = multiprocessing.get_context()
 
         super(SynchronizingQueue, self).__init__(*args, ctx=ctx, **kwargs)
         self._consumer_ready_event = multiprocessing.Event()
-        self._producer = producer
-        self._args_stack = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
+        self._callback = callback
+        self._args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
+        self._lock = multiprocessing.Lock()
 
     def attend_consumer(self, timeout: float = None):
         consumer_ready = self._wait_for_consumer(timeout)
         if not consumer_ready: return
-        args, kwargs = self._args_stack.get()
+        args, kwargs = self._args_queue.get()
         try:
-            self.put(self._producer(*args, **kwargs))
+            self.put(self._callback(*args, **kwargs))
         except Exception as e:
             self.put(RemoteError(e))
 
@@ -44,19 +61,21 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         return consumer_ready
 
     def get(self, *base_args, args=None, kwargs=None, **base_kwargs):
-        self._args_stack.put((args if args is not None else (), kwargs if kwargs is not None else {}))
+        self._lock.acquire()
+        self._args_queue.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
         res = super(SynchronizingQueue, self).get(*base_args, **base_kwargs)
+        self._lock.release()
         if isinstance(res, RemoteError):
             raise res.error from res
         else:
             return res
 
     def __getstate__(self):
-        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer, self._args_stack)
+        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._callback, self._args_queue, self._lock)
 
     def __setstate__(self, state):
-        *state, self._consumer_ready_event, self._producer, self._args_stack = state
+        *state, self._consumer_ready_event, self._callback, self._args_queue, self._lock = state
         return super(SynchronizingQueue, self).__setstate__(state)
 
 
@@ -84,3 +103,31 @@ class ProducerHandler:
 class RemoteError(Exception):
     def __init__(self, error):
         self.error = error
+
+
+def call_fully_qualified(__qualname__, args, kwargs):
+    return registered_functions[__qualname__](*args, **kwargs)
+
+
+registered_functions = {}
+
+
+current_process_id = 'webui'
+process_callback_listeners = {
+    'webui': ProducerHandler(SynchronizingQueue(call_fully_qualified)),
+}
+process_queues = {}
+
+
+def get_process_queues():
+    return {k: v.queue for k, v in process_callback_listeners.items()}
+
+
+def start_process_queues():
+    for callback_listener in process_callback_listeners.values():
+        callback_listener.start()
+
+
+def stop_process_queues():
+    for callback_listener in process_callback_listeners.values():
+        callback_listener.stop()

@@ -1,6 +1,8 @@
 import sys
 import textwrap
-
+import types
+import json
+from lib_comfyui import parallel_utils
 from modules import shared
 import install_comfyui
 
@@ -50,3 +52,12 @@ def get_comfyui_client_url():
         client_url = loopback_address
 
     return f'http://{client_url}:{get_port()}/'
+
+
+def fetch_shared_opts():
+    return types.SimpleNamespace(**json.loads(get_opts()))
+
+
+@parallel_utils.confine_to('webui')
+def get_opts():
+    return shared.opts.dumpjson()

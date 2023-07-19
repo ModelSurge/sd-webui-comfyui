@@ -1,9 +1,8 @@
 import functools
-
 import yaml
 import textwrap
 import torch
-from lib_comfyui import torch_utils
+from lib_comfyui import webui_settings, parallel_utils, torch_utils
 from modules import shared, devices, sd_models, sd_models_config
 
 
@@ -22,6 +21,15 @@ class WebuiModelPatcher:
     def model_dtype(self):
         return self.model.dtype
 
+    def set_model_patch_replace(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def add_patches(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_key_patches(self, *args, **kwargs):
+        return {}
+
     def model_patches_to(self, device):
         return
 
@@ -30,6 +38,13 @@ class WebuiModelPatcher:
 
     def unpatch_model(self):
         return
+
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return self.__dict__[item]
+
+        import comfy
+        return functools.partial(getattr(comfy.sd.ModelPatcher, item), self)
 
 
 class WebuiModelProxy:
@@ -70,24 +85,26 @@ class WebuiModelProxy:
         raise NotImplementedError
 
     def apply_model(self, *args, **kwargs):
-        import webui_process
         args = torch_utils.deep_to(args, device='cpu')
         del kwargs['transformer_options']
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(webui_process.apply_model(*args, **kwargs), device=self.device)
+        return torch_utils.deep_to(sd_model_apply(*args, **kwargs), device=self.device)
+
+    def state_dict(self):
+        raise NotImplementedError('applying a LoRA on a webui resource is not yet supported')
 
     def __getattr__(self, item):
-        import webui_process
         if item in self.__dict__:
             return self.__dict__[item]
 
-        res = webui_process.fetch_model_attribute(item)
+        res = sd_model_getattr(item)
         if isinstance(res, torch.Tensor):
             return torch_utils.deep_to(res, device=self.device)
 
         return res
 
 
+@parallel_utils.confine_to('webui')
 def sd_model_apply(*args, **kwargs):
     args = torch_utils.deep_to(args, shared.sd_model.device)
     kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
@@ -96,6 +113,7 @@ def sd_model_apply(*args, **kwargs):
         return res.cpu()
 
 
+@parallel_utils.confine_to('webui')
 def sd_model_getattr(item):
     if item == WebuiModelProxy.CONFIG_PATH_ATTRIBUTE:
         return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
@@ -138,35 +156,34 @@ class WebuiVaeProxy:
         return self
 
     def encode(self, *args, **kwargs):
-        import webui_process
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(webui_process.vae_encode(*args, **kwargs), device=self.device)
+        return torch_utils.deep_to(sd_vae_encode(*args, **kwargs), device=self.device)
 
     def decode(self, *args, **kwargs):
-        import webui_process
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(webui_process.vae_decode(*args, **kwargs), device=self.device)
+        return torch_utils.deep_to(sd_vae_decode(*args, **kwargs), device=self.device)
 
     def __getattr__(self, item):
-        import webui_process
         if item in self.__dict__:
             return self.__dict__[item]
 
-        res = webui_process.fetch_vae_attribute(item)
+        res = sd_vae_getattr(item)
         if isinstance(res, torch.Tensor):
             return torch_utils.deep_to(res, device=self.device)
 
         return res
 
 
+@parallel_utils.confine_to('webui')
 def sd_vae_getattr(item):
     res = getattr(shared.sd_model.first_stage_model, item)
     res = torch_utils.deep_to(res, 'cpu')
     return res
 
 
+@parallel_utils.confine_to('webui')
 def sd_vae_encode(*args, **kwargs):
     args = torch_utils.deep_to(args, shared.sd_model.device)
     kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
@@ -175,6 +192,7 @@ def sd_vae_encode(*args, **kwargs):
         return res.cpu()
 
 
+@parallel_utils.confine_to('webui')
 def sd_vae_decode(*args, **kwargs):
     args = torch_utils.deep_to(args, shared.sd_model.device)
     kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
@@ -189,15 +207,13 @@ class WebuiClipWrapper:
         self.patcher = WebuiModelPatcher(self.cond_stage_model)
 
     def tokenize(self, *args, **kwargs):
-        import webui_process
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(webui_process.clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
+        return torch_utils.deep_to(sd_clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
 
     @property
     def layer_idx(self):
-        import webui_process
-        clip_skip = self.cond_stage_model.config.num_hidden_layers - webui_process.fetch_shared_opts().CLIP_stop_at_last_layers
+        clip_skip = self.cond_stage_model.config.num_hidden_layers - webui_settings.fetch_shared_opts().CLIP_stop_at_last_layers
         return clip_skip if clip_skip < self.cond_stage_model.config.num_hidden_layers - 1 else None
 
     def __getattr__(self, item):
@@ -208,44 +224,7 @@ class WebuiClipWrapper:
         return functools.partial(getattr(comfy.sd.CLIP, item), self)
 
 
-class WebuiClipProxy:
-    def clip_layer(self, idx):
-        return
-
-    def reset_clip_layer(self):
-        return
-
-    def encode_token_weights(self, *args, **kwargs):
-        import webui_process
-        args = torch_utils.deep_to(args, device='cpu')
-        kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(webui_process.clip_encode_token_weights(*args, **kwargs), device=self.device)
-
-    def to(self, device):
-        assert str(device) == str(self.device), textwrap.dedent(f'''
-            cannot move the webui unet to a different device
-            comfyui attempted to move it from {self.device} to {device}
-        ''')
-        return self
-
-    def __getattr__(self, item):
-        import webui_process
-        if item in self.__dict__:
-            return self.__dict__[item]
-
-        res = webui_process.fetch_clip_attribute(item)
-        if isinstance(res, torch.Tensor):
-            return torch_utils.deep_to(res, device=self.device)
-
-        return res
-
-
-def sd_clip_getattr(item):
-    res = getattr(shared.sd_model.cond_stage_model.wrapped.transformer, item)
-    res = torch_utils.deep_to(res, 'cpu')
-    return res
-
-
+@parallel_utils.confine_to('webui')
 def sd_clip_tokenize_with_weights(text, return_word_ids=False):
     chunks, tokens_count, *_ = shared.sd_model.cond_stage_model.tokenize_line(text)
     weighted_tokens = [list(zip(chunk.tokens, chunk.multipliers)) for chunk in chunks]
@@ -259,6 +238,44 @@ def sd_clip_tokenize_with_weights(text, return_word_ids=False):
     return weighted_tokens
 
 
+class WebuiClipProxy:
+    def clip_layer(self, idx):
+        return
+
+    def reset_clip_layer(self):
+        return
+
+    def encode_token_weights(self, *args, **kwargs):
+        args = torch_utils.deep_to(args, device='cpu')
+        kwargs = torch_utils.deep_to(kwargs, device='cpu')
+        return torch_utils.deep_to(sd_clip_encode_token_weights(*args, **kwargs), device=self.device)
+
+    def to(self, device):
+        assert str(device) == str(self.device), textwrap.dedent(f'''
+            cannot move the webui unet to a different device
+            comfyui attempted to move it from {self.device} to {device}
+        ''')
+        return self
+
+    def __getattr__(self, item):
+        if item in self.__dict__:
+            return self.__dict__[item]
+
+        res = sd_clip_getattr(item)
+        if isinstance(res, torch.Tensor):
+            return torch_utils.deep_to(res, device=self.device)
+
+        return res
+
+
+@parallel_utils.confine_to('webui')
+def sd_clip_getattr(item):
+    res = getattr(shared.sd_model.cond_stage_model.wrapped.transformer, item)
+    res = torch_utils.deep_to(res, 'cpu')
+    return res
+
+
+@parallel_utils.confine_to('webui')
 def sd_clip_encode_token_weights(token_weight_pairs_list):
     tokens = [[pair[0] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]
     weights = [[pair[1] for pair in token_weight_pairs] for token_weight_pairs in token_weight_pairs_list]

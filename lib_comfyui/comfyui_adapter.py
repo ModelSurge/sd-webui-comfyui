@@ -1,26 +1,12 @@
 import sys
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, torch_utils, webui_proxies
-from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
+from lib_comfyui import async_comfyui_loader, webui_settings, parallel_utils, torch_utils, webui_proxies
 from modules import shared
-
-
-def get_opts():
-    return shared.opts.dumpjson()
 
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
-model_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_getattr, ctx=multiprocessing_spawn))
-model_apply_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_model_apply, ctx=multiprocessing_spawn))
-vae_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_getattr, ctx=multiprocessing_spawn))
-vae_encode_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_encode, ctx=multiprocessing_spawn))
-vae_decode_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_vae_decode, ctx=multiprocessing_spawn))
-clip_attribute_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_clip_getattr, ctx=multiprocessing_spawn))
-clip_tokenizer_handler = ProducerHandler(SynchronizingQueue(webui_proxies.sd_clip_tokenize_with_weights, ctx=multiprocessing_spawn))
-clip_transformer_queue = ProducerHandler(SynchronizingQueue(webui_proxies.sd_clip_encode_token_weights, ctx=multiprocessing_spawn))
-shared_opts_handler = ProducerHandler(SynchronizingQueue(get_opts, ctx=multiprocessing_spawn))
 
 
 def start():
@@ -28,15 +14,7 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    model_attribute_handler.start()
-    model_apply_handler.start()
-    vae_attribute_handler.start()
-    vae_encode_handler.start()
-    vae_decode_handler.start()
-    clip_attribute_handler.start()
-    clip_tokenizer_handler.start()
-    clip_transformer_queue.start()
-    shared_opts_handler.start()
+    parallel_utils.start_process_queues()
     start_comfyui_process(install_location)
 
 
@@ -49,16 +27,8 @@ def start_comfyui_process(install_location):
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
             args=(
-                model_attribute_handler.queue,
-                model_apply_handler.queue,
-                vae_attribute_handler.queue,
-                vae_encode_handler.queue,
-                vae_decode_handler.queue,
-                clip_attribute_handler.queue,
-                clip_tokenizer_handler.queue,
-                clip_transformer_queue.queue,
-                shared_opts_handler.queue,
                 install_location,
+                parallel_utils.get_process_queues()
             ),
             daemon=True,
         )
@@ -70,15 +40,7 @@ def start_comfyui_process(install_location):
 
 def stop():
     stop_comfyui_process()
-    model_apply_handler.stop()
-    model_attribute_handler.stop()
-    vae_attribute_handler.stop()
-    vae_encode_handler.stop()
-    vae_decode_handler.stop()
-    clip_attribute_handler.stop()
-    clip_tokenizer_handler.stop()
-    clip_transformer_queue.stop()
-    shared_opts_handler.stop()
+    parallel_utils.stop_process_queues()
 
 
 def stop_comfyui_process():

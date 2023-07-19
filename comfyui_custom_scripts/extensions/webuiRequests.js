@@ -12,7 +12,8 @@ function uuidv4() {
 
 
 const clientUuidForWebui = uuidv4();
-var clientResponse = undefined;
+var clientResponse = 'register_cid';
+
 
 const request_map = new Map([
     ['/webui_request_queue_prompt', async (json) => {
@@ -43,8 +44,9 @@ const request_map = new Map([
     }],
 ]);
 
-
 async function longPolling() {
+    console.log(`[sd-webui-comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
+
     try {
         while(true) {
             const response = await api.fetchApi("/webui_request", {
@@ -68,6 +70,7 @@ async function longPolling() {
         console.log(e);
     }
     finally {
+        clientResponse = 'register_cid';
         setTimeout(longPolling, 100);
     }
 }

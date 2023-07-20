@@ -1,6 +1,6 @@
 import sys
 import textwrap
-
+from lib_comfyui import ipc
 from modules import shared
 import install_comfyui
 
@@ -50,3 +50,16 @@ def get_comfyui_client_url():
         client_url = loopback_address
 
     return f'http://{client_url}:{get_port()}/'
+
+
+class WebuiOptions:
+    def __getattr__(self, item):
+        return WebuiOptions.opts_getattr(item)
+
+    @ipc.confine_to('webui')
+    @staticmethod
+    def opts_getattr(item):
+        return getattr(shared.opts, item)
+
+
+opts = WebuiOptions()

@@ -24,37 +24,36 @@ class StoppableThread(threading.Thread):
         return not self._stop_event.is_set()
 
 
-class SynchronizingQueue(multiprocessing.queues.Queue):
-    def __init__(self, producer, *args, ctx=None, **kwargs):
+class CallbackQueue(multiprocessing.queues.Queue):
+    def __init__(self, callback, *args, ctx=None, **kwargs):
         if ctx is None:
             ctx = multiprocessing.get_context()
 
-        super(SynchronizingQueue, self).__init__(1, *args, ctx=ctx, **kwargs)
+        super(CallbackQueue, self).__init__(*args, ctx=ctx, **kwargs)
         self._consumer_ready_event = multiprocessing.Event()
-        self._producer = producer
-        self._args_stack = multiprocessing.queues.Queue(1, *args, ctx=ctx, **kwargs)
+        self._callback = callback
+        self._args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
         self._lock = multiprocessing.Lock()
 
     def attend_consumer(self, timeout: float = None):
         consumer_ready = self._wait_for_consumer(timeout)
         if not consumer_ready: return
-        args, kwargs = self._args_stack.get()
+        args, kwargs = self._args_queue.get()
         try:
-            res = self._producer(*args, **kwargs)
+            self.put(self._callback(*args, **kwargs))
         except Exception as e:
-            res = RemoteError(e)
-        self.put(res)
+            self.put(RemoteError(e))
 
     def _wait_for_consumer(self, timeout: float = None):
         consumer_ready = self._consumer_ready_event.wait(timeout)
         self._consumer_ready_event.clear()
         return consumer_ready
 
-    def get(self, *base_args, args=None, kwargs=None, **base_kwargs):
+    def get(self, *self_args, args=None, kwargs=None, **self_kwargs):
         self._lock.acquire()
-        self._args_stack.put((args if args is not None else (), kwargs if kwargs is not None else {}))
+        self._args_queue.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
-        res = super(SynchronizingQueue, self).get(*base_args, **base_kwargs)
+        res = super(CallbackQueue, self).get(*self_args, **self_kwargs)
         self._lock.release()
         if isinstance(res, RemoteError):
             raise res.error from res
@@ -62,15 +61,26 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
             return res
 
     def __getstate__(self):
-        return super(SynchronizingQueue, self).__getstate__() + (self._consumer_ready_event, self._producer, self._args_stack, self._lock)
+        return super(CallbackQueue, self).__getstate__() + (
+            self._consumer_ready_event,
+            self._callback,
+            self._args_queue,
+            self._lock
+        )
 
     def __setstate__(self, state):
-        *state, self._consumer_ready_event, self._producer, self._args_stack, self._lock = state
-        return super(SynchronizingQueue, self).__setstate__(state)
+        (
+            *state,
+            self._consumer_ready_event,
+            self._callback,
+            self._args_queue,
+            self._lock
+        ) = state
+        return super(CallbackQueue, self).__setstate__(state)
 
 
-class ProducerHandler:
-    def __init__(self, queue: SynchronizingQueue):
+class CallbackWatcher:
+    def __init__(self, queue: CallbackQueue):
         self.queue = queue
         self.producer_thread = None
 

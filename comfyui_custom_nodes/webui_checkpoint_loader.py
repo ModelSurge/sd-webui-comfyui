@@ -1,4 +1,11 @@
-from lib_comfyui.webui_proxies import WebuiModelPatcher, WebuiModelProxy, WebuiClipWrapper, WebuiClipProxy, WebuiVaeWrapper, WebuiVaeProxy
+from lib_comfyui.webui_proxies import (
+    WebuiModelPatcher,
+    WebuiModelProxy,
+    WebuiClipWrapper,
+    WebuiClipProxy,
+    WebuiVaeWrapper,
+    WebuiVaeProxy,
+)
 from lib_comfyui import webui_proxies
 
 

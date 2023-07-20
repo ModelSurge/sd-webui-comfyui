@@ -35,7 +35,7 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
 
 current_process_id = 'webui'
 current_process_callback_listeners = {
-    'webui': parallel_utils.ProducerHandler(parallel_utils.SynchronizingQueue(call_fully_qualified)),
+    'webui': parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified)),
 }
 current_process_queues = {}
 

@@ -19,12 +19,12 @@ class StoppableThread(threading.Thread):
         return not self._stop_event.is_set()
 
 
-class SynchronizingQueue(multiprocessing.queues.Queue):
+class CallbackQueue(multiprocessing.queues.Queue):
     def __init__(self, callback, *args, ctx=None, **kwargs):
         if ctx is None:
             ctx = multiprocessing.get_context()
 
-        super(SynchronizingQueue, self).__init__(*args, ctx=ctx, **kwargs)
+        super(CallbackQueue, self).__init__(*args, ctx=ctx, **kwargs)
         self._consumer_ready_event = multiprocessing.Event()
         self._callback = callback
         self._args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
@@ -48,7 +48,7 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
         self._lock.acquire()
         self._args_queue.put((args if args is not None else (), kwargs if kwargs is not None else {}))
         self._consumer_ready_event.set()
-        res = super(SynchronizingQueue, self).get(*self_args, **self_kwargs)
+        res = super(CallbackQueue, self).get(*self_args, **self_kwargs)
         self._lock.release()
         if isinstance(res, RemoteError):
             raise res.error from res
@@ -56,7 +56,7 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
             return res
 
     def __getstate__(self):
-        return super(SynchronizingQueue, self).__getstate__() + (
+        return super(CallbackQueue, self).__getstate__() + (
             self._consumer_ready_event,
             self._callback,
             self._args_queue,
@@ -71,11 +71,11 @@ class SynchronizingQueue(multiprocessing.queues.Queue):
             self._args_queue,
             self._lock
         ) = state
-        return super(SynchronizingQueue, self).__setstate__(state)
+        return super(CallbackQueue, self).__setstate__(state)
 
 
-class ProducerHandler:
-    def __init__(self, queue: SynchronizingQueue):
+class CallbackWatcher:
+    def __init__(self, queue: CallbackQueue):
         self.queue = queue
         self.producer_thread = None
 

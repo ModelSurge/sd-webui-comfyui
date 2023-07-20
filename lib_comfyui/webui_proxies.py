@@ -20,29 +20,37 @@ class WebuiModelPatcher:
         # https://github.com/comfyanonymous/ComfyUI/blob/ee8f8ee07fb141e5a5ce3abf602ed0fa2e50cf7b/comfy/model_management.py#L272-L276
         return 0
 
+    def clone(self):
+        return self
+
+    def set_model_patch(self, *args, **kwargs):
+        soft_raise('patching a webui resource is not yet supported')
+
+    def set_model_patch_replace(self, *args, **kwargs):
+        soft_raise('patching a webui resource is not yet supported')
+
+    def model_patches_to(self, device):
+        return
+
     def model_dtype(self):
         return self.model.dtype
 
-    def set_model_patch_replace(self, *args, **kwargs):
-        raise NotImplementedError('patching a webui resource is not yet supported')
-
     def add_patches(self, *args, **kwargs):
-        raise NotImplementedError('patching a webui resource is not yet supported')
+        soft_raise('patching a webui resource is not yet supported')
+        return []
 
     def get_key_patches(self, *args, **kwargs):
         return {}
 
-    def model_patches_to(self, device):
-        return
+    def model_state_dict(self, *args, **kwargs):
+        soft_raise('accessing the webui checkpoint state dict from comfyui is not yet suppported')
+        return {}
 
     def patch_model(self):
         return self.model
 
     def unpatch_model(self):
         return
-
-    def model_state_dict(self, *args, **kwargs):
-        raise NotImplementedError('accessing the webui checkpoint state dict from comfyui is not yet suppported')
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -94,7 +102,8 @@ class WebuiModelProxy:
             return res
 
     def state_dict(self):
-        raise NotImplementedError('accessing the webui checkpoint state dict from comfyui is not yet suppported')
+        soft_raise('accessing the webui checkpoint state dict from comfyui is not yet suppported')
+        return {}
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -139,6 +148,10 @@ class WebuiVaeWrapper:
 
 
 class WebuiVaeProxy:
+    def state_dict(self):
+        soft_raise('accessing the webui checkpoint state dict from comfyui is not yet suppported')
+        return {}
+
     def encode(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
@@ -199,6 +212,21 @@ class WebuiClipWrapper:
         self.cond_stage_model = proxy
         self.patcher = WebuiModelPatcher(self.cond_stage_model)
 
+    @property
+    def layer_idx(self):
+        clip_skip = webui_settings.opts.CLIP_stop_at_last_layers
+        return -clip_skip if clip_skip > 1 else None
+
+    def clone(self):
+        return self
+
+    def load_from_state_dict(self, *args, **kwargs):
+        return
+
+    def clip_layer(self, layer_idx):
+        soft_raise(f'cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}')
+        return
+
     def tokenize(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
@@ -218,14 +246,6 @@ class WebuiClipWrapper:
 
         return weighted_tokens
 
-    @property
-    def layer_idx(self):
-        clip_skip = webui_settings.opts.CLIP_stop_at_last_layers
-        return -clip_skip if clip_skip > 1 else None
-
-    def clone(self):
-        return self
-
     def __getattr__(self, item):
         if item in self.__dict__:
             return self.__dict__[item]
@@ -236,7 +256,7 @@ class WebuiClipWrapper:
 
 class WebuiClipProxy:
     def clip_layer(self, layer_idx):
-        print(f'[sd-webui-comfyui] Cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}', file=sys.stderr)
+        soft_raise(f'cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}')
         return
 
     def reset_clip_layer(self):
@@ -320,3 +340,7 @@ def get_comfy_model_config():
 @ipc.confine_to('webui')
 def sd_model_get_config():
     return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
+
+
+def soft_raise(message):
+    print(f'[sd-webui-comfyui] {message}', file=sys.stderr)

@@ -62,6 +62,10 @@ class WebuiModelPatcher:
 
 class WebuiModelProxy:
     @property
+    def model_config(self):
+        return get_comfy_model_config()
+
+    @property
     def latent_format(self):
         return get_comfy_model_config().latent_format
 
@@ -206,6 +210,10 @@ class WebuiClipProxy:
             comfyui attempted to move it from {self.device} to {device}
         ''')
         return self
+
+    def state_dict(self):
+        soft_raise('accessing the webui checkpoint state dict from comfyui is not yet suppported')
+        return {}
 
     def __getattr__(self, item):
         if item in self.__dict__:

@@ -273,7 +273,7 @@ class WebuiVaeProxy:
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
-            res = shared.sd_model.first_stage_model.encode(*args, **kwargs).cpu().share_memory_()
+            res = shared.sd_model.first_stage_model.encode(*args, **kwargs).sample().cpu().share_memory_()
             free_webui_memory()
             return res
 

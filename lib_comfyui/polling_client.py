@@ -2,49 +2,62 @@ import asyncio
 import multiprocessing
 from threading import Thread
 from lib_comfyui.parallel_utils import clear_queue
-
-
-# webui pass-through
-class WebuiNodeWidgetRequests:
-    start_comfyui_queue = None
-    finished_comfyui_queue = None
-
-    @classmethod
-    def init(cls, ctx):
-        cls.start_comfyui_queue = ctx.Queue()
-        cls.finished_comfyui_queue = ctx.Queue()
-
-    @classmethod
-    def send(cls, request_params):
-        clear_queue(cls.finished_comfyui_queue)
-        cls.start_comfyui_queue.put(request_params)
-        cls.finished_comfyui_queue.get()
-
-    @classmethod
-    def get_queues(cls):
-        return cls.start_comfyui_queue, cls.finished_comfyui_queue
+from lib_comfyui import ipc, global_state
+from lib_comfyui.queue_tracker import PromptQueueTracker
 
 
 # rest is ran on comfyui's server side
 class ComfyuiNodeWidgetRequests:
-    start_comfyui_queue = None
-    finished_comfyui_queue = None
+    start_comfyui_queue = multiprocessing.Queue()
+    finished_comfyui_queue = multiprocessing.Queue()
     cids = set()
     param_events = {}
     last_params = None
     loop = None
 
-    @classmethod
-    def init(cls, start_q: multiprocessing.Queue, end_q: multiprocessing.Queue):
-        cls.start_comfyui_queue = start_q
-        cls.finished_comfyui_queue = end_q
+    @ipc.confine_to('comfyui')
+    @staticmethod
+    def send(request_params):
+        clear_queue(ComfyuiNodeWidgetRequests.finished_comfyui_queue)
+        ComfyuiNodeWidgetRequests.start_comfyui_queue.put(request_params)
+        return ComfyuiNodeWidgetRequests.finished_comfyui_queue.get()
+
+    @ipc.confine_to('comfyui')
+    @staticmethod
+    def start_workflow_sync(batch, workflow_type, is_img2img, required_node_types, queue_front):
+        xxx2img = ("img2img" if is_img2img else "txt2img")
+        setattr(global_state, f'{xxx2img}_{workflow_type}_input_images', batch)
+        setattr(global_state, f'tab_name', xxx2img)
+        PromptQueueTracker.update_tracked_id()
+        response = ComfyuiNodeWidgetRequests.send({
+            'request': '/sd-webui-comfyui/webui_request_queue_prompt',
+            'workflowType': f'comfyui_{workflow_type}_{xxx2img}',
+            'requiredNodeTypes': required_node_types,
+            'queueFront': queue_front,
+        })
+
+        if 'error' in response:
+            return response
+
+        # unsafe queue tracking
+        PromptQueueTracker.wait_for_last_put()
+
+        output_key = f'{xxx2img}_{workflow_type}_output_images'
+        results = getattr(global_state, output_key, None)
+        setattr(global_state, output_key, None)
+
+        return results
 
     @classmethod
     def set_loop(cls, loop):
+        if loop is None or cls.loop is not None:
+            return
+
         cls.loop = loop
+        cls._start_listener()
 
     @classmethod
-    def start_listener(cls):
+    def _start_listener(cls):
         def request_listener():
             while True:
                 cls.last_params = cls.start_comfyui_queue.get()

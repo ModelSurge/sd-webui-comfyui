@@ -1,12 +1,29 @@
 import sys
 import os
 import runpy
-from lib_comfyui import argv_conversion, custom_extension_injector, webui_paths, ipc
+from lib_comfyui import (
+    argv_conversion,
+    custom_extension_injector,
+    webui_paths,
+    ipc,
+    polling_client,
+    queue_tracker,
+    parallel_utils,
+)
+import atexit
 
 
 def main(comfyui_path, process_queues):
+    process_queue = process_queues['comfyui']
+    ipc.current_process_callback_listeners = {
+        'comfyui': parallel_utils.CallbackWatcher(process_queue)
+    }
+    del process_queues['comfyui']
+    ipc.current_process_queues.clear()
     ipc.current_process_queues.update(process_queues)
     ipc.current_process_id = 'comfyui'
+    ipc.start_callback_listeners()
+    atexit.register(ipc.stop_callback_listeners)
     start_comfyui(comfyui_path)
 
 
@@ -25,6 +42,7 @@ def start_comfyui(comfyui_path):
 
 def patch_comfyui():
     custom_extension_injector.register_webui_extensions()
-    comfyui_requests.patch_server_routes()
+    polling_client.patch_server_routes()
+    queue_tracker.patch_prompt_queue()
 
 

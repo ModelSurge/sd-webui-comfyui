@@ -2,9 +2,10 @@ import gradio as gr
 
 import modules.scripts as scripts
 import sys
-from lib_comfyui import webui_callbacks, comfyui_requests, webui_settings
+from lib_comfyui import webui_callbacks, webui_settings, global_state
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
-from lib_comfyui.comfyui_requests import WebuiNodeWidgetRequests
+from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
+from lib_comfyui.queue_tracker import PromptQueueTracker
 
 base_dir = scripts.basedir()
 sys.path.append(base_dir)
@@ -38,23 +39,22 @@ class ComfyUIScript(scripts.Script):
 
     def postprocess(self, p, res, queue_front, output_node_label, **kwargs):
         images = res.images[res.index_of_first_image:]
-
         for i in range(p.n_iter):
             range_start = i*p.batch_size
             range_end = (i+1)*p.batch_size
             images_batch = images[range_start:range_end]
-            webui_postprocess_input.images = images_batch
-            results = WebuiNodeWidgetRequests.send({
-                'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-                'workflowType': 'comfyui_postprocess_txt2img',
-                'requiredNodeTypes': webui_postprocess_output.expected_node_types,
-                'queueFront': queue_front,
-            })
+            image_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
+                batch=images_batch,
+                workflow_type='postprocess',
+                is_img2img=self.is_img2img,
+                required_node_types=webui_postprocess_output.expected_node_types,
+                queue_front=queue_front,
+            )
 
-            if results is None:
+            if image_results is None or 'error' in image_results:
                 continue
 
-            res.images[res.index_of_first_image + range_start:res.index_of_first_image + range_end] = results
+            res.images[res.index_of_first_image + range_start:res.index_of_first_image + range_end] = image_results
 
 
 webui_callbacks.register_callbacks()

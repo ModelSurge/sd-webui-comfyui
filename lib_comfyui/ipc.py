@@ -23,7 +23,7 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
         module = sys.modules[module_parts[0]]
         for part in module_parts[1:]:
             module = getattr(module, part)
-    except AttributeError:
+    except (AttributeError, KeyError):
         source_module = module_parts[-1]
         module = importlib.import_module(module_name, source_module)
 
@@ -37,11 +37,15 @@ current_process_id = 'webui'
 current_process_callback_listeners = {
     'webui': parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified)),
 }
-current_process_queues = {}
 
 
 def get_current_process_queues():
     return {k: v.queue for k, v in current_process_callback_listeners.items()}
+
+
+current_process_queues = {
+    'comfyui': parallel_utils.CallbackQueue(call_fully_qualified)
+}
 
 
 def start_callback_listeners():

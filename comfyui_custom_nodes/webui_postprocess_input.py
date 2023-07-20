@@ -1,10 +1,9 @@
 import torch
 from torchvision.transforms.functional import to_tensor
+from lib_comfyui import global_state
 
 
 class WebuiPostprocessInput:
-    node_id = 0
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -18,8 +17,9 @@ class WebuiPostprocessInput:
     CATEGORY = "image"
 
     def fetch_images(self, void):
-        import webui_process
-        return torch.stack([to_tensor(img) for img in webui_process.fetch_last_postprocessed_images()]).permute(0, 2, 3, 1),
+        tab_name = global_state.tab_name
+        key = f'{tab_name}_postprocess_input_images'
+        return torch.stack([to_tensor(img) for img in getattr(global_state, key)]).permute(0, 2, 3, 1),
 
 
 NODE_CLASS_MAPPINGS = {

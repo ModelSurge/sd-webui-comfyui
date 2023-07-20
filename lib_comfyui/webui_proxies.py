@@ -1,5 +1,6 @@
 import functools
 import gc
+import sys
 import yaml
 import textwrap
 import torch
@@ -41,7 +42,7 @@ class WebuiModelPatcher:
         return
 
     def model_state_dict(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('accessing the webui checkpoint state dict from comfyui is not yet suppported')
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -74,7 +75,7 @@ class WebuiModelProxy:
         return adm_in_channels > 0
 
     def encode_adm(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('webui v-prediction checkpoints are not yet supported')
 
     def apply_model(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
@@ -93,7 +94,7 @@ class WebuiModelProxy:
             return res
 
     def state_dict(self):
-        raise NotImplementedError('applying a LoRA on a webui checkpoint is not yet supported')
+        raise NotImplementedError('accessing the webui checkpoint state dict from comfyui is not yet suppported')
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -219,8 +220,11 @@ class WebuiClipWrapper:
 
     @property
     def layer_idx(self):
-        clip_skip = self.cond_stage_model.config.num_hidden_layers - webui_settings.opts.CLIP_stop_at_last_layers
-        return clip_skip if clip_skip < self.cond_stage_model.config.num_hidden_layers - 1 else None
+        clip_skip = webui_settings.opts.CLIP_stop_at_last_layers
+        return -clip_skip if clip_skip > 1 else None
+
+    def clone(self):
+        return self
 
     def __getattr__(self, item):
         if item in self.__dict__:
@@ -231,7 +235,8 @@ class WebuiClipWrapper:
 
 
 class WebuiClipProxy:
-    def clip_layer(self, idx):
+    def clip_layer(self, layer_idx):
+        print(f'[sd-webui-comfyui] Cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}', file=sys.stderr)
         return
 
     def reset_clip_layer(self):

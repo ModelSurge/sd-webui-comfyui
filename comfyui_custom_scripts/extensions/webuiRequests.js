@@ -91,6 +91,13 @@ function hijackUiEnv(clientIdForWebui) {
     if(embededWorkflowFrameIds.includes(clientIdForWebui)) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
+        const original_localStorage_setItem = localStorage.setItem;
+        localStorage.setItem = (item, data, ...args) => {
+            if(item !== 'workflow' || clientIdForWebui === 'comfyui_general_tab') {
+                return original_localStorage_setItem(item, data, ...args);
+            }
+            return;
+        }
         fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
             .then(response => response.json())
             .then(data => app.loadGraphData(data));

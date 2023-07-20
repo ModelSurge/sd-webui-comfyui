@@ -4,6 +4,14 @@ document.addEventListener("DOMContentLoaded", (e) => {
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
 
+
+const iframeIds = [
+    'comfyui_general_tab',
+    'comfyui_postprocess_txt2img',
+    'comfyui_postprocess_img2img'
+];
+
+
 function onComfyuiTabLoaded(callback) {
     const comfyui_document = getComfyuiContainer();
     const tab_nav = getTabNav();
@@ -18,27 +26,13 @@ function onComfyuiTabLoaded(callback) {
 }
 
 function setupComfyuiTabEvents() {
-    // starts the comfyui js extension as soon as possible
-    forceLoadObjectElement();
-
     setupReloadOnErrorEvent();
     setupResizeTabEvent();
     setupToggleFooterEvent();
 
     updateComfyuiTabHeight();
-}
 
-function forceLoadObjectElement() {
-    const objectEl = getComfyuiObjectElement();
-    if(objectEl === null) return;
-
-    objectEl.style.visibility = 'hidden';
-    const comfyuiTab = getComfyuiTab();
-    objectEl.addEventListener('load', () => {
-        comfyuiTab.style.display = 'none';
-        objectEl.style.visibility = 'visible';
-    });
-    comfyuiTab.style.display = 'block';
+    iframeIds.forEach(id => forceFeedIdToIFrame(document.querySelector(`#${id}`)));
 }
 
 function setupReloadOnErrorEvent() {
@@ -97,8 +91,8 @@ function getComfyuiContainer() {
     return document.getElementById("comfyui_webui_container") ?? null;
 }
 
-function getComfyuiObjectElement() {
-    return document.getElementById("comfyui_webui_root") ?? null;
+function getComfyuiIFrameElement() {
+    return document.getElementById("comfyui_general_tab") ?? null;
 }
 
 function getFooter() {
@@ -106,5 +100,25 @@ function getFooter() {
 }
 
 function reloadObjectElement(objectElement) {
-    objectElement.data = objectElement.data;
+    objectElement.src = objectElement.src;
+}
+
+function forceFeedIdToIFrame(frameEl) {
+    let received = false;
+    let messageToReceive = frameEl.getAttribute('id');
+
+    window.addEventListener('message', (event) => {
+        if(messageToReceive !== event.data) return;
+        console.log(`[sd-webui-comfyui][webui] hs - ${event.data}`);
+        received = true;
+    });
+
+    const feed = () => {
+        if(received) return;
+        const targetOrigin = frameEl.src;
+        const message = frameEl.getAttribute('id');
+        frameEl.contentWindow.postMessage(message, targetOrigin);
+        setTimeout(() => { feed(); }, 100);
+    };
+    feed();
 }

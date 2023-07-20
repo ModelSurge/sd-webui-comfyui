@@ -1,182 +1,112 @@
 import asyncio
-import json
+import multiprocessing
 from threading import Thread
 from lib_comfyui.parallel_utils import clear_queue
 
-start_comfyui_queue = None
-comfyui_prompt_finished_queue = None
+
+# webui pass-through
+class WebuiNodeWidgetRequests:
+    start_comfyui_queue = None
+    finished_comfyui_queue = None
+
+    @classmethod
+    def init(cls, ctx):
+        cls.start_comfyui_queue = ctx.Queue()
+        cls.finished_comfyui_queue = ctx.Queue()
+
+    @classmethod
+    def send(cls, request_params):
+        clear_queue(cls.finished_comfyui_queue)
+        cls.start_comfyui_queue.put(request_params)
+        cls.finished_comfyui_queue.get()
+
+    @classmethod
+    def get_queues(cls):
+        return cls.start_comfyui_queue, cls.finished_comfyui_queue
 
 
-# webui
-def send(request_params):
-    global start_comfyui_queue, comfyui_prompt_finished_queue
+# rest is ran on comfyui's server side
+class ComfyuiNodeWidgetRequests:
+    start_comfyui_queue = None
+    finished_comfyui_queue = None
+    cids = set()
+    param_events = {}
+    last_params = None
+    loop = None
 
-    clear_queue(comfyui_prompt_finished_queue)
+    @classmethod
+    def init(cls, start_q: multiprocessing.Queue, end_q: multiprocessing.Queue):
+        cls.start_comfyui_queue = start_q
+        cls.finished_comfyui_queue = end_q
 
-    start_comfyui_queue.put(request_params)
-    return comfyui_prompt_finished_queue.get()
+    @classmethod
+    def set_loop(cls, loop):
+        cls.loop = loop
+
+    @classmethod
+    def start_listener(cls):
+        def request_listener():
+            while True:
+                cls.last_params = cls.start_comfyui_queue.get()
+                cls.loop.call_soon_threadsafe(cls.param_events[cls.last_params['workflowType']].set)
+
+        Thread(target=request_listener).start()
+
+    @classmethod
+    def add_client(cls, cid):
+        if cid in cls.cids:
+            return
+
+        cls.cids.add(cid)
+        cls.param_events[cid] = asyncio.Event()
+        print(f'[sd-webui-comfyui] registered new ComfyUI client - {cid}')
+
+    @classmethod
+    async def handle_response(cls, response):
+        cls.finished_comfyui_queue.put(response)
+
+    @classmethod
+    async def handle_request(cls, cid):
+        await cls.param_events[cid].wait()
+        cls.param_events[cid].clear()
+        return cls.last_params
 
 
-# webui
-def init_comfyui_postprocess_request_handler(ctx):
-    global start_comfyui_queue, comfyui_prompt_finished_queue
-    start_comfyui_queue = ctx.Queue()
-    comfyui_prompt_finished_queue = ctx.Queue()
-
-
-# comfyui
-def comfyui_postprocess_done():
-    import webui_process
-    images = webui_process.postprocessed_images if hasattr(webui_process, 'postprocessed_images') else None
-    webui_process.comfyui_postprocessing_prompt_done(images)
-
-
-# comfyui
-def comfyui_postprocess_cancel():
-    import webui_process
-    webui_process.comfyui_postprocessing_prompt_done(None)
-
-
-# comfyui
-def patch_server_routes():
-    import webui_process
-    import server
+def polling_server_patch(instance, loop):
     from aiohttp import web
 
-    def init_requests_handler(comfy_client_handler):
-        def release_long_polling_on_start_signal():
-            while True:
-                request_params = webui_process.comfyui_wait_for_request()
-                comfy_client_handler.send_request(request_params)
+    ComfyuiNodeWidgetRequests.set_loop(loop)
 
-        Thread(target=release_long_polling_on_start_signal).start()
+    @instance.routes.post("/sd-webui-comfyui/webui_polling_server")
+    async def webui_polling_server(request):
+        response = await request.json()
+        if 'cid' not in response:
+            return web.json_response(status=400)
 
+        cid = response['cid']
+
+        if cid not in ComfyuiNodeWidgetRequests.cids:
+            ComfyuiNodeWidgetRequests.add_client(cid)
+        else:
+            if 'error' in response:
+                print(f"[sd-webui-comfyui] Client {cid} encountered an error - \n{response['error']}")
+            await ComfyuiNodeWidgetRequests.handle_response(response)
+
+        request = await ComfyuiNodeWidgetRequests.handle_request(cid)
+        print(f'[sd-webui-comfyui] send request - \n{request}')
+        return web.json_response(request)
+
+
+def add_server__init__patch(cb):
+    import server
     original_init = server.PromptServer.__init__
 
     def patched_PromptServer__init__(self, loop: asyncio.AbstractEventLoop, *args, **kwargs):
-        comfy_client_handler = LongPollingComfyuiClient(loop)
-        init_requests_handler(comfy_client_handler)
         original_init(self, loop, *args, **kwargs)
-
-        self.webui_locked_queue_id = None
-
-        @self.routes.post("/sd-webui-comfyui/webui_request")
-        async def webui_polling_server(request):
-            global comfyui_client_long_polling_release_event
-            response = await request.json()
-            if 'cid' not in response:
-                return web.json_response(status=400)
-
-            comfy_client_handler.handle_response(self, response)
-            await comfy_client_handler.halt_clients_until_request(response)
-
-            return web.json_response(comfy_client_handler.get_request_params(response))
-
-        @self.routes.post("/sd-webui-comfyui/send_workflow_to_webui")
-        async def send_workflow_to_webui(request):
-            json_workflow = await request.json()
-            workflow = json.loads(json_workflow)
-
-            return web.json_response()
+        cb(self, loop, *args, **kwargs)
 
     server.PromptServer.__init__ = patched_PromptServer__init__
 
 
-# comfyui
-class LongPollingComfyuiClient:
-    def __init__(self, loop):
-        self.loop = loop
-        self.cids = set()
-        self.client_release_event = asyncio.Event()
-        self.request_params = {}
-
-    def send_request(self, params):
-        self.request_params = params
-        self.loop.call_soon_threadsafe(self.client_release_event.set)
-
-    def handle_response(self, future_server_instance, response):
-        if 'request' not in response:
-            return
-
-        if response['request'] == 'register_cid':
-            self.register_new_cid(response['cid'])
-            print(f'[sd-webui-comfyui] registered new ComfyUI client - {response["cid"]}')
-        if response['cid'] not in self.cids:
-            return
-
-        if response['request'] == 'queued_prompt_comfyui':
-            future_server_instance.webui_locked_queue_id = future_server_instance.number - 1
-            future_server_instance.request_params = self.request_params
-            print(f'[sd-webui-comfyui] queued prompt - {response["cid"]}')
-            return
-
-    async def halt_clients_until_request(self, response):
-        if response['cid'] not in self.cids:
-            return
-
-        await self.client_release_event.wait()
-        self.client_release_event.clear()
-
-    def register_new_cid(self, cid):
-        self.cids.add(cid)
-
-    def get_request_params(self, response):
-        if response['cid'] not in self.cids:
-            return {
-                'access': 'denied'
-            }
-        return self.request_params
-
-
-# comfyui
-def patch_prompt_queue():
-    from execution import PromptQueue
-
-    original__init__ = PromptQueue.__init__
-
-    def patched_PromptQueue__init__(orig_self, server_self, *args, **kwargs):
-        original__init__(orig_self, server_self, *args, **kwargs)
-
-        prompt_queue = orig_self
-
-        # task_done
-        original_task_done = prompt_queue.task_done
-        def patched_task_done(item_id, output, *args, **kwargs):
-            with prompt_queue.mutex:
-                v = prompt_queue.currently_running[item_id]
-                if abs(v[0]) == server_self.webui_locked_queue_id:
-                    comfyui_postprocess_done()
-
-            return original_task_done(item_id, output, *args, **kwargs)
-
-        prompt_queue.task_done = patched_task_done
-
-        # wipe_queue
-        original_wipe_queue = prompt_queue.wipe_queue
-        def patched_wipe_queue(*args, **kwargs):
-            with prompt_queue.mutex:
-                should_release_webui = True
-                for _, v in prompt_queue.currently_running.items():
-                    if abs(v[0]) == server_self.webui_locked_queue_id:
-                        should_release_webui = False
-
-            if should_release_webui:
-                comfyui_postprocess_cancel()
-            return original_wipe_queue(*args, **kwargs)
-
-        prompt_queue.wipe_queue = patched_wipe_queue
-
-        # delete_queue_item
-        original_delete_queue_item = prompt_queue.delete_queue_item
-        def patched_delete_queue_item(function, *args, **kwargs):
-            def patched_function(x):
-                res = function(x)
-                if res and abs(x[0]) == server_self.webui_locked_queue_id:
-                    comfyui_postprocess_cancel()
-                return res
-
-            return original_delete_queue_item(patched_function, *args, **kwargs)
-
-        prompt_queue.delete_queue_item = patched_delete_queue_item
-
-    PromptQueue.__init__ = patched_PromptQueue__init__
+def patch_server_routes():
+    add_server__init__patch(polling_server_patch)

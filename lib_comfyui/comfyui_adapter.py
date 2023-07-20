@@ -3,12 +3,11 @@ from torch import multiprocessing
 from lib_comfyui import (
     async_comfyui_loader,
     webui_settings,
-    comfyui_requests,
 )
+from lib_comfyui.comfyui_requests import WebuiNodeWidgetRequests
 from lib_comfyui.comfyui_context import ComfyuiContext
 from lib_comfyui.parallel_utils import SynchronizingQueue, ProducerHandler
 from modules import shared
-from comfyui_custom_nodes import webui_postprocess_input
 
 
 def get_cpu_state_dict():
@@ -28,16 +27,11 @@ def get_opts_outdirs():
     return shared.opts.dumpjson()
 
 
-def get_last_postprocessed_images():
-    return webui_postprocess_input.images
-
-
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
 producers = [
     ProducerHandler(queue=SynchronizingQueue(producer=get_cpu_state_dict, ctx=multiprocessing_spawn)),
     ProducerHandler(queue=SynchronizingQueue(producer=get_opts_outdirs, ctx=multiprocessing_spawn)),
-    ProducerHandler(queue=SynchronizingQueue(producer=get_last_postprocessed_images, ctx=multiprocessing_spawn)),
 ]
 
 
@@ -47,18 +41,17 @@ def start():
         return
 
     [p.start() for p in producers]
-    comfyui_requests.init_comfyui_postprocess_request_handler(ctx=multiprocessing_spawn)
+    WebuiNodeWidgetRequests.init(multiprocessing_spawn)
     start_comfyui_process(install_location)
 
 
 def start_comfyui_process(install_location):
     global comfyui_process
-
     with ComfyuiContext():
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
             args=(
-                *[p.queue for p in producers], comfyui_requests.start_comfyui_queue, comfyui_requests.comfyui_prompt_finished_queue,
+                *[p.queue for p in producers], *WebuiNodeWidgetRequests.get_queues(),
                 install_location),
             daemon=True,
         )

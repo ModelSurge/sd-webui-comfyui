@@ -7,7 +7,7 @@ COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 
 def set_comfyui_argv():
-    sys.argv = sys.argv[:1] + webui_settings.get_additional_argv() + extract_comfyui_argv()
+    sys.argv = sys.argv[:1] + webui_settings.get_additional_argv() + extract_comfyui_argv() + ['--enable-cors-header']
     deduplicate_comfyui_args(sys.argv)
 
 

@@ -2,8 +2,9 @@ import gradio as gr
 
 import modules.scripts as scripts
 import sys
-from lib_comfyui import webui_callbacks, comfyui_requests
+from lib_comfyui import webui_callbacks, comfyui_requests, webui_settings
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
+from lib_comfyui.comfyui_requests import WebuiNodeWidgetRequests
 
 base_dir = scripts.basedir()
 sys.path.append(base_dir)
@@ -14,17 +15,22 @@ class ComfyUIScript(scripts.Script):
         return "ComfyUI"
 
     def ui(self, is_img2img):
-        elem_id_tabname = ("img2img" if is_img2img else "txt2img") + "_comfyui"
+        xxx2img = ("img2img" if is_img2img else "txt2img")
+        elem_id_tabname = xxx2img + "_comfyui"
         with gr.Group(elem_id=elem_id_tabname):
             with gr.Accordion(f"ComfyUI", open=False, elem_id="sd-comfyui-webui"):
-                controls = ComfyUIScript.get_alwayson_ui()
+                controls = ComfyUIScript.get_alwayson_ui(xxx2img)
         return controls
 
     @staticmethod
-    def get_alwayson_ui():
+    def get_alwayson_ui(xxx2img):
         with gr.Row():
-            queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front')
+            queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front', value=True)
             output_node_label = gr.Dropdown(label='Workflow type', choices=['postprocess'], value='postprocess')
+        with gr.Row():
+            gr.HTML(value=f"""
+                <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_postprocess_{xxx2img}" class="comfyui-embedded-widget" style="width:100%; height:500px;"></iframe>
+            """)
         return queue_front, output_node_label
 
     def show(self, is_img2img):
@@ -38,8 +44,9 @@ class ComfyUIScript(scripts.Script):
             range_end = (i+1)*p.batch_size
             images_batch = images[range_start:range_end]
             webui_postprocess_input.images = images_batch
-            results = comfyui_requests.send({
+            results = WebuiNodeWidgetRequests.send({
                 'request': '/sd-webui-comfyui/webui_request_queue_prompt',
+                'workflowType': 'comfyui_postprocess_txt2img',
                 'requiredNodeTypes': webui_postprocess_output.expected_node_types,
                 'queueFront': queue_front,
             })

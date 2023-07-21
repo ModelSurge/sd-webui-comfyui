@@ -44,9 +44,9 @@ class WebuiSaveImage:
         return save_image(*args, **kwargs)
 
 NODE_CLASS_MAPPINGS = {
-    "WebuiTxt2ImgOutput": WebuiSaveImage,
+    "WebuiSaveImage": WebuiSaveImage,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WebuiTxt2ImgOutput": 'Webui Save Image',
+    "WebuiSaveImage": 'Webui Save Image',
 }

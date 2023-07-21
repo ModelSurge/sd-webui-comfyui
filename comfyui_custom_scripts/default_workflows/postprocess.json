@@ -4,7 +4,7 @@
   "nodes": [
     {
       "id": 316,
-      "type": "WebuiPostprocessInput",
+      "type": "PostprocessFromWebui",
       "pos": [
         16,
         229
@@ -28,7 +28,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "WebuiPostprocessInput"
+        "Node name for S&R": "PostprocessFromWebui"
       },
       "widgets_values": [
         "5358"
@@ -36,7 +36,7 @@
     },
     {
       "id": 317,
-      "type": "WebuiPostprocessOutput",
+      "type": "PostprocessToWebui",
       "pos": [
         537,
         190
@@ -56,7 +56,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "WebuiPostprocessOutput"
+        "Node name for S&R": "PostprocessToWebui"
       },
       "widgets_values": [
         "5358"

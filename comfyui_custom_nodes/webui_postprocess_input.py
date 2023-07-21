@@ -23,9 +23,9 @@ class WebuiPostprocessInput:
 
 
 NODE_CLASS_MAPPINGS = {
-    "WebuiPostprocessInput": WebuiPostprocessInput,
+    "PostprocessFromWebui": WebuiPostprocessInput,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WebuiPostprocessInput": 'Postprocess From Webui',
+    "PostprocessFromWebui": 'Postprocess From Webui',
 }

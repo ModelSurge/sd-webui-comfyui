@@ -2,7 +2,7 @@ from torchvision.transforms.functional import to_pil_image
 from lib_comfyui import global_state
 
 
-expected_node_types = [{'type': 'WebuiPostprocessInput', 'count': 1}, {'type': 'WebuiPostprocessOutput', 'count': 1}]
+expected_node_types = [{'type': 'PostprocessFromWebui', 'count': 1}, {'type': 'PostprocessToWebui', 'count': 1}]
 
 
 class WebuiPostprocessOutput:
@@ -33,9 +33,9 @@ class WebuiPostprocessOutput:
 
 
 NODE_CLASS_MAPPINGS = {
-    "WebuiPostprocessOutput": WebuiPostprocessOutput,
+    "PostprocessToWebui": WebuiPostprocessOutput,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WebuiPostprocessOutput": 'Postprocess To Webui',
+    "PostprocessToWebui": 'Postprocess To Webui',
 }

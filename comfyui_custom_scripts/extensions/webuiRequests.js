@@ -1,6 +1,8 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
+const startup_workflow = localStorage.getItem('workflow');
+
 const request_map = new Map([
     ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
         const workflow = app.graph.serialize();
@@ -76,17 +78,22 @@ function hijackUiEnv(thisClientId) {
     if(embededWorkflowFrameIds.includes(thisClientId)) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
-        hijackLocalStorage(thisClientId);
+        hijackLocalStorage(thisClientId, embededWorkflowFrameIds);
         setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
             .then(response => response.json())
             .then(data => app.loadGraphData(data)), 500);
     }
+    else {
+        // ComfyUI has an interval for setting the local storage, but we have many ComfyUI's in parallel, so we restore
+        // the prvious correct state here for the tab
+        setTimeout(() => app.loadGraphData(startup_workflow), 500);
+    }
 }
 
-function hijackLocalStorage(thisClientId) {
+function hijackLocalStorage(thisClientId, embededWorkflowFrameIds) {
     const original_localStorage_setItem = localStorage.setItem;
     localStorage.setItem = (item, data, ...args) => {
-        if(item !== 'workflow' || thisClientId === 'comfyui_general_tab') {
+        if(item === 'workflow' && embededWorkflowFrameIds.includes(thisClientId)) {
             return original_localStorage_setItem(item, data, ...args);
         }
         return;

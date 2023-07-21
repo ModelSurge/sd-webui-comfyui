@@ -17,10 +17,11 @@ class PromptQueueTracker:
         PromptQueueTracker.done_event.wait()
         PromptQueueTracker.done_event.clear()
 
+    @ipc.confine_to('comfyui')
     @staticmethod
     def tracked_id_present():
         with PromptQueueTracker.queue_instance.mutex:
-            for _, v in PromptQueueTracker.queue_instance.currently_running.items():
+            for v in PromptQueueTracker.queue_instance.currently_running.values():
                 if abs(v[0]) == PromptQueueTracker.tracked_id:
                     return True
             for x in PromptQueueTracker.queue_instance.queue:
@@ -29,6 +30,7 @@ class PromptQueueTracker:
             return False
 
 
+    @ipc.confine_to('comfyui')
     @staticmethod
     def update_tracked_id():
         PromptQueueTracker.tracked_id = PromptQueueTracker.server_instance.number

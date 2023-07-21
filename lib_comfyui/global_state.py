@@ -25,11 +25,19 @@ class GlobalState(ModuleType):
     def setattr(item, value):
         GlobalState.__state[item] = value
 
+    @ipc.confine_to('webui')
+    @staticmethod
+    def delattr(item):
+        del GlobalState.__state[item]
+
     def __getattr__(self, item):
         return GlobalState.getattr(item)
 
     def __setattr__(self, item, value):
         GlobalState.setattr(item, value)
+
+    def __delattr__(self, item):
+        GlobalState.delattr(item)
 
 
 sys.modules[__name__] = GlobalState(globals())

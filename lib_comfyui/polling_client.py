@@ -45,7 +45,7 @@ class ComfyuiNodeWidgetRequests:
 
         output_key = f'{xxx2img}_{workflow_type}_output_images'
         results = getattr(global_state, output_key, None)
-        setattr(global_state, output_key, None)
+        delattr(global_state, output_key)
 
         return results
 
@@ -69,9 +69,9 @@ class ComfyuiNodeWidgetRequests:
 
     @classmethod
     def add_client(cls, cid, key):
-        if key not in cls.cids:
+        if key not in cls.cids.keys():
             cls.cids[key] = set()
-        if key not in cls.param_events:
+        if key not in cls.param_events.keys():
             cls.param_events[key] = {}
         if cid in cls.cids[key]:
             return
@@ -110,7 +110,7 @@ def polling_server_patch(instance, loop):
         key = response['key']
         cid = response['cid']
 
-        if 'request' in response and response['request'] == 'register_cid':
+        if not (key in ComfyuiNodeWidgetRequests.cids.keys() and cid in ComfyuiNodeWidgetRequests.cids[key]):
             ComfyuiNodeWidgetRequests.add_client(cid, key)
         else:
             if 'error' in response:

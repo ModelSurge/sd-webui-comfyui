@@ -86,6 +86,7 @@ function hijackUiEnv(thisClientId) {
     else {
         // ComfyUI has an interval for setting the local storage, but we have many ComfyUI's in parallel, so we restore
         // the prvious correct state here for the tab
+        localStorage.setItem('workflow', startup_workflow);
         setTimeout(() => app.loadGraphData(JSON.parse(startup_workflow)), 500);
     }
 }

@@ -77,7 +77,7 @@ function hijackUiEnv(thisClientId) {
     if(embededWorkflowFrameIds.includes(thisClientId)) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
-        //hijackLocalStorage(thisClientId, embededWorkflowFrameIds);
+        hijackLocalStorage(thisClientId, embededWorkflowFrameIds);
         setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
             .then(response => response.json())
             .then(data => app.loadGraphData(data)), 500);

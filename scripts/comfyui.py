@@ -40,12 +40,6 @@ class ComfyUIScript(scripts.Script):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
 
-        xxx2img = self.get_xxx2img_str()
-
-        output_key = f'{xxx2img}_postprocess_output_images'
-        if output_key in global_state:
-            delattr(global_state, output_key)
-
         images = res.images[res.index_of_first_image:]
         results = res.images[:res.index_of_first_image]
         initial_amount_of_images = len(images)

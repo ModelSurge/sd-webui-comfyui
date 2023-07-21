@@ -2,6 +2,9 @@ import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
 
+const POLLING_TIMEOUT = 500;
+
+
 const request_map = new Map([
     ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
         const workflow = app.graph.serialize();
@@ -74,13 +77,14 @@ function patchUiEnv(thisClientId) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         patchSavingMechanism();
-        setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
-            .then(response => response.json())
-            .then(data => app.loadGraphData(data)), 500);
     }
 }
 
 function patchSavingMechanism() {
+    if(app.graph === undefined) {
+        setTimeout(patchSavingMechanism, POLLING_TIMEOUT);
+        return;
+    }
     app.graph.original_serialize = app.graph.serialize;
     app.graph.patched_serialize = () => JSON.parse(localStorage.getItem('workflow'));
     app.graph.serialize = app.graph.patched_serialize;
@@ -95,6 +99,11 @@ function patchSavingMechanism() {
         saveButton.click();
         app.graph.serialize = app.graph.patched_serialize;
     };
+    setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
+        .then(response => response.json())
+        .then(data => {
+            app.loadGraphData(data);
+        }), POLLING_TIMEOUT);
 }
 
 onElementDomIdRegistered(longPolling);

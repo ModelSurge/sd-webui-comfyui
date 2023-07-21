@@ -62,29 +62,25 @@ function onElementDomIdRegistered(callback) {
         webuiClientKey = messageData[1];
         console.log(`[sd-webui-comfyui][comfyui] REGISTERED ELEMENT TAG ID - ${thisClientId}/${webuiClientKey}`);
         event.source.postMessage(thisClientId, event.origin);
-        hijackUiEnv(thisClientId);
+        patchUiEnv(thisClientId);
         const clientResponse = 'register_cid';
         console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
         callback(thisClientId, webuiClientKey, clientResponse);
     });
 }
 
-function hijackUiEnv(thisClientId) {
-    const embededWorkflowFrameIds = [
-        'comfyui_postprocess_txt2img',
-        'comfyui_postprocess_img2img',
-    ];
-    if(embededWorkflowFrameIds.includes(thisClientId)) {
+function patchUiEnv(thisClientId) {
+    if(thisClientId !== 'comfyui_general_tab') {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
-        hijackLocalStorage(thisClientId);
+        patchSavingMechanism();
         setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
             .then(response => response.json())
             .then(data => app.loadGraphData(data)), 500);
     }
 }
 
-function hijackLocalStorage(thisClientId) {
+function patchSavingMechanism() {
     app.graph.original_serialize = app.graph.serialize;
     app.graph.patched_serialize = () => JSON.parse(localStorage.getItem('workflow'));
     app.graph.serialize = app.graph.patched_serialize;

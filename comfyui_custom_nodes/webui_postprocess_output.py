@@ -18,7 +18,7 @@ class WebuiPostprocessOutput:
     RETURN_TYPES = ()
     FUNCTION = "fetch_images"
 
-    CATEGORY = "image"
+    CATEGORY = "webui"
 
     OUTPUT_NODE = True
 

@@ -14,7 +14,7 @@ class WebuiPostprocessInput:
     RETURN_TYPES = ("IMAGE", )
     FUNCTION = "fetch_images"
 
-    CATEGORY = "image"
+    CATEGORY = "webui"
 
     def fetch_images(self, void):
         tab_name = global_state.tab_name

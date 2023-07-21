@@ -13,7 +13,6 @@ class WebuiPostprocessOutput:
         return {
             "required": {
                 "images": ("IMAGE", ),
-                "void": ("VOID", ),
             },
         }
     RETURN_TYPES = ()
@@ -23,7 +22,7 @@ class WebuiPostprocessOutput:
 
     OUTPUT_NODE = True
 
-    def fetch_images(self, images, void):
+    def fetch_images(self, images):
         tab_name = global_state.tab_name
         key = f'{tab_name}_postprocess_output_images'
         images_pil = [to_pil_image(img) for img in images.permute(0, 3, 1, 2)]
@@ -38,5 +37,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WebuiPostprocessOutput": 'Webui Postprocess Output',
+    "WebuiPostprocessOutput": 'Postprocess To Webui',
 }

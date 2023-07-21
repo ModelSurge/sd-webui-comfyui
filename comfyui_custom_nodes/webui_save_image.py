@@ -1,7 +1,7 @@
 import os
+from lib_comfyui import ipc
 from lib_comfyui.webui_settings import opts
 from torchvision.transforms.functional import to_pil_image
-from modules.images import save_image
 from modules.paths import data_path
 
 
@@ -32,10 +32,16 @@ class WebuiSaveImage:
         for image in images:
             pil_image = to_pil_image(image.permute(2, 0, 1))
             save_path = os.path.join(data_path, output_dir)
-            filename, _ = save_image(image=pil_image, path=save_path, basename='')
+            filename, _ = WebuiSaveImage.webui_save_image(image=pil_image, path=save_path, basename='')
 
         return []
 
+
+    @ipc.confine_to('webui')
+    @staticmethod
+    def webui_save_image(*args, **kwargs):
+        from modules.images import save_image
+        return save_image(*args, **kwargs)
 
 NODE_CLASS_MAPPINGS = {
     "WebuiTxt2ImgOutput": WebuiSaveImage,

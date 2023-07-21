@@ -1,7 +1,7 @@
 import os
 import sys
 import importlib
-from modules import sd_models, paths, shared, modelloader
+from modules import paths, shared, modelloader
 
 
 def share_webui_folder_paths(folder_paths: dict):
@@ -12,6 +12,7 @@ def share_webui_folder_paths(folder_paths: dict):
 
 
 def get_folder_paths() -> dict:
+    from modules import sd_models
     return {
         'checkpoints': [sd_models.model_path] + ([shared.cmd_opts.ckpt_dir] if shared.cmd_opts.ckpt_dir else []),
         'vae': [os.path.join(paths.models_path, 'VAE')] + ([shared.cmd_opts.vae_dir] if shared.cmd_opts.vae_dir else []),

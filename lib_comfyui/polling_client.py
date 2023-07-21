@@ -47,7 +47,9 @@ class ComfyuiNodeWidgetRequests:
 
         output_key = f'{xxx2img}_{workflow_type}_output_images'
         results = getattr(global_state, output_key, None)
-        delattr(global_state, output_key)
+
+        if output_key in global_state:
+            delattr(global_state, output_key)
 
         return results
 
@@ -64,7 +66,7 @@ class ComfyuiNodeWidgetRequests:
         def request_listener():
             while request_thread.is_running():
                 try:
-                    cls.last_params = cls.start_comfyui_queue.get_nowait()
+                    cls.last_params = cls.start_comfyui_queue.get(timeout=1)
                 except queue.Empty:
                     continue
                 key = ComfyuiNodeWidgetRequests.focused_key

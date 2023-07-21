@@ -2,6 +2,8 @@ import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
 
+
+
 const request_map = new Map([
     ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
         const workflow = app.graph.serialize();
@@ -78,9 +80,9 @@ function hijackUiEnv(thisClientId) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         //hijackLocalStorage(thisClientId, embededWorkflowFrameIds);
-        /*setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
+        setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
             .then(response => response.json())
-            .then(data => app.loadGraphData(data)), 500);*/
+            .then(data => app.loadGraphData(data)), 500);
     }
     else {
         // ComfyUI has an interval for setting the local storage, but we have many ComfyUI's in parallel, so we restore

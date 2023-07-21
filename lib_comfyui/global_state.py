@@ -12,6 +12,9 @@ class GlobalState(ModuleType):
         for k, v in glob.items():
             setattr(self, k, v)
 
+    def __getattr__(self, item):
+        return GlobalState.getattr(item)
+
     @ipc.confine_to('webui')
     @staticmethod
     def getattr(item):
@@ -20,24 +23,29 @@ class GlobalState(ModuleType):
         except KeyError:
             raise AttributeError
 
+    def __setattr__(self, item, value):
+        GlobalState.setattr(item, value)
+
     @ipc.confine_to('webui')
     @staticmethod
     def setattr(item, value):
         GlobalState.__state[item] = value
+
+    def __delattr__(self, item):
+        GlobalState.delattr(item)
 
     @ipc.confine_to('webui')
     @staticmethod
     def delattr(item):
         del GlobalState.__state[item]
 
-    def __getattr__(self, item):
-        return GlobalState.getattr(item)
+    def __contains__(self, item):
+        return GlobalState.contains(item)
 
-    def __setattr__(self, item, value):
-        GlobalState.setattr(item, value)
-
-    def __delattr__(self, item):
-        GlobalState.delattr(item)
+    @ipc.confine_to('webui')
+    @staticmethod
+    def contains(item):
+        return item in GlobalState.__state
 
 
 sys.modules[__name__] = GlobalState(globals())

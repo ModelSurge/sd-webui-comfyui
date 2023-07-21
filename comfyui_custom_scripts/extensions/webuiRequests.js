@@ -85,12 +85,19 @@ function hijackUiEnv(thisClientId) {
 }
 
 function hijackLocalStorage(thisClientId) {
-    const original_localStorage_setItem = localStorage.setItem;
-    localStorage.setItem = (item, data, ...args) => {
-        if(item === 'workflow') {
-            return;
-        }
-        return original_localStorage_setItem(item, data, ...args);
+    app.graph.original_serialize = app.graph.serialize;
+    app.graph.patched_serialize = () => JSON.parse(localStorage.getItem('workflow'));
+    app.graph.serialize = app.graph.patched_serialize;
+    const saveButton = document.querySelector('#comfy-save-button');
+    saveButton.removeAttribute('id');
+    const comfyParent = saveButton.parentElement;
+    const muahahaButton = document.createElement('button');
+    muahahaButton.setAttribute('id', 'comfy-save-button');
+    comfyParent.appendChild(muahahaButton);
+    muahahaButton.click = () => {
+        app.graph.serialize = app.graph.original_serialize;
+        saveButton.click();
+        app.graph.serialize = app.graph.patched_serialize;
     };
 }
 

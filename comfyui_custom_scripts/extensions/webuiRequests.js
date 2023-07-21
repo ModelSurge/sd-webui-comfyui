@@ -25,8 +25,8 @@ async function longPolling(thisClientId, webuiClientKey, startupResponse) {
                 },
                 cache: "no-store",
                 body: JSON.stringify({
-                    cid: thisClientId,
-                    key: webuiClientKey,
+                    comfyui_iframe_id: thisClientId,
+                    webui_client_id: webuiClientKey,
                     request: clientResponse,
                 }),
             });

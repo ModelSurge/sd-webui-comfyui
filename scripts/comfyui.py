@@ -8,6 +8,9 @@ from modules import shared
 
 
 class ComfyUIScript(scripts.Script):
+    def get_xxx2img_str(self):
+        return "img2img" if self.is_img2img else "txt2img"
+
     def title(self):
         return "ComfyUI"
 
@@ -36,6 +39,12 @@ class ComfyUIScript(scripts.Script):
     def postprocess(self, p, res, queue_front, output_node_label, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
+
+        xxx2img = self.get_xxx2img_str()
+
+        output_key = f'{xxx2img}_postprocess_output_images'
+        if output_key in global_state:
+            delattr(global_state, output_key)
 
         images = res.images[res.index_of_first_image:]
         results = res.images[:res.index_of_first_image]

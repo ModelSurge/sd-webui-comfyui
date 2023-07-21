@@ -1,7 +1,9 @@
 import asyncio
+import atexit
 import multiprocessing
-from threading import Thread
-from lib_comfyui.parallel_utils import clear_queue
+import queue
+
+from lib_comfyui.parallel_utils import clear_queue, StoppableThread
 from lib_comfyui import ipc, global_state
 from lib_comfyui.queue_tracker import PromptQueueTracker
 
@@ -60,12 +62,18 @@ class ComfyuiNodeWidgetRequests:
     @classmethod
     def _start_listener(cls):
         def request_listener():
-            while True:
-                cls.last_params = cls.start_comfyui_queue.get()
+            nonlocal request_thread
+            while request_thread.is_running():
+                try:
+                    cls.last_params = cls.start_comfyui_queue.get(timeout=1)
+                except queue.Empty:
+                    continue
                 key = ComfyuiNodeWidgetRequests.focused_key
                 cls.loop.call_soon_threadsafe(cls.param_events[key][cls.last_params['workflowType']].set)
 
-        Thread(target=request_listener).start()
+        request_thread = StoppableThread(target=request_listener)
+        request_thread.start()
+        atexit.register(request_thread.join)
 
     @classmethod
     def add_client(cls, cid, key):

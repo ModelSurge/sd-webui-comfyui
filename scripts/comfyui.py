@@ -4,6 +4,7 @@ import modules.scripts as scripts
 from lib_comfyui import webui_callbacks, webui_settings, global_state
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
+from modules import shared
 
 
 class ComfyUIScript(scripts.Script):
@@ -33,6 +34,9 @@ class ComfyUIScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def postprocess(self, p, res, queue_front, output_node_label, **kwargs):
+        if not getattr(shared.opts, 'comfyui_enabled', True):
+            return
+
         images = res.images[res.index_of_first_image:]
         results = res.images[:res.index_of_first_image]
         initial_amount_of_images = len(images)

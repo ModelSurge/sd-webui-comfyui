@@ -7,6 +7,7 @@ import install_comfyui
 
 def create_section():
     section = ('comfyui', "ComfyUI")
+    shared.opts.add_option('comfyui_enabled', shared.OptionInfo(True, 'Enable sd-webui-comfyui extension', section=section))
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
         install_comfyui.default_install_location, "ComfyUI install location", section=section))
     shared.opts.add_option("comfyui_additional_args", shared.OptionInfo(

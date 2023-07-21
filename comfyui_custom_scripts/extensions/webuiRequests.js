@@ -2,8 +2,6 @@ import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 
 
-
-
 const request_map = new Map([
     ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
         const workflow = app.graph.serialize();

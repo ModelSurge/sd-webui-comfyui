@@ -1,11 +1,16 @@
 import threading
+from queue import Empty
+
 from torch import multiprocessing
 import multiprocessing.queues
 
 
-def clear_queue(queue):
+def clear_queue(queue: multiprocessing.Queue):
     while not queue.empty():
-        queue.get()
+        try:
+            queue.get(timeout=1)
+        except Empty:
+            pass
 
 
 class StoppableThread(threading.Thread):

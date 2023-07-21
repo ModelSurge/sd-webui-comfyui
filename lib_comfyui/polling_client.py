@@ -10,10 +10,11 @@ from lib_comfyui.queue_tracker import PromptQueueTracker
 class ComfyuiNodeWidgetRequests:
     start_comfyui_queue = multiprocessing.Queue()
     finished_comfyui_queue = multiprocessing.Queue()
-    cids = set()
+    cids = {}
     param_events = {}
     last_params = None
     loop = None
+    focused_key = None
 
     @ipc.confine_to('comfyui')
     @staticmethod
@@ -61,17 +62,25 @@ class ComfyuiNodeWidgetRequests:
         def request_listener():
             while True:
                 cls.last_params = cls.start_comfyui_queue.get()
-                cls.loop.call_soon_threadsafe(cls.param_events[cls.last_params['workflowType']].set)
+                key = ComfyuiNodeWidgetRequests.focused_key
+                cls.loop.call_soon_threadsafe(cls.param_events[key][cls.last_params['workflowType']].set)
 
         Thread(target=request_listener).start()
 
     @classmethod
-    def add_client(cls, cid):
-        if cid in cls.cids:
+    def add_client(cls, cid, key):
+        if key not in cls.cids:
+            cls.cids[key] = set()
+        if key not in cls.param_events:
+            cls.param_events[key] = {}
+        if cid in cls.cids[key]:
             return
 
-        cls.cids.add(cid)
-        cls.param_events[cid] = asyncio.Event()
+        # REMOVE THIS OMG
+        ComfyuiNodeWidgetRequests.focused_key = key
+
+        cls.param_events[key][cid] = asyncio.Event()
+        cls.cids[key].add(cid)
         print(f'[sd-webui-comfyui] registered new ComfyUI client - {cid}')
 
     @classmethod
@@ -79,9 +88,9 @@ class ComfyuiNodeWidgetRequests:
         cls.finished_comfyui_queue.put(response)
 
     @classmethod
-    async def handle_request(cls, cid):
-        await cls.param_events[cid].wait()
-        cls.param_events[cid].clear()
+    async def handle_request(cls, cid, key):
+        await cls.param_events[key][cid].wait()
+        cls.param_events[key][cid].clear()
         return cls.last_params
 
 
@@ -93,21 +102,35 @@ def polling_server_patch(instance, loop):
     @instance.routes.post("/sd-webui-comfyui/webui_polling_server")
     async def webui_polling_server(request):
         response = await request.json()
+        if 'key' not in response:
+            return web.json_response(status=400)
         if 'cid' not in response:
             return web.json_response(status=400)
 
+        key = response['key']
         cid = response['cid']
 
-        if cid not in ComfyuiNodeWidgetRequests.cids:
-            ComfyuiNodeWidgetRequests.add_client(cid)
+        if 'request' in response and response['request'] == 'register_cid':
+            ComfyuiNodeWidgetRequests.add_client(cid, key)
         else:
             if 'error' in response:
-                print(f"[sd-webui-comfyui] Client {cid} encountered an error - \n{response['error']}")
+                print(f"[sd-webui-comfyui] Client {cid}-{key} encountered an error - \n{response['error']}")
             await ComfyuiNodeWidgetRequests.handle_response(response)
 
-        request = await ComfyuiNodeWidgetRequests.handle_request(cid)
+        request = await ComfyuiNodeWidgetRequests.handle_request(cid, key)
         print(f'[sd-webui-comfyui] send request - \n{request}')
         return web.json_response(request)
+
+    @instance.routes.post("/sd-webui-comfyui/set_polling_server_focused_key")
+    async def set_polling_server_focused_key(request):
+        request_json = await request.json()
+        if 'key' not in request_json:
+            return web.json_response(status=400)
+
+        key = request_json['key']
+        ComfyuiNodeWidgetRequests.focused_key = key
+        print(f'[sd-webui-comfyui] set client key - \n{key}')
+        return web.json_response()
 
 
 def add_server__init__patch(cb):

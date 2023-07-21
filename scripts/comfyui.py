@@ -5,7 +5,6 @@ import sys
 from lib_comfyui import webui_callbacks, webui_settings, global_state
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
-from lib_comfyui.queue_tracker import PromptQueueTracker
 
 base_dir = scripts.basedir()
 sys.path.append(base_dir)

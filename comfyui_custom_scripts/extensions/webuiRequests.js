@@ -18,7 +18,8 @@ const request_map = new Map([
             });
         }
 
-        const workflow = JSON.parse(localStorage.getItem("workflow"));
+        // const workflow = JSON.parse(localStorage.getItem("workflow"));
+        const workflow = app.graph.serialize();
 
         // check if the graph contains the node types we want
         // if no node types are specified, run the workflow
@@ -32,8 +33,9 @@ const request_map = new Map([
     }],
 ]);
 
-async function longPolling(clientIdForWebui, startupResponse) {
+async function longPolling(thisClientId, webuiClientKey, startupResponse) {
     let clientResponse = startupResponse;
+
     try {
         while(true) {
             const response = await api.fetchApi("/sd-webui-comfyui/webui_polling_server", {
@@ -43,7 +45,8 @@ async function longPolling(clientIdForWebui, startupResponse) {
                 },
                 cache: "no-store",
                 body: JSON.stringify({
-                    cid: clientIdForWebui,
+                    cid: thisClientId,
+                    key: webuiClientKey,
                     request: clientResponse,
                 }),
             });
@@ -58,49 +61,56 @@ async function longPolling(clientIdForWebui, startupResponse) {
     }
     finally {
         setTimeout(() => {
-            longPolling(clientIdForWebui, clientResponse);
+            longPolling(thisClientId, webuiClientKey, clientResponse);
         }, 100);
     }
 }
 
 
 function onElementDomIdRegistered(callback) {
-    let clientIdForWebui = undefined;
+    let thisClientId = undefined;
+    let webuiClientKey = undefined;
 
     window.addEventListener("message", (event) => {
-        if(event.data.length > 50) return;
-        if(clientIdForWebui) {
-            event.source.postMessage(clientIdForWebui, event.origin);
+        if(event.data.length > 100) return;
+        if(thisClientId) {
+            event.source.postMessage(thisClientId, event.origin);
             return;
         };
-        clientIdForWebui = event.data;
-        console.log(`[sd-webui-comfyui][comfyui] REGISTERED ELEMENT TAG ID - ${event.data}`);
-        event.source.postMessage(clientIdForWebui, event.origin);
-        hijackUiEnv(clientIdForWebui);
+        const messageData = event.data.split('.');
+        thisClientId = messageData[0];
+        webuiClientKey = messageData[1];
+        console.log(`[sd-webui-comfyui][comfyui] REGISTERED ELEMENT TAG ID - ${thisClientId}/${webuiClientKey}`);
+        event.source.postMessage(thisClientId, event.origin);
+        hijackUiEnv(thisClientId);
         const clientResponse = 'register_cid';
         console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
-        callback(event.data, clientResponse);
+        callback(thisClientId, webuiClientKey, clientResponse);
     });
 }
 
-function hijackUiEnv(clientIdForWebui) {
+function hijackUiEnv(thisClientId) {
     const embededWorkflowFrameIds = [
         'comfyui_postprocess_txt2img',
         'comfyui_postprocess_img2img',
     ];
-    if(embededWorkflowFrameIds.includes(clientIdForWebui)) {
+    if(embededWorkflowFrameIds.includes(thisClientId)) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
-        const original_localStorage_setItem = localStorage.setItem;
-        localStorage.setItem = (item, data, ...args) => {
-            if(item !== 'workflow' || clientIdForWebui === 'comfyui_general_tab') {
-                return original_localStorage_setItem(item, data, ...args);
-            }
-            return;
-        }
-        fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
+        hijackLocalStorage(thisClientId);
+        setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
             .then(response => response.json())
-            .then(data => app.loadGraphData(data));
+            .then(data => app.loadGraphData(data)), 500);
+    }
+}
+
+function hijackLocalStorage(thisClientId) {
+    const original_localStorage_setItem = localStorage.setItem;
+    localStorage.setItem = (item, data, ...args) => {
+        if(item !== 'workflow' || thisClientId === 'comfyui_general_tab') {
+            return original_localStorage_setItem(item, data, ...args);
+        }
+        return;
     }
 }
 

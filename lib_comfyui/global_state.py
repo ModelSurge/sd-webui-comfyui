@@ -15,7 +15,10 @@ class GlobalState(ModuleType):
     @ipc.confine_to('webui')
     @staticmethod
     def getattr(item):
-        return GlobalState.__state[item]
+        try:
+            return GlobalState.__state[item]
+        except KeyError:
+            raise AttributeError
 
     @ipc.confine_to('webui')
     @staticmethod

@@ -1,15 +1,16 @@
 const POLLING_TIMEOUT = 500;
+const CLIENT_KEY = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+const FRAME_IDS = [
+    `comfyui_general_tab`,
+    `comfyui_postprocess_txt2img`,
+    `comfyui_postprocess_img2img`,
+];
+
+let comfyuiUrl = undefined;
 
 document.addEventListener("DOMContentLoaded", (e) => {
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
-
-
-const iframeIds = [
-    'comfyui_general_tab',
-    'comfyui_postprocess_txt2img',
-    'comfyui_postprocess_img2img'
-];
 
 
 function onComfyuiTabLoaded(callback) {
@@ -32,7 +33,7 @@ function setupComfyuiTabEvents() {
 
     updateComfyuiTabHeight();
 
-    iframeIds.forEach(id => forceFeedIdToIFrame(document.querySelector(`#${id}`)));
+    FRAME_IDS.forEach(id => forceFeedIdToIFrame(document.querySelector(`#${id}`)));
 }
 
 function setupReloadOnErrorEvent() {
@@ -92,7 +93,7 @@ function getComfyuiContainer() {
 }
 
 function getComfyuiIFrameElement() {
-    return document.getElementById("comfyui_general_tab") ?? null;
+    return document.querySelector('comfyui_general_tab') ?? null;
 }
 
 function getFooter() {
@@ -110,15 +111,29 @@ function forceFeedIdToIFrame(frameEl) {
     window.addEventListener('message', (event) => {
         if(messageToReceive !== event.data) return;
         console.log(`[sd-webui-comfyui][webui] hs - ${event.data}`);
+        comfyuiUrl = event.origin;
         received = true;
+
     });
 
     const feed = () => {
         if(received) return;
         const targetOrigin = frameEl.src;
-        const message = frameEl.getAttribute('id');
+        const message = `${frameEl.getAttribute('id')}.${CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);
         setTimeout(() => { feed(); }, 100);
     };
     feed();
 }
+
+/*idk.addEventListener('ikd', () => {
+    const endpoint = "/sd-webui-comfyui/set_polling_server_focused_key";
+    const url = comfyuiUrl + endpoint;
+    fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        cache: "no-store",
+        body: JSON.stringify({key: CLIENT_KEY}),
+    })
+    .then(response => console.log(`[sd-webui-comfyui][webui] sent client key - ${CLIENT_KEY}`));
+});*/

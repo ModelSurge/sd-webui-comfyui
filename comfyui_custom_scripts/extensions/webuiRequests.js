@@ -3,30 +3,9 @@ import { api } from "/scripts/api.js";
 
 const request_map = new Map([
     ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
-        /*function graphContainsPreciselyTheseNodeTypes(workflow, nodeTypes) {
-            const workflowTypes = workflow.nodes.map(node => node.type);
-            return nodeTypes.every(nodeType => {
-                const amountInWorkflow = workflowTypes.reduce((accumulator, currentValue) => {
-                    if (currentValue === nodeType.type) {
-                        return accumulator + 1;
-                    }
-                    else {
-                        return accumulator;
-                    }
-                }, 0);
-                return amountInWorkflow == nodeType.count
-            });
-        }*/
-
-        // const workflow = JSON.parse(localStorage.getItem("workflow"));
         const workflow = app.graph.serialize();
-
-        // check if the graph contains the node types we want
-        // if no node types are specified, run the workflow
-        //if(!json.requiredNodeTypes || graphContainsPreciselyTheseNodeTypes(workflow, json.requiredNodeTypes)) {
-            await app.queuePrompt(json.queueFront ? -1 : 0, 1);
-            return 'queued_prompt_comfyui';
-        //}
+        await app.queuePrompt(json.queueFront ? -1 : 0, 1);
+        return 'queued_prompt_comfyui';
     }],
     ['/sd-webui-comfyui/send_workflow_to_webui', async (json) => {
         return localStorage.getItem("workflow");

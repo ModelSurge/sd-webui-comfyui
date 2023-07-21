@@ -84,7 +84,7 @@ class ComfyuiNodeWidgetRequests:
         if cid in cls.cids[key]:
             return
 
-        # REMOVE THIS OMG
+        # REMOVE THIS AT SOME POINT
         ComfyuiNodeWidgetRequests.focused_key = key
 
         cls.param_events[key][cid] = asyncio.Event()

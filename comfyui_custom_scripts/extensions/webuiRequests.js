@@ -88,10 +88,10 @@ function hijackLocalStorage(thisClientId) {
     const original_localStorage_setItem = localStorage.setItem;
     localStorage.setItem = (item, data, ...args) => {
         if(item === 'workflow') {
-            return original_localStorage_setItem(item, data, ...args);
+            return;
         }
-        return;
-    }
+        return original_localStorage_setItem(item, data, ...args);
+    };
 }
 
 onElementDomIdRegistered(longPolling);

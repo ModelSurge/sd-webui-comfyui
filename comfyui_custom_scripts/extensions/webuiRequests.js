@@ -93,7 +93,7 @@ function hijackUiEnv(thisClientId) {
 function hijackLocalStorage(thisClientId, embededWorkflowFrameIds) {
     const original_localStorage_setItem = localStorage.setItem;
     localStorage.setItem = (item, data, ...args) => {
-        if(item === 'workflow' && embededWorkflowFrameIds.includes(thisClientId)) {
+        if(item === 'workflow' && ! embededWorkflowFrameIds.includes(thisClientId)) {
             return original_localStorage_setItem(item, data, ...args);
         }
         return;

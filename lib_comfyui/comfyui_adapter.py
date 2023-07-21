@@ -1,3 +1,4 @@
+import atexit
 import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings, ipc, torch_utils, webui_proxies
@@ -14,6 +15,7 @@ def start():
         return
 
     ipc.start_callback_listeners()
+    atexit.register(ipc.stop_callback_listeners)
     start_comfyui_process(install_location)
 
 
@@ -35,6 +37,7 @@ def start_comfyui_process(install_location):
 def stop():
     stop_comfyui_process()
     ipc.stop_callback_listeners()
+    atexit.unregister(ipc.stop_callback_listeners)
 
 
 def stop_comfyui_process():

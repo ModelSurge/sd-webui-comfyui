@@ -62,16 +62,22 @@ class ComfyuiNodeWidgetRequests:
     @classmethod
     def _start_listener(cls):
         def request_listener():
-            nonlocal request_thread
             while request_thread.is_running():
                 try:
-                    cls.last_params = cls.start_comfyui_queue.get(timeout=1)
+                    cls.last_params = cls.start_comfyui_queue.get_nowait()
                 except queue.Empty:
                     continue
                 key = ComfyuiNodeWidgetRequests.focused_key
                 cls.loop.call_soon_threadsafe(cls.param_events[key][cls.last_params['workflowType']].set)
 
-        request_thread = StoppableThread(target=request_listener)
+        def graceful_exit():
+            nonlocal request_thread
+            try:
+                request_listener()
+            except OSError:
+                pass
+
+        request_thread = StoppableThread(target=graceful_exit)
         request_thread.start()
         atexit.register(request_thread.join)
 

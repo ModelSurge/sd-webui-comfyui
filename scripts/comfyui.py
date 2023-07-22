@@ -5,9 +5,13 @@ from lib_comfyui import webui_callbacks, webui_settings, global_state
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
 from modules import shared
+from modules.images import save_image
 
 
 class ComfyUIScript(scripts.Script):
+    def __init__(self):
+        self.outpath_samples = ''
+
     def get_xxx2img_str(self):
         return "img2img" if self.is_img2img else "txt2img"
 
@@ -36,6 +40,12 @@ class ComfyUIScript(scripts.Script):
     def show(self, is_img2img):
         return scripts.AlwaysVisible
 
+    def process(self, p, *args):
+        if not getattr(shared.opts, 'comfyui_enabled', True):
+            return
+
+        self.outpath_samples = p.outpath_samples
+
     def postprocess(self, p, res, queue_front, output_node_label, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
@@ -44,6 +54,8 @@ class ComfyUIScript(scripts.Script):
         results = res.images[:res.index_of_first_image]
         initial_amount_of_images = len(images)
         for i in range(p.n_iter):
+            if getattr(shared.opts, 'interrupted', False):
+                return
             range_start = i*p.batch_size
             range_end = (i+1)*p.batch_size
             images_batch = images[range_start:range_end]
@@ -58,11 +70,21 @@ class ComfyUIScript(scripts.Script):
             if batch_results is None or 'error' in batch_results:
                 continue
 
+            amount_of_images_per_image = len(batch_results)
+            for j, image in enumerate(images_batch):
+                for k in range(amount_of_images_per_image):
+                    batch_results[j*amount_of_images_per_image + k].info = images_batch[j].info
+
             results.extend(batch_results)
 
         batch_count_multiplier = (len(results) - res.index_of_first_image) // initial_amount_of_images
         p.n_iter = p.n_iter * batch_count_multiplier
         res.images = results
+
+        self.save_image(results)
+
+    def save_image(self, results):
+        [save_image(image=image, path=self.outpath_samples, basename='') for image in results]
 
 
 webui_callbacks.register_callbacks()

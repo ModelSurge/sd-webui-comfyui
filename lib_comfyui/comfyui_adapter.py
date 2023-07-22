@@ -3,6 +3,7 @@ import os
 from torch import multiprocessing
 from lib_comfyui import async_comfyui_loader, webui_settings, webui_paths, ipc, torch_utils, webui_proxies
 from lib_comfyui.comfyui_context import ComfyuiContext
+from modules import shared
 
 
 comfyui_process = None
@@ -12,6 +13,9 @@ multiprocessing_spawn = multiprocessing.get_context('spawn')
 def start():
     install_location = webui_settings.get_install_location()
     if not os.path.exists(install_location):
+        return
+
+    if not getattr(shared.opts, 'comfyui_enabled', True):
         return
 
     ipc.start_callback_listeners()

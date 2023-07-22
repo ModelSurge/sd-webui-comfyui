@@ -51,7 +51,7 @@ class ComfyuiNodeWidgetRequests:
 
         PromptQueueTracker.wait_until_done()
 
-        results = getattr(global_state, output_key, None)
+        results = getattr(global_state, output_key, [])
 
         return results
 

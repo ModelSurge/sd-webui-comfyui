@@ -54,7 +54,7 @@ class ComfyUIScript(scripts.Script):
         results = res.images[:res.index_of_first_image]
         initial_amount_of_images = len(images)
         for i in range(p.n_iter):
-            if getattr(shared.opts, 'interrupted', False):
+            if getattr(shared.state, 'interrupted', False):
                 return
             range_start = i*p.batch_size
             range_end = (i+1)*p.batch_size

@@ -2,7 +2,6 @@ import os
 from lib_comfyui import ipc
 from lib_comfyui.webui_settings import opts
 from torchvision.transforms.functional import to_pil_image
-from modules.paths import data_path
 
 
 class WebuiSaveImage:
@@ -22,6 +21,7 @@ class WebuiSaveImage:
     OUTPUT_NODE = True
 
     def save_image(self, location, images):
+        from modules.paths import data_path
         if 'txt2img' in location:
             output_dir = opts.outdir_samples or opts.outdir_txt2img_samples if 'images' in location else opts.outdir_grids or opts.outdir_txt2img_grids
         elif 'img2img' in location:

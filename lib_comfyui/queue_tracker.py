@@ -1,7 +1,6 @@
 import functools
 import multiprocessing
-import queue
-from threading import Thread
+import contextlib
 
 from lib_comfyui import ipc
 
@@ -25,9 +24,8 @@ class PromptQueueTracker:
     @ipc.confine_to('comfyui')
     @staticmethod
     def wait_until_done():
-        try:
-            PromptQueueTracker.put_event.wait(timeout=3)
-        except queue.Empty:
+        was_put = PromptQueueTracker.put_event.wait(timeout=3)
+        if not was_put:
             PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
             return
 
@@ -59,7 +57,8 @@ class PromptQueueTracker:
                 if abs(item[0]) == PromptQueueTracker.tracked_id:
                     PromptQueueTracker.put_event.set()
 
-            return original_put(item, *args, **kwargs)
+                with AlreadyInUseMutex(prompt_queue):
+                    return original_put(item, *args, **kwargs)
         
         prompt_queue.put = functools.partial(patched_put, original_put=prompt_queue.put)
 
@@ -70,7 +69,8 @@ class PromptQueueTracker:
                 if abs(v[0]) == PromptQueueTracker.tracked_id:
                     PromptQueueTracker.done_event.set()
 
-            return original_task_done(item_id, output, *args, **kwargs)
+                with AlreadyInUseMutex(prompt_queue):
+                    return original_task_done(item_id, output, *args, **kwargs)
 
         prompt_queue.task_done = functools.partial(patched_task_done, original_task_done=prompt_queue.task_done)
 
@@ -85,7 +85,8 @@ class PromptQueueTracker:
                 if should_release_webui:
                     PromptQueueTracker.done_event.set()
 
-            return original_wipe_queue(*args, **kwargs)
+                with AlreadyInUseMutex(prompt_queue):
+                    return original_wipe_queue(*args, **kwargs)
 
         prompt_queue.wipe_queue = functools.partial(patched_wipe_queue, original_wipe_queue=prompt_queue.wipe_queue)
 
@@ -100,6 +101,19 @@ class PromptQueueTracker:
             return original_delete_queue_item(patched_function, *args, **kwargs)
 
         prompt_queue.delete_queue_item = functools.partial(patched_delete_queue_item, original_delete_queue_item=prompt_queue.delete_queue_item)
+
+
+class AlreadyInUseMutex:
+    def __init__(self, prompt_queue):
+        self.prompt_queue = prompt_queue
+        self.original_mutex = prompt_queue.mutex
+
+    def __enter__(self):
+        self.prompt_queue.mutex = contextlib.nullcontext()
+        return self.original_mutex
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.prompt_queue.mutex = self.original_mutex
 
 
 def add_queue__init__patch(callback):

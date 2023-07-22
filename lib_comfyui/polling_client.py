@@ -29,9 +29,16 @@ class ComfyuiNodeWidgetRequests:
     @staticmethod
     def start_workflow_sync(batch, workflow_type, is_img2img, required_node_types, queue_front):
         xxx2img = ("img2img" if is_img2img else "txt2img")
-        setattr(global_state, f'{xxx2img}_{workflow_type}_input_images', batch)
+        output_key = f'{xxx2img}_{workflow_type}_output_images'
+        input_key = f'{xxx2img}_{workflow_type}_input_images'
+        setattr(global_state, input_key, batch)
         setattr(global_state, f'tab_name', xxx2img)
-        PromptQueueTracker.update_tracked_id()
+        if output_key in global_state:
+            delattr(global_state, output_key)
+
+        PromptQueueTracker.setup_tracker_id()
+
+        # unsafe queue tracking
         response = ComfyuiNodeWidgetRequests.send({
             'request': '/sd-webui-comfyui/webui_request_queue_prompt',
             'workflowType': f'comfyui_{workflow_type}_{xxx2img}',
@@ -42,14 +49,9 @@ class ComfyuiNodeWidgetRequests:
         if 'error' in response:
             return response
 
-        # unsafe queue tracking
-        PromptQueueTracker.wait_for_last_put()
+        PromptQueueTracker.wait_until_done()
 
-        output_key = f'{xxx2img}_{workflow_type}_output_images'
         results = getattr(global_state, output_key, None)
-
-        if output_key in global_state:
-            delattr(global_state, output_key)
 
         return results
 

@@ -1,22 +1,40 @@
 import functools
 import multiprocessing
+import queue
+from threading import Thread
+
 from lib_comfyui import ipc
 
 
 class PromptQueueTracker:
     done_event = multiprocessing.Event()
+    put_event = multiprocessing.Event()
     tracked_id = None
+    original_id = None
     queue_instance = None
     server_instance = None
 
     @ipc.confine_to('comfyui')
     @staticmethod
-    def wait_for_last_put():
+    def setup_tracker_id():
+        PromptQueueTracker.original_id = PromptQueueTracker.tracked_id
+        PromptQueueTracker.tracked_id = PromptQueueTracker.server_instance.number
+        PromptQueueTracker.put_event.clear()
+        PromptQueueTracker.done_event.clear()
+
+    @ipc.confine_to('comfyui')
+    @staticmethod
+    def wait_until_done():
+        try:
+            PromptQueueTracker.put_event.wait(timeout=3)
+        except queue.Empty:
+            PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
+            return
+
         if not PromptQueueTracker.tracked_id_present():
             return
 
         PromptQueueTracker.done_event.wait()
-        PromptQueueTracker.done_event.clear()
 
     @ipc.confine_to('comfyui')
     @staticmethod
@@ -30,17 +48,20 @@ class PromptQueueTracker:
                     return True
             return False
 
-
-    @ipc.confine_to('comfyui')
-    @staticmethod
-    def update_tracked_id():
-        PromptQueueTracker.tracked_id = PromptQueueTracker.server_instance.number
-
     @staticmethod
     def patched__init__(self, server_instance):
         prompt_queue = self
         PromptQueueTracker.server_instance = server_instance
         PromptQueueTracker.queue_instance = self
+
+        def patched_put(item, *args, original_put, **kwargs):
+            with prompt_queue.mutex:
+                if abs(item[0]) == PromptQueueTracker.tracked_id:
+                    PromptQueueTracker.put_event.set()
+
+            return original_put(item, *args, **kwargs)
+        
+        prompt_queue.put = functools.partial(patched_put, original_put=prompt_queue.put)
 
         # task_done
         def patched_task_done(item_id, output, *args, original_task_done, **kwargs):

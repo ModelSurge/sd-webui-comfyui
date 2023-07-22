@@ -1,6 +1,7 @@
 import importlib
 import sys
 from lib_comfyui import parallel_utils
+import platform
 
 
 def confine_to(process_id):
@@ -10,6 +11,8 @@ def confine_to(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
+                if is_wsl():
+                    raise_wsl_not_supported()
                 return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
 
         return wrapper
@@ -49,10 +52,22 @@ current_process_queues = {
 
 
 def start_callback_listeners():
+    if is_wsl() and current_process_id == 'comfyui':
+        raise_wsl_not_supported()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
 
 
 def stop_callback_listeners():
+    if is_wsl() and current_process_id == 'comfyui':
+        raise_wsl_not_supported()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()
+
+
+def is_wsl():
+    return 'wsl' in platform.release().lower()
+
+
+def raise_wsl_not_supported():
+    raise NotImplemented('WSL is not yet supported for integrated workflows of ComfyUI in the Webui... sorry!')

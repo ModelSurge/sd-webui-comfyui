@@ -84,7 +84,7 @@ class ComfyUIScript(scripts.Script):
         self.save_image(results)
 
     def save_image(self, results):
-        [save_image(image=image, path=self.outpath_samples, basename='') for image in results]
+        [save_image(image=image, path=self.outpath_samples, basename='', info=image.info.get('parameters', '')) for image in results]
 
 
 webui_callbacks.register_callbacks()

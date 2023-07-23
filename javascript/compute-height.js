@@ -36,15 +36,17 @@ function setupComfyuiTabEvents() {
 
     updateComfyuiTabHeight();
 
-    FRAME_IDS.forEach(id => forceFeedIdToIFrame(document.querySelector(`#${id}`)));
+    FRAME_IDS.forEach(id => forceFeedIdToIFrame(id));
 }
 
 function setupReloadOnErrorEvent() {
-    const comfyui_document = getComfyuiContainer();
-    comfyui_document.addEventListener("error", () => {
-        setTimeout(() => {
-            reloadObjectElement(comfyui_document);
-        }, POLLING_TIMEOUT);
+    FRAME_IDS.forEach(id => {
+        const comfyui_frame = document.querySelector(`#${id}`);
+        comfyui_frame.addEventListener("error", () => {
+            setTimeout(() => {
+                reloadFrameElement(comfyui_frame);
+            }, POLLING_TIMEOUT);
+        });
     });
 }
 
@@ -103,13 +105,13 @@ function getFooter() {
     return document.querySelector('#footer') ?? null;
 }
 
-function reloadObjectElement(objectElement) {
-    objectElement.src = objectElement.src;
+function reloadFrameElement(iframeElement) {
+    iframeElement.src = iframeElement.src;
 }
 
-function forceFeedIdToIFrame(frameEl) {
+function forceFeedIdToIFrame(frameId) {
     let received = false;
-    let messageToReceive = frameEl.getAttribute('id');
+    let messageToReceive = frameId;
 
     window.addEventListener('message', (event) => {
         if(messageToReceive !== event.data) return;
@@ -120,6 +122,7 @@ function forceFeedIdToIFrame(frameEl) {
 
     const feed = () => {
         if(received) return;
+        const frameEl = document.querySelector(`#${frameId}`);
         const targetOrigin = frameEl.src;
         const message = `${frameEl.getAttribute('id')}.${CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);

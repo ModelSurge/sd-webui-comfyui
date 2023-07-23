@@ -274,7 +274,8 @@ class WebuiVaeProxy:
     def encode(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiVaeProxy.sd_vae_encode(*args, **kwargs), device=self.device)
+        res = torch_utils.deep_to(WebuiVaeProxy.sd_vae_encode(*args, **kwargs), device=self.device)
+        return DistributionProxy(res)
 
     @ipc.confine_to('webui')
     @staticmethod
@@ -327,6 +328,14 @@ class WebuiVaeProxy:
         res = getattr(shared.sd_model.first_stage_model, item)
         res = torch_utils.deep_to(res, 'cpu')
         return res
+
+
+class DistributionProxy:
+    def __init__(self, sample):
+        self.sample_proxy = sample
+
+    def sample(self):
+        return self.sample_proxy
 
 
 @ipc.confine_to('webui')

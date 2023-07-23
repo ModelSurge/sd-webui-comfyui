@@ -1,6 +1,6 @@
 # sd-webui-comfyui
 ## Overview
-sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that embeds [ComfyUI](https://github.com/comfyanonymous/ComfyUI) in its own tab. This allows to create ComfyUI nodes that interact directly with some parts of the webui's normal pipeline.
+sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that embeds [ComfyUI](https://github.com/comfyanonymous/ComfyUI) in the workflow of the webui. This allows to create ComfyUI nodes that interact directly with some parts of the webui's normal pipeline.
 
 ![front-page-gif](/resources/front-page.gif)
 

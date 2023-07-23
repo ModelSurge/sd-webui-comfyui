@@ -6,12 +6,7 @@ from lib_comfyui.webui_proxies import (
     WebuiVaeWrapper,
     WebuiVaeProxy,
 )
-from lib_comfyui import webui_proxies
-import platform
-
-
-def is_wsl():
-    return 'wsl' in platform.release().lower()
+from lib_comfyui import webui_proxies, platform_utils
 
 
 class WebuiCheckpointLoader:
@@ -28,7 +23,7 @@ class WebuiCheckpointLoader:
     CATEGORY = "loaders"
 
     def load_checkpoint(self, void):
-        if is_wsl():
+        if platform_utils.is_unsupported_platform():
             raise NotImplemented('WSL is not yet supported for integrated workflows of ComfyUI in the Webui... sorry!')
         config = webui_proxies.get_comfy_model_config()
         webui_proxies.raise_on_unsupported_model_type(config)

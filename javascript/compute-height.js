@@ -1,8 +1,20 @@
 const POLLING_TIMEOUT = 500;
 
+function uuidv4() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+}
+
+const CLIENT_KEY = uuidv4();
+const FRAME_IDS = [
+    'comfyui_general_tab',
+    'comfyui_postprocess_txt2img',
+    'comfyui_postprocess_img2img',
+];
+
 document.addEventListener("DOMContentLoaded", (e) => {
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
+
 
 function onComfyuiTabLoaded(callback) {
     const comfyui_document = getComfyuiContainer();
@@ -23,14 +35,18 @@ function setupComfyuiTabEvents() {
     setupToggleFooterEvent();
 
     updateComfyuiTabHeight();
+
+    FRAME_IDS.forEach(id => forceFeedIdToIFrame(id));
 }
 
 function setupReloadOnErrorEvent() {
-    const comfyui_document = getComfyuiContainer();
-    comfyui_document.addEventListener("error", () => {
-        setTimeout(() => {
-            reloadObjectElement(comfyui_document);
-        }, POLLING_TIMEOUT);
+    FRAME_IDS.forEach(id => {
+        const comfyui_frame = document.querySelector(`#${id}`);
+        comfyui_frame.addEventListener("error", () => {
+            setTimeout(() => {
+                reloadFrameElement(comfyui_frame);
+            }, POLLING_TIMEOUT);
+        });
     });
 }
 
@@ -81,10 +97,36 @@ function getComfyuiContainer() {
     return document.getElementById("comfyui_webui_container") ?? null;
 }
 
+function getComfyuiIFrameElement() {
+    return document.querySelector('comfyui_general_tab') ?? null;
+}
+
 function getFooter() {
     return document.querySelector('#footer') ?? null;
 }
 
-function reloadObjectElement(objectElement) {
-    objectElement.data = objectElement.data;
+function reloadFrameElement(iframeElement) {
+    iframeElement.src = iframeElement.src;
+}
+
+function forceFeedIdToIFrame(frameId) {
+    let received = false;
+    let messageToReceive = frameId;
+
+    window.addEventListener('message', (event) => {
+        if(messageToReceive !== event.data) return;
+        console.log(`[sd-webui-comfyui][webui] hs - ${event.data}`);
+        received = true;
+
+    });
+
+    const feed = () => {
+        if(received) return;
+        const frameEl = document.querySelector(`#${frameId}`);
+        const targetOrigin = frameEl.src;
+        const message = `${frameEl.getAttribute('id')}.${CLIENT_KEY}`;
+        frameEl.contentWindow.postMessage(message, targetOrigin);
+        setTimeout(() => { feed(); }, 100);
+    };
+    feed();
 }

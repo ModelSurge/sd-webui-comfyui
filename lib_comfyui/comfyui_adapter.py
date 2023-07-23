@@ -1,7 +1,9 @@
-import sys
+import atexit
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, ipc, torch_utils, webui_proxies
+from lib_comfyui import async_comfyui_loader, webui_settings, webui_paths, ipc, torch_utils, webui_proxies
+from lib_comfyui.comfyui_context import ComfyuiContext
+from modules import shared
 
 
 comfyui_process = None
@@ -13,33 +15,34 @@ def start():
     if not os.path.exists(install_location):
         return
 
+    if not getattr(shared.opts, 'comfyui_enabled', True):
+        return
+
     ipc.start_callback_listeners()
+    atexit.register(ipc.stop_callback_listeners)
     start_comfyui_process(install_location)
 
 
 def start_comfyui_process(install_location):
     global comfyui_process
-    original_sys_path = list(sys.path)
-    sys_path_to_add = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    try:
-        sys.path.insert(0, sys_path_to_add)
+
+    with ComfyuiContext():
         comfyui_process = multiprocessing_spawn.Process(
             target=async_comfyui_loader.main,
             args=(
                 install_location,
-                ipc.get_current_process_queues()
+                webui_paths.get_folder_paths(),
+                {**ipc.get_current_process_queues(), **ipc.current_process_queues}
             ),
             daemon=True,
         )
         comfyui_process.start()
-    finally:
-        sys.path.clear()
-        sys.path.extend(original_sys_path)
 
 
 def stop():
     stop_comfyui_process()
     ipc.stop_callback_listeners()
+    atexit.unregister(ipc.stop_callback_listeners)
 
 
 def stop_comfyui_process():

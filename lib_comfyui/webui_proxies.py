@@ -5,7 +5,6 @@ import yaml
 import textwrap
 import torch
 from lib_comfyui import webui_settings, ipc, torch_utils
-from modules import shared, devices, sd_models, sd_models_config
 
 
 class WebuiModelPatcher:
@@ -66,6 +65,11 @@ class WebuiModelProxy:
         return get_comfy_model_config()
 
     @property
+    def model_type(self):
+        import comfy
+        return comfy.model_base.ModelType.EPS
+
+    @property
     def latent_format(self):
         return get_comfy_model_config().latent_format
 
@@ -98,6 +102,7 @@ class WebuiModelProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_model_apply(*args, **kwargs):
+        from modules import shared, devices
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
@@ -122,6 +127,7 @@ class WebuiModelProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_model_getattr(item):
+        from modules import shared
         res = getattr(shared.sd_model, item)
         res = torch_utils.deep_to(res, 'cpu')
         return res
@@ -155,6 +161,7 @@ class WebuiClipWrapper:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_tokenize_with_weights(text, return_word_ids=False):
+        from modules import shared
         chunks, tokens_count, *_ = shared.sd_model.cond_stage_model.tokenize_line(text)
         weighted_tokens = [list(zip(chunk.tokens, chunk.multipliers)) for chunk in chunks]
         clip_max_len = shared.sd_model.cond_stage_model.wrapped.max_length
@@ -190,6 +197,7 @@ class WebuiClipProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_encode_token_weights(token_weight_pairs_list):
+        from modules import shared
         tokens = [
             [pair[0] for pair in token_weight_pairs]
             for token_weight_pairs in token_weight_pairs_list
@@ -228,6 +236,7 @@ class WebuiClipProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_clip_getattr(item):
+        from modules import shared
         res = getattr(shared.sd_model.cond_stage_model.wrapped.transformer, item)
         res = torch_utils.deep_to(res, 'cpu')
         return res
@@ -270,6 +279,7 @@ class WebuiVaeProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_vae_encode(*args, **kwargs):
+        from modules import shared, devices
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
@@ -285,6 +295,7 @@ class WebuiVaeProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_vae_decode(*args, **kwargs):
+        from modules import shared, devices
         args = torch_utils.deep_to(args, shared.sd_model.device)
         kwargs = torch_utils.deep_to(kwargs, shared.sd_model.device)
         with devices.autocast(), torch.no_grad():
@@ -312,6 +323,7 @@ class WebuiVaeProxy:
     @ipc.confine_to('webui')
     @staticmethod
     def sd_vae_getattr(item):
+        from modules import shared
         res = getattr(shared.sd_model.first_stage_model, item)
         res = torch_utils.deep_to(res, 'cpu')
         return res
@@ -347,6 +359,7 @@ def get_comfy_model_config():
 
 @ipc.confine_to('webui')
 def sd_model_get_config():
+    from modules import shared, sd_models, sd_models_config
     return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
 
 

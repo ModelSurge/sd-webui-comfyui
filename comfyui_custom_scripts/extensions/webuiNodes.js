@@ -21,7 +21,6 @@ function createVoidWidget(node, name) {
     return widget;
 }
 
-
 const ext = {
     name: "sd-webui-comfyui",
     async getCustomWidgets(app) {

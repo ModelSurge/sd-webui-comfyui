@@ -1,7 +1,5 @@
 import asyncio
-import atexit
 import multiprocessing
-import queue
 
 from lib_comfyui.parallel_utils import clear_queue, StoppableThread
 from lib_comfyui import ipc, global_state
@@ -21,9 +19,12 @@ class ComfyuiNodeWidgetRequests:
     @ipc.confine_to('comfyui')
     @staticmethod
     def send(request_params):
-        clear_queue(ComfyuiNodeWidgetRequests.finished_comfyui_queue)
-        ComfyuiNodeWidgetRequests.start_comfyui_queue.put(request_params)
-        return ComfyuiNodeWidgetRequests.finished_comfyui_queue.get()
+        cls = ComfyuiNodeWidgetRequests
+        clear_queue(cls.finished_comfyui_queue)
+        webui_client_id = cls.focused_webui_client_id
+        cls.last_params = request_params
+        cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_params['workflowType']].set)
+        return cls.finished_comfyui_queue.get()
 
     @ipc.confine_to('comfyui')
     @staticmethod
@@ -61,29 +62,6 @@ class ComfyuiNodeWidgetRequests:
             return
 
         cls.loop = loop
-        cls._start_listener()
-
-    @classmethod
-    def _start_listener(cls):
-        def request_listener():
-            while request_thread.is_running():
-                try:
-                    cls.last_params = cls.start_comfyui_queue.get(timeout=1)
-                except queue.Empty:
-                    continue
-                webui_client_id = ComfyuiNodeWidgetRequests.focused_webui_client_id
-                cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_params['workflowType']].set)
-
-        def graceful_exit():
-            nonlocal request_thread
-            try:
-                request_listener()
-            except OSError:
-                pass
-
-        request_thread = StoppableThread(target=graceful_exit)
-        request_thread.start()
-        atexit.register(request_thread.join)
 
     @classmethod
     def add_client(cls, comfyui_iframe_id, webui_client_id):

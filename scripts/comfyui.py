@@ -1,7 +1,7 @@
 import gradio as gr
 
 import modules.scripts as scripts
-from lib_comfyui import webui_callbacks, webui_settings, global_state
+from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
 from modules import shared
@@ -32,9 +32,12 @@ class ComfyUIScript(scripts.Script):
             queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front', value=True)
             output_node_label = gr.Dropdown(label='Workflow type', choices=['postprocess'], value='postprocess')
         with gr.Row():
-            gr.HTML(value=f"""
-                <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_postprocess_{xxx2img}" class="comfyui-embedded-widget" style="width:100%; height:500px;"></iframe>
-            """)
+            if not platform_utils.is_unsupported_platform():
+                gr.HTML(value=f"""
+                    <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_postprocess_{xxx2img}" class="comfyui-embedded-widget" style="width:100%; height:500px;"></iframe>
+                """)
+            else:
+                gr.Label('Your platform does not support this feature yet.')
         return queue_front, output_node_label
 
     def show(self, is_img2img):

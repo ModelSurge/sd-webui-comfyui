@@ -65,6 +65,11 @@ class WebuiModelProxy:
         return get_comfy_model_config()
 
     @property
+    def model_type(self):
+        import comfy
+        return comfy.model_base.ModelType.EPS
+
+    @property
     def latent_format(self):
         return get_comfy_model_config().latent_format
 

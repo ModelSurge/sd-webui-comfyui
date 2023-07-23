@@ -42,5 +42,3 @@ def patch_comfyui():
     custom_extension_injector.register_webui_extensions()
     polling_client.patch_server_routes()
     queue_tracker.patch_prompt_queue()
-
-

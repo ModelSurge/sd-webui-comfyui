@@ -2,6 +2,8 @@ import os
 import sys
 import importlib
 from modules import paths, shared, modelloader
+from modules.images import save_image
+from lib_comfyui import ipc
 
 
 def share_webui_folder_paths(folder_paths: dict):
@@ -80,3 +82,8 @@ def get_controlnet_paths():
         controlnet.global_state.cn_models_dir_old,
         *extra_lora_paths
     ]
+
+
+@ipc.confine_to('webui')
+def webui_save_image(*args, **kwargs):
+    save_image(*args, **kwargs)

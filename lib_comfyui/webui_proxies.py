@@ -45,10 +45,10 @@ class WebuiModelPatcher:
         soft_raise('accessing the webui checkpoint state dict from comfyui is not yet suppported')
         return {}
 
-    def patch_model(self):
+    def patch_model(self, *args, **kwargs):
         return self.model
 
-    def unpatch_model(self):
+    def unpatch_model(self, *args, **kwargs):
         return
 
     def __getattr__(self, item):
@@ -73,20 +73,20 @@ class WebuiModelProxy:
     def latent_format(self):
         return get_comfy_model_config().latent_format
 
-    def process_latent_in(self, latent):
+    def process_latent_in(self, latent, *args, **kwargs):
         return self.latent_format.process_in(latent)
 
-    def process_latent_out(self, latent):
+    def process_latent_out(self, latent, *args, **kwargs):
         return self.latent_format.process_out(latent)
 
-    def to(self, device):
+    def to(self, device, *args, **kwargs):
         assert str(device) == str(self.device), textwrap.dedent(f'''
             cannot move the webui unet to a different device
             comfyui attempted to move it from {self.device} to {device}
         ''')
         return self
 
-    def is_adm(self):
+    def is_adm(self, *args, **kwargs):
         adm_in_channels = get_comfy_model_config().unet_config.get('adm_in_channels', None) or 0
         return adm_in_channels > 0
 
@@ -143,13 +143,13 @@ class WebuiClipWrapper:
         clip_skip = webui_settings.opts.CLIP_stop_at_last_layers
         return -clip_skip if clip_skip > 1 else None
 
-    def clone(self):
+    def clone(self, *args, **kwargs):
         return self
 
     def load_from_state_dict(self, *args, **kwargs):
         return
 
-    def clip_layer(self, layer_idx):
+    def clip_layer(self, layer_idx, *args, **kwargs):
         soft_raise(f'cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}')
         return
 
@@ -182,11 +182,11 @@ class WebuiClipWrapper:
 
 
 class WebuiClipProxy:
-    def clip_layer(self, layer_idx):
+    def clip_layer(self, layer_idx, *args, **kwargs):
         soft_raise(f'cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}')
         return
 
-    def reset_clip_layer(self):
+    def reset_clip_layer(self, *args, **kwargs):
         return
 
     def encode_token_weights(self, *args, **kwargs):
@@ -334,7 +334,7 @@ class DistributionProxy:
     def __init__(self, sample):
         self.sample_proxy = sample
 
-    def sample(self):
+    def sample(self, *args, **kwargs):
         return self.sample_proxy
 
 

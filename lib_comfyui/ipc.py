@@ -11,7 +11,7 @@ def confine_to(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                if is_wsl() and process_id == 'webui':
+                if is_wsl() and current_process_id == 'webui':
                     raise NotImplemented('WSL is not yet supported for integrated workflows of ComfyUI in the Webui... sorry!')
                 return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
 

@@ -85,9 +85,20 @@ function patchSavingMechanism() {
         setTimeout(patchSavingMechanism, POLLING_TIMEOUT);
         return;
     }
+
     app.graph.original_serialize = app.graph.serialize;
     app.graph.patched_serialize = () => JSON.parse(localStorage.getItem('workflow'));
     app.graph.serialize = app.graph.patched_serialize;
+
+    app.original_graphToPrompt = app.graphToPrompt;
+    app.patched_graphToPrompt = () => {
+        app.graph.serialize = app.graph.original_serialize;
+        const result = app.original_graphToPrompt();
+        app.graph.serialize = app.graph.patched_serialize;
+        return result;
+    };
+    app.graphToPrompt = app.patched_graphToPrompt;
+
     const saveButton = document.querySelector('#comfy-save-button');
     saveButton.removeAttribute('id');
     const comfyParent = saveButton.parentElement;

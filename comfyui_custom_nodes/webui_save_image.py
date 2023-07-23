@@ -36,12 +36,11 @@ class WebuiSaveImage:
 
         return []
 
-
-    @ipc.confine_to('webui')
     @staticmethod
     def webui_save_image(*args, **kwargs):
-        from modules.images import save_image
+        from lib_comfyui.webui_paths import save_image
         return save_image(*args, **kwargs)
+
 
 NODE_CLASS_MAPPINGS = {
     "WebuiSaveImage": WebuiSaveImage,

@@ -13,6 +13,9 @@ class GlobalState(ModuleType):
             setattr(self, k, v)
 
     def __getattr__(self, item):
+        if item in ['__file__']:
+            return globals()[item]
+
         return GlobalState.getattr(item)
 
     @ipc.confine_to('webui')

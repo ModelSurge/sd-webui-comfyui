@@ -96,8 +96,8 @@ class WebuiModelProxy:
     def apply_model(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         del kwargs['transformer_options']
-        kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args, **kwargs), device=self.device)
+        #kwargs = torch_utils.deep_to(kwargs, device='cpu')
+        return torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args), device=self.device)
 
     @ipc.confine_to('webui')
     @staticmethod

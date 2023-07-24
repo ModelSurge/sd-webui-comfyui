@@ -1,3 +1,6 @@
+import functools
+from typing import List
+
 import gradio as gr
 
 import modules.scripts as scripts
@@ -5,7 +8,6 @@ from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
 from modules import shared
-from modules.images import save_image
 
 
 class ComfyUIScript(scripts.Script):
@@ -49,45 +51,32 @@ class ComfyUIScript(scripts.Script):
 
         self.outpath_samples = p.outpath_samples
 
-    def postprocess(self, p, res, queue_front, output_node_label, **kwargs):
+    def postprocess_batch_list(self, p, pp, queue_front, output_node_label, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
+        if getattr(shared.state, 'interrupted', False):
+            return
+        if len(pp.images) == 0:
+            return
 
-        images = res.images[res.index_of_first_image:]
-        results = res.images[:res.index_of_first_image]
-        initial_amount_of_images = len(images)
-        for i in range(p.n_iter):
-            if getattr(shared.state, 'interrupted', False):
-                return
-            range_start = i*p.batch_size
-            range_end = (i+1)*p.batch_size
-            images_batch = images[range_start:range_end]
-            batch_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
-                batch=images_batch,
-                workflow_type='postprocess',
-                is_img2img=self.is_img2img,
-                required_node_types=webui_postprocess_output.expected_node_types,
-                queue_front=queue_front,
-            )
+        batch_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
+            batch=pp.images,
+            workflow_type='postprocess',
+            is_img2img=self.is_img2img,
+            required_node_types=webui_postprocess_output.expected_node_types,
+            queue_front=queue_front,
+        )
 
-            if batch_results is None or 'error' in batch_results:
-                continue
+        if batch_results is None or 'error' in batch_results:
+            return
 
-            amount_of_images_per_image = len(batch_results)
-            for j, image in enumerate(images_batch):
-                for k in range(amount_of_images_per_image):
-                    batch_results[j*amount_of_images_per_image + k].info = images_batch[j].info
+        batch_size_factor = len(batch_results) // len(pp.images)
 
-            results.extend(batch_results)
+        for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
+            list_to_scale[0:len(list_to_scale)] = list_to_scale[0:len(list_to_scale)] * batch_size_factor
 
-        batch_count_multiplier = (len(results) - res.index_of_first_image) // initial_amount_of_images
-        p.n_iter = p.n_iter * batch_count_multiplier
-        res.images = results
-
-        self.save_image(results)
-
-    def save_image(self, results):
-        [save_image(image=image, path=self.outpath_samples, basename='', info=image.info.get('parameters', '')) for image in results]
+        pp.images.clear()
+        pp.images.extend(batch_results)
 
 
 webui_callbacks.register_callbacks()

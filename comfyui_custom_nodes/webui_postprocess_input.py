@@ -19,7 +19,7 @@ class WebuiPostprocessInput:
     def fetch_images(self, void):
         tab_name = global_state.tab_name
         key = f'{tab_name}_postprocess_input_images'
-        return torch.stack([to_tensor(img) for img in getattr(global_state, key)]).permute(0, 2, 3, 1),
+        return torch.stack([img for img in getattr(global_state, key)]).permute(0, 2, 3, 1),
 
 
 NODE_CLASS_MAPPINGS = {

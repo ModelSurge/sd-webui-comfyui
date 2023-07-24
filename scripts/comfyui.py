@@ -77,7 +77,7 @@ class ComfyUIScript(scripts.Script):
 original_create_infotext = processing.create_infotext
 
 
-def patched_create_infotext(p, *args, comments=None, iteration=0, position_in_batch=0, **kwargs):
+def patched_create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0):
     n = iteration
     all_prompts = p.all_prompts[:]
     all_seeds = p.all_seeds[:]
@@ -94,7 +94,7 @@ def patched_create_infotext(p, *args, comments=None, iteration=0, position_in_ba
     p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size] = p.negative_prompts
 
     try:
-        return original_create_infotext(p, *args, comments, iteration, position_in_batch, **kwargs)
+        return original_create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=comments, iteration=iteration, position_in_batch=position_in_batch)
     finally:
         # restore p.all_negative_prompts in case extensions changed the size of the batch
         p.all_negative_prompts[n * p.batch_size:n * p.batch_size + len(p.negative_prompts)] = old_negative_prompts

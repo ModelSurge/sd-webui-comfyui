@@ -1,6 +1,3 @@
-import functools
-from typing import List
-
 import gradio as gr
 
 import modules.scripts as scripts

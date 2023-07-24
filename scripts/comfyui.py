@@ -1,7 +1,10 @@
+import gradio as gr
+
+import functools
+
+from modules import processing
 import ast
 import inspect
-
-import gradio as gr
 
 import modules.scripts as scripts
 from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
@@ -66,19 +69,38 @@ class ComfyUIScript(scripts.Script):
 
         if batch_results is None or 'error' in batch_results:
             return
-
-        batch_size_factor = len(batch_results) // len(images)
-
-        if batch_number == 0:
-            lists_to_scale = [p.prompts, p.negative_prompts, p.seeds, p.subseeds,
-                              p.all_prompts, p.all_negative_prompts, p.all_seeds, p.all_subseeds]
-        else:
-            lists_to_scale = [p.prompts, p.negative_prompts, p.seeds, p.subseeds]
-        for list_to_scale in lists_to_scale:
-            list_to_scale[0:len(list_to_scale)] = list_to_scale[0:len(list_to_scale)] * batch_size_factor
             
         images.clear()
         images.extend(batch_results)
+
+
+original_create_infotext = processing.create_infotext
+
+
+def patched_create_infotext(p, *args, comments=None, iteration=0, position_in_batch=0, **kwargs):
+    n = iteration
+    all_prompts = p.all_prompts[:]
+    all_seeds = p.all_seeds[:]
+    all_subseeds = p.all_subseeds[:]
+
+    # apply changes to generation data
+    all_prompts[n * p.batch_size:(n + 1) * p.batch_size] = p.prompts
+    all_seeds[n * p.batch_size:(n + 1) * p.batch_size] = p.seeds
+    all_subseeds[n * p.batch_size:(n + 1) * p.batch_size] = p.subseeds
+
+    # update p.all_negative_prompts in case extensions changed the size of the batch
+    # create_infotext below uses it
+    old_negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+    p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size] = p.negative_prompts
+
+    try:
+        return original_create_infotext(p, *args, comments, iteration, position_in_batch, **kwargs)
+    finally:
+        # restore p.all_negative_prompts in case extensions changed the size of the batch
+        p.all_negative_prompts[n * p.batch_size:n * p.batch_size + len(p.negative_prompts)] = old_negative_prompts
+
+
+processing.create_infotext = patched_create_infotext
 
 
 def highjack_postprocessed_tensor_to_list():
@@ -95,7 +117,10 @@ def highjack_postprocessed_tensor_to_list():
             for inner_for in inner_with.body:
                 if not isinstance(inner_for, ast.If):
                     continue
-                is_postprocess_if = len([exp for exp in inner_for.body if hasattr(exp, 'value') and hasattr(exp.value, 'func') and hasattr(exp.value.func, 'attr') and exp.value.func.attr == 'postprocess_batch']) == 1
+                is_postprocess_if = len([exp for exp in inner_for.body if
+                                         hasattr(exp, 'value') and hasattr(exp.value, 'func') and hasattr(
+                                             exp.value.func,
+                                             'attr') and exp.value.func.attr == 'postprocess_batch']) == 1
                 if not is_postprocess_if:
                     continue
                 if_statement = inner_for

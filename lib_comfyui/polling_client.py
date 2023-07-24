@@ -1,9 +1,11 @@
 import asyncio
 import multiprocessing
+import queue
 
 from lib_comfyui.parallel_utils import clear_queue, StoppableThread
 from lib_comfyui import ipc, global_state
 from lib_comfyui.queue_tracker import PromptQueueTracker
+from lib_comfyui.webui_settings import shared_state
 
 
 # rest is ran on comfyui's server side
@@ -20,11 +22,23 @@ class ComfyuiNodeWidgetRequests:
     @staticmethod
     def send(request_params):
         cls = ComfyuiNodeWidgetRequests
+        if cls.focused_webui_client_id is None:
+            return None
         clear_queue(cls.finished_comfyui_queue)
         webui_client_id = cls.focused_webui_client_id
         cls.last_params = request_params
         cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_params['workflowType']].set)
-        return cls.finished_comfyui_queue.get()
+        
+        keep_waiting = True
+        while keep_waiting:
+            try:
+                result = cls.finished_comfyui_queue.get(timeout=1)
+                keep_waiting = False
+            except queue.Empty:
+                if getattr(shared_state, 'interrupted', False):
+                    return None
+
+        return result
 
     @ipc.confine_to('comfyui')
     @staticmethod
@@ -47,7 +61,7 @@ class ComfyuiNodeWidgetRequests:
             'queueFront': queue_front,
         })
 
-        if 'error' in response:
+        if response is None or 'error' in response:
             return response
 
         PromptQueueTracker.wait_until_done()

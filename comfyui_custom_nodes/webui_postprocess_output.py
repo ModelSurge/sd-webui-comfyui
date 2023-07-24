@@ -1,4 +1,3 @@
-from torchvision.transforms.functional import to_pil_image
 from lib_comfyui import global_state
 
 
@@ -25,9 +24,9 @@ class WebuiPostprocessOutput:
     def fetch_images(self, images):
         tab_name = global_state.tab_name
         key = f'{tab_name}_postprocess_output_images'
-        images_pil = [to_pil_image(img) for img in images.permute(0, 3, 1, 2)]
+        images_list = [img for img in images.permute(0, 3, 1, 2)]
         generated_images = getattr(global_state, key, [])
-        generated_images.extend(images_pil)
+        generated_images.extend(images_list)
         setattr(global_state, key, generated_images)
         return []
 

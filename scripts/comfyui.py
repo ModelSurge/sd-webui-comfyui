@@ -104,13 +104,5 @@ def highjack_postprocessed_tensor_to_list():
     exec(compile(parsed_module, '<string>', 'exec'), processing.__dict__)
 
 
-def get_ast_function(parsed_object, function_name):
-    res = [exp for exp in parsed_object.body if getattr(exp, 'name', None) == function_name]
-    if not res:
-        raise RuntimeError(f'Cannot find function {function_name} in parsed ast')
-
-    return res[0]
-
-
 highjack_postprocessed_tensor_to_list()
 webui_callbacks.register_callbacks()

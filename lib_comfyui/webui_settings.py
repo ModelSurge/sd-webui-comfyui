@@ -65,7 +65,7 @@ class WebuiOptions:
 
 class WebuiSharedState:
     def __getattr__(self, item):
-        return WebuiOptions.shared_state_getattr(item)
+        return WebuiSharedState.shared_state_getattr(item)
 
     @ipc.confine_to('webui')
     @staticmethod

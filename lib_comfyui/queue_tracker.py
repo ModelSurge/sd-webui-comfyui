@@ -3,7 +3,7 @@ import multiprocessing
 import contextlib
 
 from lib_comfyui import ipc
-
+from lib_comfyui.webui_settings import shared_state
 
 class PromptQueueTracker:
     done_event = multiprocessing.Event()
@@ -32,7 +32,13 @@ class PromptQueueTracker:
         if not PromptQueueTracker.tracked_id_present():
             return
 
-        PromptQueueTracker.done_event.wait()
+        while True:
+            has_been_set = PromptQueueTracker.done_event.wait(timeout=1)
+            if not has_been_set:
+                if getattr(shared_state, 'interrupted', False):
+                    return
+            else:
+                return
 
     @ipc.confine_to('comfyui')
     @staticmethod

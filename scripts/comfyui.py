@@ -69,3 +69,6 @@ class ComfyUIScript(scripts.Script):
 
         pp.images.clear()
         pp.images.extend(batch_results)
+
+
+webui_callbacks.register_callbacks()

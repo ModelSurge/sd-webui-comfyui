@@ -105,6 +105,7 @@ def infotext(iteration=0, position_in_batch=0):
 
 def highjack_postprocessed_tensor_to_list():
     from modules import processing
+    processing.original_sd_webui_comfyui_process_images_inner = processing.process_images_inner
     parsed_module = ast.parse(inspect.getsource(processing.process_images_inner))
     parsed_function = parsed_module.body[0]
 

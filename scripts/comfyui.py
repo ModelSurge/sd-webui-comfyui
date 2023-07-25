@@ -1,8 +1,5 @@
 import gradio as gr
 
-import ast
-import inspect
-
 import modules.scripts as scripts
 from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
@@ -46,8 +43,6 @@ class ComfyUIScript(scripts.Script):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
 
-        self.outpath_samples = p.outpath_samples
-
     def postprocess_batch_list(self, p, pp, queue_front, output_node_label, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
@@ -70,7 +65,7 @@ class ComfyUIScript(scripts.Script):
         batch_size_factor = len(batch_results) // len(pp.images)
 
         for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
-            list_to_scale[0:len(list_to_scale)] = list_to_scale[0:len(list_to_scale)] * batch_size_factor
+            list_to_scale[:] = list_to_scale * batch_size_factor
 
         pp.images.clear()
         pp.images.extend(batch_results)

@@ -1,5 +1,4 @@
 import os
-from lib_comfyui import ipc
 from lib_comfyui.webui_settings import opts
 from torchvision.transforms.functional import to_pil_image
 

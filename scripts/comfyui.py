@@ -1,5 +1,8 @@
 import gradio as gr
 
+import ast
+import inspect
+
 import modules.scripts as scripts
 from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
@@ -8,9 +11,6 @@ from modules import shared
 
 
 class ComfyUIScript(scripts.Script):
-    def __init__(self):
-        self.outpath_samples = ''
-
     def get_xxx2img_str(self):
         return "img2img" if self.is_img2img else "txt2img"
 
@@ -74,6 +74,3 @@ class ComfyUIScript(scripts.Script):
 
         pp.images.clear()
         pp.images.extend(batch_results)
-
-
-webui_callbacks.register_callbacks()

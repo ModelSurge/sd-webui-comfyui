@@ -20,11 +20,15 @@ class ComfyuiNodeWidgetRequests:
     @staticmethod
     def send(request_params):
         cls = ComfyuiNodeWidgetRequests
+        if cls.focused_webui_client_id is None:
+            return None
         clear_queue(cls.finished_comfyui_queue)
         webui_client_id = cls.focused_webui_client_id
         cls.last_params = request_params
         cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_params['workflowType']].set)
-        return cls.finished_comfyui_queue.get()
+        result = cls.finished_comfyui_queue.get(timeout=10)
+
+        return result
 
     @ipc.confine_to('comfyui')
     @staticmethod
@@ -47,7 +51,7 @@ class ComfyuiNodeWidgetRequests:
             'queueFront': queue_front,
         })
 
-        if 'error' in response:
+        if response is None or 'error' in response:
             return response
 
         PromptQueueTracker.wait_until_done()

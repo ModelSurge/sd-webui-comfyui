@@ -32,7 +32,10 @@ class PromptQueueTracker:
         if not PromptQueueTracker.tracked_id_present():
             return
 
-        PromptQueueTracker.done_event.wait()
+        while True:
+            has_been_set = PromptQueueTracker.done_event.wait(timeout=1)
+            if has_been_set:
+                return
 
     @ipc.confine_to('comfyui')
     @staticmethod

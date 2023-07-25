@@ -9,6 +9,8 @@ const FRAME_IDS = [
     'comfyui_general_tab',
     'comfyui_postprocess_txt2img',
     'comfyui_postprocess_img2img',
+    'comfyui_preprocess_latent_txt2img',
+    'comfyui_preprocess_latent_img2img',
 ];
 
 document.addEventListener("DOMContentLoaded", (e) => {

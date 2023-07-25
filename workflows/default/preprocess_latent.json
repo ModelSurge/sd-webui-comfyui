@@ -4,7 +4,7 @@
   "nodes": [
     {
       "id": 316,
-      "type": "PostprocessFromWebui",
+      "type": "LatentFromWebui",
       "pos": [
         16,
         229
@@ -18,8 +18,8 @@
       "mode": 0,
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
+          "name": "LATENT",
+          "type": "LATENT",
           "links": [
             575
           ],
@@ -28,7 +28,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "PostprocessFromWebui"
+        "Node name for S&R": "LatentFromWebui"
       },
       "widgets_values": [
         "5358"
@@ -36,7 +36,7 @@
     },
     {
       "id": 317,
-      "type": "PostprocessToWebui",
+      "type": "LatentToWebui",
       "pos": [
         537,
         190
@@ -50,13 +50,13 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
+          "name": "latents",
+          "type": "LATENT",
           "link": 575
         }
       ],
       "properties": {
-        "Node name for S&R": "PostprocessToWebui"
+        "Node name for S&R": "LatentToWebui"
       },
       "widgets_values": [
         "5358"
@@ -70,7 +70,7 @@
       0,
       317,
       0,
-      "IMAGE"
+      "LATENT"
     ]
   ],
   "groups": [],

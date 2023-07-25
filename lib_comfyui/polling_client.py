@@ -1,8 +1,11 @@
 import asyncio
+import json
 import multiprocessing
+import os
+from pathlib import Path
 
 from lib_comfyui.parallel_utils import clear_queue, StoppableThread
-from lib_comfyui import ipc, global_state
+from lib_comfyui import ipc, global_state, comfyui_context, torch_utils
 from lib_comfyui.queue_tracker import PromptQueueTracker
 
 
@@ -34,10 +37,10 @@ class ComfyuiNodeWidgetRequests:
     @staticmethod
     def start_workflow_sync(batch, workflow_type, is_img2img, required_node_types, queue_front):
         xxx2img = ("img2img" if is_img2img else "txt2img")
-        output_key = f'{xxx2img}_{workflow_type}_output_images'
-        input_key = f'{xxx2img}_{workflow_type}_input_images'
+        output_key = f'{xxx2img}_node_outputs'
+        input_key = f'{xxx2img}_node_inputs'
         setattr(global_state, input_key, batch)
-        setattr(global_state, f'tab_name', xxx2img)
+        setattr(global_state, 'tab_name', xxx2img)
         if output_key in global_state:
             delattr(global_state, output_key)
 
@@ -133,6 +136,19 @@ def polling_server_patch(instance, loop):
         print(f'[sd-webui-comfyui] set client webui_client_id - \n{webui_client_id}')
         return web.json_response()
 
+    @instance.routes.get("/sd-webui-comfyui/default_workflow")
+    async def get_default_workflow(request):
+        params = request.rel_url.query
+        client_id = params['client_id']
+
+        default_workflows_path = Path(comfyui_context.get_webui_base_dir()) / 'workflows' / 'default'
+        default_workflows = os.listdir(str(default_workflows_path))
+        for default_workflow in default_workflows:
+            if str(Path(default_workflow).stem) in client_id:
+                with open(str(default_workflows_path / default_workflow)) as f:
+                    return web.json_response(json.loads(f.read()))
+
+        return web.json_response(status=422)
 
 def add_server__init__patch(callback):
     import server

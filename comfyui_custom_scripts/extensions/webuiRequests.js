@@ -76,11 +76,11 @@ function patchUiEnv(thisClientId) {
     if(thisClientId !== 'comfyui_general_tab') {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
-        patchSavingMechanism();
+        patchSavingMechanism(thisClientId);
     }
 }
 
-function patchSavingMechanism() {
+function patchSavingMechanism(thisClientId) {
     if(app.graph === undefined) {
         setTimeout(patchSavingMechanism, POLLING_TIMEOUT);
         return;
@@ -110,11 +110,22 @@ function patchSavingMechanism() {
         saveButton.click();
         app.graph.serialize = app.graph.patched_serialize;
     };
-    setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
-        .then(response => response.json())
-        .then(data => {
-            app.loadGraphData(data);
-        }), POLLING_TIMEOUT);
+
+    loadDefaultGraph(thisClientId);
+}
+
+async function loadDefaultGraph(thisClientId) {
+    const response = await api.fetchApi("/sd-webui-comfyui/default_workflow?" + new URLSearchParams({
+        client_id: thisClientId,
+        bar: 2,
+    }), {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+    app.loadGraphData(await response.json());
 }
 
 onElementDomIdRegistered(longPolling);

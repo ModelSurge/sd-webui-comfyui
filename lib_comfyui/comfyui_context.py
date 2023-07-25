@@ -1,6 +1,14 @@
 import sys
 import modules.scripts as scripts
+from lib_comfyui import ipc
+
+
 base_dir = scripts.basedir()
+
+
+@ipc.confine_to('webui')
+def get_webui_base_dir():
+    return base_dir
 
 
 class ComfyuiContext:

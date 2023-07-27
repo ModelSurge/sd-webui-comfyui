@@ -6,11 +6,11 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 
 ## Features
 - [x] Use ComfyUI directly into the Webui
-- [x] Support for [loading custom nodes from other webui extensions](https://github.com/ModelSurge/sd-webui-comfyui/wiki/Developing-custom-nodes-from-webui-extensions)
+- [x] Support for [loading custom nodes from other Webui extensions](https://github.com/ModelSurge/sd-webui-comfyui/wiki/Developing-custom-nodes-from-webui-extensions)
 - [x] Integration of ComfyUI workflows directly into the Webui's pipeline. 
 - [x] Webui nodes for sharing resources and data, such as the model, the prompt, etc.
 
-For a full overview of all the advantageous features this extension adds to ComfyUI and the Webui, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
+For a full overview of all the advantageous features this extension adds to ComfyUI and to the Webui, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
 
 ## Installation
 1) Go to Extensions > Available

@@ -12,6 +12,9 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 
 For a full overview of all the advantageous features this extension adds to ComfyUI and to the Webui, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
 
+## Supported versions
+We try our best to keep this extension compatible the latest version of ComfyUI at all times, and are currently supporting `V1.5.1` of A1111. 
+
 ## Installation
 1) Go to Extensions > Available
 2) Click the `Load from:` button

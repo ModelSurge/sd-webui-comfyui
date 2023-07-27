@@ -14,7 +14,7 @@ For a full overview of all the advantageous features this extension adds to Comf
 
 ## Supported versions
 - A1111's Webui >= `V1.5.1`
-- ComfyUI == Latest
+- ComfyUI == `Latest`
 
 ## Installation
 1) Go to Extensions > Available

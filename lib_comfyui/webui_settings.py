@@ -41,7 +41,7 @@ def get_port():
 def get_comfyui_client_url():
     loopback_address = '127.0.0.1'
     server_url = get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)
-    client_url = getattr(shared.opts.data, 'comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
+    client_url = shared.opts.data.get('comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
     if client_url == '0.0.0.0':
         print(textwrap.dedent(f"""
             [ComfyUI extension] changing the ComfyUI client address from {client_url} to {loopback_address}

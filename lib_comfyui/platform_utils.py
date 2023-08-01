@@ -1,9 +1,5 @@
 import platform
 
 
-def is_wsl():
+def is_unix():
     return 'wsl' in platform.release().lower()
-
-
-def is_unsupported_platform():
-    return is_wsl()

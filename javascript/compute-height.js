@@ -50,6 +50,14 @@ function setupReloadOnErrorEvent() {
     });
 }
 
+function reloadComfyuiIframes() {
+    FRAME_IDS.forEach(id => {
+        const comfyui_frame = document.querySelector(`#${id}`);
+        reloadFrameElement(comfyui_frame);
+        forceFeedIdToIFrame(id);
+    });
+}
+
 function setupResizeTabEvent() {
     window.addEventListener("resize", updateComfyuiTabHeight);
 }
@@ -106,7 +114,9 @@ function getFooter() {
 }
 
 function reloadFrameElement(iframeElement) {
-    iframeElement.src = iframeElement.src;
+    oldSrc = iframeElement.src;
+    iframeElement.src = '';
+    iframeElement.src = oldSrc;
 }
 
 function forceFeedIdToIFrame(frameId) {
@@ -126,7 +136,7 @@ function forceFeedIdToIFrame(frameId) {
         const targetOrigin = frameEl.src;
         const message = `${frameEl.getAttribute('id')}.${CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);
-        setTimeout(() => { feed(); }, 100);
+        setTimeout(() => feed(), POLLING_TIMEOUT);
     };
-    feed();
+    setTimeout(() => feed(), POLLING_TIMEOUT);
 }

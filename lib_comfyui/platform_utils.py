@@ -2,4 +2,4 @@ import platform
 
 
 def is_unix():
-    return 'wsl' in platform.release().lower()
+    return 'windows' not in platform.system().lower()

@@ -1,3 +1,4 @@
+import builtins
 import sys
 import os
 import runpy
@@ -14,6 +15,8 @@ import atexit
 
 
 def main(comfyui_path, webui_folder_paths, process_queues):
+    original_print = builtins.print
+    builtins.print = lambda *args, **kwargs: original_print('[ComfyUI]', *args, **kwargs)
     process_queue = process_queues['comfyui']
     ipc.current_process_callback_listeners = {
         'comfyui': parallel_utils.CallbackWatcher(process_queue)

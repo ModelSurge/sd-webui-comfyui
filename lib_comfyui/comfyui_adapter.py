@@ -1,7 +1,7 @@
 import atexit
 import os
 from torch import multiprocessing
-from lib_comfyui import async_comfyui_loader, webui_settings, webui_paths, ipc, torch_utils, webui_proxies
+from lib_comfyui import comfyui_pre_main, webui_settings, webui_paths, ipc, torch_utils, webui_proxies
 from lib_comfyui.comfyui_context import ComfyuiContext
 from modules import shared
 
@@ -28,7 +28,7 @@ def start_comfyui_process(install_location):
 
     with ComfyuiContext():
         comfyui_process = multiprocessing_spawn.Process(
-            target=async_comfyui_loader.main,
+            target=comfyui_pre_main.main,
             args=(
                 install_location,
                 webui_paths.get_folder_paths(),

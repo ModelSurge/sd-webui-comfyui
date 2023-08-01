@@ -10,8 +10,6 @@ def confine_to(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                if platform_utils.is_unsupported_platform():
-                    raise NotImplemented('WSL is not yet supported for integrated workflows of ComfyUI in the Webui... sorry!')
                 return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
 
         return wrapper
@@ -51,16 +49,10 @@ current_process_queues = {
 
 
 def start_callback_listeners():
-    if platform_utils.is_unsupported_platform():
-        return
-
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
 
 
 def stop_callback_listeners():
-    if platform_utils.is_unsupported_platform():
-        return
-
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()

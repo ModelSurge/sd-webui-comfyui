@@ -3,6 +3,7 @@ from queue import Empty
 
 from torch import multiprocessing
 import multiprocessing.queues
+from lib_comfyui import platform_utils
 
 
 def clear_queue(queue: multiprocessing.Queue):
@@ -16,17 +17,17 @@ def clear_queue(queue: multiprocessing.Queue):
 class StoppableThread(threading.Thread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._stop_event = threading.Event()
+        self.stop_event = threading.Event()
 
     def stop(self):
-        self._stop_event.set()
+        self.stop_event.set()
 
     def join(self, *args, **kwargs) -> None:
         self.stop()
         super().join(*args, **kwargs)
 
     def is_running(self):
-        return not self._stop_event.is_set()
+        return not self.stop_event.is_set()
 
 
 class CallbackQueue:
@@ -34,36 +35,62 @@ class CallbackQueue:
         if ctx is None:
             ctx = multiprocessing.get_context()
 
-        self._consumer_ready_event = multiprocessing.Event()
-        self._callback = callback
-        self._res_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
-        self._args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
-        self._lock = multiprocessing.Lock()
+        if platform_utils.is_windows():
+            self.consumer_ready_event = multiprocessing.Event()
+            self.callback = callback
+            self.res_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
+            self.args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
+            self.lock = multiprocessing.Lock()
+        else:
+            manager = ctx.Manager()
+            self.consumer_ready_event = manager.Event()
+            self.callback = callback
+            self.res_queue = manager.Queue(*args, **kwargs)
+            self.args_queue = manager.Queue(*args, **kwargs)
+            self.lock = manager.Lock()
 
     def attend_consumer(self, timeout: float = None):
-        consumer_ready = self._wait_for_consumer(timeout)
+        consumer_ready = self.wait_for_consumer(timeout)
         if not consumer_ready: return
-        args, kwargs = self._args_queue.get()
+        args, kwargs = self.args_queue.get()
         try:
-            self._res_queue.put(self._callback(*args, **kwargs))
+            self.res_queue.put(self.callback(*args, **kwargs))
         except Exception as e:
-            self._res_queue.put(RemoteError(e))
+            self.res_queue.put(RemoteError(e))
 
-    def _wait_for_consumer(self, timeout: float = None):
-        consumer_ready = self._consumer_ready_event.wait(timeout)
-        self._consumer_ready_event.clear()
+    def wait_for_consumer(self, timeout: float = None):
+        consumer_ready = self.consumer_ready_event.wait(timeout)
+        self.consumer_ready_event.clear()
         return consumer_ready
 
     def get(self, *self_args, args=None, kwargs=None, **self_kwargs):
-        self._lock.acquire()
-        self._args_queue.put((args if args is not None else (), kwargs if kwargs is not None else {}))
-        self._consumer_ready_event.set()
-        res = self._res_queue.get(*self_args, **self_kwargs)
-        self._lock.release()
+        self.lock.acquire()
+        self.args_queue.put((args if args is not None else (), kwargs if kwargs is not None else {}))
+        self.consumer_ready_event.set()
+        res = self.res_queue.get(*self_args, **self_kwargs)
+        self.lock.release()
         if isinstance(res, RemoteError):
             raise res.error from res
         else:
             return res
+
+    def __getstate__(self):
+        return (
+            self.consumer_ready_event,
+            self.callback,
+            self.res_queue,
+            self.args_queue,
+            self.lock,
+        )
+
+    def __setstate__(self, state):
+        (
+            self.consumer_ready_event,
+            self.callback,
+            self.res_queue,
+            self.args_queue,
+            self.lock,
+        ) = state
 
 
 class CallbackWatcher:

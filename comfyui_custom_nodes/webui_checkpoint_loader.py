@@ -23,8 +23,6 @@ class WebuiCheckpointLoader:
     CATEGORY = "loaders"
 
     def load_checkpoint(self, void):
-        if platform_utils.is_unsupported_platform():
-            raise NotImplemented('WSL is not yet supported for integrated workflows of ComfyUI in the Webui... sorry!')
         config = webui_proxies.get_comfy_model_config()
         webui_proxies.raise_on_unsupported_model_type(config)
         return (

@@ -1,5 +1,5 @@
 import platform
 
 
-def is_unix():
-    return 'windows' not in platform.system().lower()
+def is_windows():
+    return 'windows' in platform.system().lower()

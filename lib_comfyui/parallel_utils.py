@@ -35,19 +35,19 @@ class CallbackQueue:
         if ctx is None:
             ctx = multiprocessing.get_context()
 
-        if platform_utils.is_unix():
+        if platform_utils.is_windows():
+            self.consumer_ready_event = multiprocessing.Event()
+            self.callback = callback
+            self.res_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
+            self.args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
+            self.lock = multiprocessing.Lock()
+        else:
             manager = ctx.Manager()
             self.consumer_ready_event = manager.Event()
             self.callback = callback
             self.res_queue = manager.Queue(*args, **kwargs)
             self.args_queue = manager.Queue(*args, **kwargs)
             self.lock = manager.Lock()
-        else:
-            self.consumer_ready_event = multiprocessing.Event()
-            self.callback = callback
-            self.res_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
-            self.args_queue = multiprocessing.queues.Queue(*args, ctx=ctx, **kwargs)
-            self.lock = multiprocessing.Lock()
 
     def attend_consumer(self, timeout: float = None):
         consumer_ready = self.wait_for_consumer(timeout)

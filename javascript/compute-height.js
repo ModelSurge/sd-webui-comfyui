@@ -50,7 +50,7 @@ function setupReloadOnErrorEvent() {
     });
 }
 
-function reloadComfyuiIframes() {
+function reloadComfyuiIFrames() {
     FRAME_IDS.forEach(id => {
         const comfyui_frame = document.querySelector(`#${id}`);
         reloadFrameElement(comfyui_frame);

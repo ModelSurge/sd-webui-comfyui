@@ -35,7 +35,7 @@ class ComfyUIScript(scripts.Script):
             refresh_button = gr.Button(value=f'{ui_common.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
             refresh_button.click(
                 fn=None,
-                _js='reloadComfyuiIframes'
+                _js='reloadComfyuiIFrames'
             )
         return queue_front, output_node_label
 

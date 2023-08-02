@@ -4,7 +4,7 @@ import modules.scripts as scripts
 from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
 from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
-from modules import shared, ui_common
+from modules import shared, ui
 
 
 class ComfyUIScript(scripts.Script):
@@ -32,7 +32,7 @@ class ComfyUIScript(scripts.Script):
                 <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_postprocess_{xxx2img}" class="comfyui-embedded-widget" style="width:100%; height:500px;"></iframe>
             """)
         with gr.Row():
-            refresh_button = gr.Button(value=f'{ui_common.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
+            refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
             refresh_button.click(
                 fn=None,
                 _js='reloadComfyuiIFrames'

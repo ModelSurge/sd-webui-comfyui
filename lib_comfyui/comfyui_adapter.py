@@ -1,7 +1,7 @@
 import atexit
 import os
 from torch import multiprocessing
-from lib_comfyui import comfyui_pre_main, webui_settings, webui_paths, ipc, torch_utils, webui_proxies
+from lib_comfyui import comfyui_pre_main, webui_settings, webui_paths, ipc, torch_utils, webui_proxies, argv_conversion
 from lib_comfyui.comfyui_context import ComfyuiContext
 from modules import shared
 
@@ -32,7 +32,8 @@ def start_comfyui_process(install_location):
             args=(
                 install_location,
                 webui_paths.get_folder_paths(),
-                {**ipc.get_current_process_queues(), **ipc.current_process_queues}
+                {**ipc.get_current_process_queues(), **ipc.current_process_queues},
+                argv_conversion.get_comfyui_args(),
             ),
             daemon=True,
         )

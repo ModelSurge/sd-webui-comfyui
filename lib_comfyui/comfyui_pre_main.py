@@ -14,7 +14,7 @@ from lib_comfyui import (
 import atexit
 
 
-def main(comfyui_path, webui_folder_paths, process_queues):
+def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
     original_print = builtins.print
     builtins.print = lambda *args, **kwargs: original_print('[ComfyUI]', *args, **kwargs)
     process_queue = process_queues['comfyui']
@@ -27,12 +27,12 @@ def main(comfyui_path, webui_folder_paths, process_queues):
     ipc.current_process_id = 'comfyui'
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
-    start_comfyui(comfyui_path, webui_folder_paths)
+    start_comfyui(comfyui_path, webui_folder_paths, cli_args)
 
 
-def start_comfyui(comfyui_path, webui_folder_paths):
+def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
     sys.path.insert(0, comfyui_path)
-    argv_conversion.set_comfyui_argv()
+    sys.argv[1:] = cli_args
 
     print('[sd-webui-comfyui]', 'Injecting custom extensions...')
     webui_paths.share_webui_folder_paths(webui_folder_paths)

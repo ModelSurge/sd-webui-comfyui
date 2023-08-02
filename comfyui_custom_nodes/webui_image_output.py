@@ -21,9 +21,8 @@ class WebuiImageOutput:
     def fetch_images(self, images):
         tab_name = global_state.tab_name
         key = f'{tab_name}_node_outputs'
-        images_list = [img for img in images.permute(0, 3, 1, 2)]
         generated_images = getattr(global_state, key, [])
-        generated_images.extend(images_list)
+        generated_images.extend(images.permute(0, 3, 1, 2))
         setattr(global_state, key, generated_images)
         return []
 

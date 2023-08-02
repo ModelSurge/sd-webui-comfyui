@@ -1,16 +1,12 @@
 import functools
 from typing import List
 import gradio as gr
-
-import ast
-import inspect
-
 import torch
 
 import modules.scripts as scripts
 from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
-from modules import shared, sd_samplers
+from modules import shared, ui, sd_samplers
 
 
 class ComfyUIScript(scripts.Script):
@@ -25,8 +21,9 @@ class ComfyUIScript(scripts.Script):
     def show(self, is_img2img):
         return scripts.AlwaysVisible
 
-    def ui(self, is_img2img: bool):
-        elem_id_tabname = f"{self.get_xxx2img_str(is_img2img)}_comfyui"
+    def ui(self, is_img2img):
+        xxx2img = ("img2img" if is_img2img else "txt2img")
+        elem_id_tabname = xxx2img + "_comfyui"
         with gr.Group(elem_id=elem_id_tabname):
             with gr.Accordion(f"ComfyUI", open=False, elem_id="sd-comfyui-webui"):
                 controls = self.get_alwayson_ui(is_img2img)
@@ -37,10 +34,13 @@ class ComfyUIScript(scripts.Script):
             queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front', value=True)
             gr.Dropdown(label='Workflow type', choices=self.get_workflows(is_img2img, tab_specific=False), value='preprocess_latent' if is_img2img else 'postprocess')
         with gr.Row():
-            if not platform_utils.is_unsupported_platform():
-                gr.HTML(value=self.get_iframes_html(is_img2img))
-            else:
-                gr.Label('Your platform does not support this feature yet.')
+            gr.HTML(value=self.get_iframes_html(is_img2img))
+        with gr.Row():
+            refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
+            refresh_button.click(
+                fn=None,
+                _js='reloadComfyuiIFrames'
+            )
         return queue_front,
 
     def get_iframes_html(self, is_img2img: bool) -> str:

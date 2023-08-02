@@ -15,8 +15,6 @@ def on_app_started(_gr_root, _fast_api):
 
 
 def on_script_unloaded():
-    from modules import processing
-    processing.process_images_inner = processing.original_sd_webui_comfyui_process_images_inner
     comfyui_adapter.stop()
 
 

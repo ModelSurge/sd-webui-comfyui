@@ -22,3 +22,9 @@ iframe.comfyui-embedded-widget-display {
 .comfyui-remove-display {
     display: none;
 }
+
+#sd-comfyui-webui-refresh_button {
+    max-width: 20em;
+    min-width: 20em;
+    height: 2.4em;
+}

@@ -19,8 +19,7 @@ div#comfyui_webui_container {
 }
 
 #sd-comfyui-webui-refresh_button {
-    max-width: 2.5em;
-    min-width: 2.5em;
+    max-width: 20em;
+    min-width: 20em;
     height: 2.4em;
-    float: left;
 }

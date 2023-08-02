@@ -32,9 +32,7 @@ class ComfyUIScript(scripts.Script):
                 <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_postprocess_{xxx2img}" class="comfyui-embedded-widget" style="width:100%; height:500px;"></iframe>
             """)
         with gr.Row():
-            gr.HTML('<p>if ComfyUI fails to load, you can try reloading it:</p>', interactive=False)
-        with gr.Row():
-            refresh_button = gr.Button(value=ui_common.refresh_symbol, elem_id='sd-comfyui-webui-refresh_button')
+            refresh_button = gr.Button(value=f'{ui_common.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
             refresh_button.click(
                 fn=None,
                 _js='reloadComfyuiIframes'

@@ -17,7 +17,7 @@ class WebuiLatentInput:
 
     def fetch_images(self, void):
         tab_name = global_state.tab_name
-        key = f'{tab_name}_latent_inputs'
+        key = f'{tab_name}_node_inputs'
         return {'samples': getattr(global_state, key)},
 
 

@@ -31,11 +31,11 @@ class ComfyUIScript(scripts.Script):
         with gr.Row():
             queue_front = gr.Checkbox(label='Queue front', elem_id=self.elem_id('queue_front'), value=True)
             workflow_type_display_names = external_code.get_workflow_type_display_names(xxx2img)
-            workflow_type = gr.Dropdown(label='Workflow type', choices=workflow_type_display_names, value=workflow_type_display_names[0], elem_id=self.elem_id('displayed_workflow_type'))
+            workflow_type = gr.Dropdown(label='Displayed workflow type', choices=workflow_type_display_names, value=workflow_type_display_names[0], elem_id=self.elem_id('displayed_workflow_type'))
             workflow_types = dict(zip(workflow_type_display_names, external_code.get_workflow_type_ids(xxx2img)))
             workflow_type.change(
                 fn=None,
-                _js='changeDisplayedWorkflow',
+                _js='changeDisplayedWorkflowType',
                 inputs=[gr.Text(json.dumps(workflow_types), interactive=False, visible=False), workflow_type],
             )
 

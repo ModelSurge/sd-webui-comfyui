@@ -1,12 +1,43 @@
 import functools
-from typing import List
+import json
+from pathlib import Path
 import gradio as gr
 import torch
 
 import modules.scripts as scripts
-from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
+from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils, external_code
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
 from modules import shared, ui, sd_samplers
+
+
+def add_default_workflows():
+    external_code.add_workflow(external_code.Workflow(
+        base_id='sandbox_tab',
+        display_name='Sandbox',
+        tabs=(),
+    ))
+
+    with open(str(Path(scripts.basedir()) / 'workflows' / 'default' / 'postprocess.json'), 'r') as f:
+        postprocess_workflow = json.loads(f.read())
+
+    external_code.add_workflow(external_code.Workflow(
+        base_id='postprocess',
+        display_name='Postprocess',
+        default_workflow=postprocess_workflow,
+    ))
+
+    with open(str(Path(scripts.basedir()) / 'workflows' / 'default' / 'preprocess_latent.json'), 'r') as f:
+        preprocess_workflow = json.loads(f.read())
+
+    external_code.add_workflow(external_code.Workflow(
+        base_id='preprocess_latent',
+        display_name='Preprocess (latent)',
+        tabs='img2img',
+        default_workflow=preprocess_workflow,
+    ))
+
+
+add_default_workflows()
 
 
 class ComfyUIScript(scripts.Script):
@@ -22,21 +53,20 @@ class ComfyUIScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        xxx2img = ("img2img" if is_img2img else "txt2img")
-        elem_id_tabname = xxx2img + "_comfyui"
-        with gr.Group(elem_id=elem_id_tabname):
-            with gr.Accordion(f"ComfyUI", open=False, elem_id="sd-comfyui-webui"):
-                controls = self.get_alwayson_ui(is_img2img)
+        global_state.is_ui_instantiated = True
+        with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
+            controls = self.get_alwayson_ui(is_img2img)
         return controls
 
     def get_alwayson_ui(self, is_img2img: bool):
         with gr.Row():
-            queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front', value=True)
-            gr.Dropdown(label='Workflow type', choices=self.get_workflows(is_img2img, tab_specific=False), value='preprocess_latent' if is_img2img else 'postprocess')
+            queue_front = gr.Checkbox(label='Queue front', elem_id=self.elem_id('queue_front'), value=True)
+            workflows = external_code.get_workflow_display_names(self.get_xxx2img_str(is_img2img))
+            gr.Dropdown(label='Workflow type', choices=workflows, value=workflows[0], elem_id=self.elem_id('workflow_type'))
         with gr.Row():
             gr.HTML(value=self.get_iframes_html(is_img2img))
         with gr.Row():
-            refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
+            refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id=self.elem_id('refresh_button'))
             refresh_button.click(
                 fn=None,
                 _js='reloadComfyuiIFrames'
@@ -44,42 +74,30 @@ class ComfyUIScript(scripts.Script):
         return queue_front,
 
     def get_iframes_html(self, is_img2img: bool) -> str:
-        iframes_html = ""
         comfyui_client_url = webui_settings.get_comfyui_client_url()
-        for workflow_id in self.get_workflows(is_img2img):
+
+        iframes = []
+        first_loop = True
+        for workflow_id in external_code.get_workflow_ids(self.get_xxx2img_str(is_img2img)):
             html_classes = ['comfyui-embedded-widget']
-            if (is_img2img and workflow_id.startswith('preprocess_latent')) or (not is_img2img and workflow_id.startswith('postprocess')):
+            if first_loop:
+                first_loop = False
                 html_classes.append('comfyui-embedded-widget-display')
-            iframes_html += f"""
+
+            iframes.append(f"""
                 <iframe
                     src="{comfyui_client_url}"
-                    id="comfyui_{workflow_id}"
+                    id="{external_code.get_iframe_id(workflow_id)}"
                     class="{' '.join(html_classes)}"
                     style="width:100%; height:500px;">
                 </iframe>
-            """
+            """)
+
         return f"""
             <div id="comfyui_iframes">
-                {iframes_html}
+                {''.join(iframes)}
             </div>
         """
-
-    def get_workflows(self, is_img2img: bool, tab_specific: bool = True) -> List[str]:
-        suffix = "" if is_img2img is None else "_" + self.get_xxx2img_str(is_img2img)
-        workflows = [
-            'postprocess',
-        ]
-        if is_img2img:
-            workflows += (
-                'preprocess_latent',
-            )
-        if tab_specific:
-            workflows = [
-                workflow + suffix
-                for workflow
-                in workflows
-            ]
-        return workflows
 
     def process(self, p, queue_front, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):

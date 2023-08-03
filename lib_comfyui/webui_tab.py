@@ -64,6 +64,6 @@ Alternatively, if you don't have ComfyUI installed, you can install it with this
 def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
-            <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_general_tab" class="comfyui-embedded-widget" style="width:100%; height:100%;"></iframe>
+            <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_sandbox_tab" class="comfyui-embedded-widget" style="width:100%; height:100%;"></iframe>
         </div>
     ''')

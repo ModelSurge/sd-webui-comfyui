@@ -6,7 +6,7 @@ function uuidv4() {
 
 const CLIENT_KEY = uuidv4();
 const FRAME_IDS = [
-    'comfyui_general_tab',
+    'comfyui_sandbox_tab',
     'comfyui_postprocess_txt2img',
     'comfyui_postprocess_img2img',
     'comfyui_preprocess_latent_img2img',
@@ -15,7 +15,6 @@ const FRAME_IDS = [
 document.addEventListener("DOMContentLoaded", (e) => {
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
-
 
 function onComfyuiTabLoaded(callback) {
     const comfyui_document = getComfyuiContainer();

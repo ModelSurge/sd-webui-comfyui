@@ -12,13 +12,13 @@ class WebuiImageOutput:
             },
         }
     RETURN_TYPES = ()
-    FUNCTION = "fetch_images"
+    FUNCTION = "set_images"
 
     CATEGORY = "webui"
 
     OUTPUT_NODE = True
 
-    def fetch_images(self, images):
+    def set_images(self, images):
         tab_name = global_state.tab_name
         key = f'{tab_name}_node_outputs'
         generated_images = getattr(global_state, key, [])

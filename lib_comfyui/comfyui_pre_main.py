@@ -14,9 +14,13 @@ from lib_comfyui import (
 import atexit
 
 
+original_print = builtins.print
+def comfyui_print(*args, **kwargs):
+    return original_print('[ComfyUI]', *args, **kwargs)
+
+
 def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
-    original_print = builtins.print
-    builtins.print = lambda *args, **kwargs: original_print('[ComfyUI]', *args, **kwargs)
+    builtins.print = comfyui_print
     process_queue = process_queues['comfyui']
     ipc.current_process_callback_listeners = {
         'comfyui': parallel_utils.CallbackWatcher(process_queue)

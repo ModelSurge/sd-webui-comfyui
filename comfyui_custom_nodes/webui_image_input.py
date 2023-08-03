@@ -11,11 +11,11 @@ class WebuiImageInput:
             },
         }
     RETURN_TYPES = ("IMAGE", )
-    FUNCTION = "fetch_images"
+    FUNCTION = "get_images"
 
     CATEGORY = "webui"
 
-    def fetch_images(self, void):
+    def get_images(self, void):
         tab_name = global_state.tab_name
         key = f'{tab_name}_node_inputs'
         return torch.stack(getattr(global_state, key)).permute(0, 2, 3, 1),

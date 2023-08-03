@@ -11,11 +11,11 @@ class WebuiLatentInput:
             },
         }
     RETURN_TYPES = ("LATENT", )
-    FUNCTION = "fetch_images"
+    FUNCTION = "get_latents"
 
     CATEGORY = "webui"
 
-    def fetch_images(self, void):
+    def get_latents(self, void):
         tab_name = global_state.tab_name
         key = f'{tab_name}_node_inputs'
         return {'samples': getattr(global_state, key)},

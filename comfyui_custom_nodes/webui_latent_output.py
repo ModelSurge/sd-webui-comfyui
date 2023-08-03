@@ -12,13 +12,13 @@ class WebuiLatentOutput:
             },
         }
     RETURN_TYPES = ()
-    FUNCTION = "fetch_images"
+    FUNCTION = "set_images"
 
     CATEGORY = "webui"
 
     OUTPUT_NODE = True
 
-    def fetch_images(self, latents):
+    def set_images(self, latents):
         tab_name = global_state.tab_name
         key = f'{tab_name}_node_outputs'
         generated_images = getattr(global_state, key, [])

@@ -11,9 +11,9 @@ const request_map = new Map([
         await app.queuePrompt(json.queueFront ? -1 : 0, 1);
         return 'queued_prompt_comfyui';
     }],
-    ['/sd-webui-comfyui/send_workflow_to_webui', async (json) => {
-        return localStorage.getItem("workflow");
-    }],
+    ['/sd-webui-comfyui/webui_request_timeout', async (json) => {
+        return 'timeout';
+    }]
 ]);
 
 async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) {
@@ -30,16 +30,18 @@ async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) 
                 body: JSON.stringify({
                     workflow_type_id: thisWorkflowTypeId,
                     webui_client_id: webuiClientKey,
-                    request: clientResponse,
+                    response: clientResponse,
                 }),
             });
             const json = await response.json();
-            console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${thisWorkflowTypeId} - ${json.request}`);
+            if (json.request !== '/sd-webui-comfyui/webui_request_timeout') {
+                console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${thisWorkflowTypeId} - ${json.request}`);
+            }
             clientResponse = await request_map.get(json.request)(json);
         }
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         clientResponse = {error: e};
     }
     finally {
@@ -72,12 +74,12 @@ function onElementDomIdRegistered(callback) {
     });
 }
 
-function patchUiEnv(thisWorkflowTypeId) {
-    if(thisWorkflowTypeId !== 'sandbox_tab') {
+async function patchUiEnv(thisWorkflowTypeId) {
+    if(thisWorkflowTypeId.endsWith('_txt2img') || thisWorkflowTypeId.endsWith('_img2img')) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         patchSavingMechanism();
-        loadDefaultGraph(thisWorkflowTypeId);
+        await patchDefaultGraph(thisWorkflowTypeId);
     }
 }
 
@@ -113,7 +115,7 @@ function patchSavingMechanism() {
     };
 }
 
-async function loadDefaultGraph(workflowTypeId) {
+async function patchDefaultGraph(workflowTypeId) {
     const response = await api.fetchApi("/sd-webui-comfyui/default_workflow?" + new URLSearchParams({
         workflow_type_id: workflowTypeId,
     }), {
@@ -123,11 +125,21 @@ async function loadDefaultGraph(workflowTypeId) {
         },
         cache: "no-store",
     });
-    const response_json = await response.json();
-    if (response_json === null) {
+    const defaultGraph = await response.json();
+    if (defaultGraph === null) {
         return;
     }
-    app.loadGraphData(response_json);
+
+    app.original_loadGraphData = app.loadGraphData;
+    app.loadGraphData = (graphData) => {
+        if (!graphData) {
+            return app.original_loadGraphData(defaultGraph);
+        } else {
+            return app.original_loadGraphData(graphData);
+        }
+    };
+
+    app.loadGraphData();
 }
 
 onElementDomIdRegistered(longPolling);

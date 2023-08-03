@@ -1,5 +1,6 @@
 import asyncio
 import multiprocessing
+import queue
 from typing import List
 import torch
 from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
@@ -21,7 +22,8 @@ class ComfyuiNodeWidgetRequests:
     def send(request_params):
         cls = ComfyuiNodeWidgetRequests
         if cls.focused_webui_client_id is None:
-            return None
+            raise RuntimeError('No active webui connection')
+
         parallel_utils.clear_queue(cls.finished_comfyui_queue)
         webui_client_id = cls.focused_webui_client_id
         cls.last_params = request_params
@@ -44,15 +46,12 @@ class ComfyuiNodeWidgetRequests:
         queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
-        response = ComfyuiNodeWidgetRequests.send({
+        ComfyuiNodeWidgetRequests.send({
             'request': '/sd-webui-comfyui/webui_request_queue_prompt',
             'workflowType': workflow_type.get_ids(tab)[0],
             'requiredNodeTypes': [],
             'queueFront': queue_front,
         })
-
-        if response is None or 'error' in response:
-            return response
 
         queue_tracker.wait_until_done()
 
@@ -87,8 +86,13 @@ class ComfyuiNodeWidgetRequests:
 
     @classmethod
     async def handle_request(cls, workflow_type_id, webui_client_id):
-        await cls.param_events[webui_client_id][workflow_type_id].wait()
+        try:
+            await asyncio.wait_for(cls.param_events[webui_client_id][workflow_type_id].wait(), timeout=1)
+        except asyncio.TimeoutError:
+            return {'request': '/sd-webui-comfyui/webui_request_timeout',}
+
         cls.param_events[webui_client_id][workflow_type_id].clear()
+        print(f'[sd-webui-comfyui] send request - \n{cls.last_params}')
         return cls.last_params
 
 
@@ -104,32 +108,24 @@ def polling_server_patch(instance, loop):
             return web.json_response(status=422)
         if 'workflow_type_id' not in response:
             return web.json_response(status=422)
+        if 'response' not in response:
+            return web.json_response(status=422)
 
         webui_client_id = response['webui_client_id']
         workflow_type_id = response['workflow_type_id']
 
-        if not (webui_client_id in ComfyuiNodeWidgetRequests.comfyui_iframe_ids
-                and workflow_type_id in ComfyuiNodeWidgetRequests.comfyui_iframe_ids[webui_client_id]):
+        if 'error' in response['response']:
+            print(f"[sd-webui-comfyui] Client {workflow_type_id}-{webui_client_id} encountered an error - \n{response['response']['error']}")
+
+        command = response['response']
+
+        if command == 'register_cid':
             ComfyuiNodeWidgetRequests.add_client(workflow_type_id, webui_client_id)
-        else:
-            if 'error' in response:
-                print(f"[sd-webui-comfyui] Client {workflow_type_id}-{webui_client_id} encountered an error - \n{response['error']}")
+        elif command != 'timeout':
             await ComfyuiNodeWidgetRequests.handle_response(response)
 
         request = await ComfyuiNodeWidgetRequests.handle_request(workflow_type_id, webui_client_id)
-        print(f'[sd-webui-comfyui] send request - \n{request}')
         return web.json_response(request)
-
-    @instance.routes.post("/sd-webui-comfyui/set_polling_server_focused_webui_client_id")
-    async def set_polling_server_focused_webui_client_id(request):
-        request_json = await request.json()
-        if 'webui_client_id' not in request_json:
-            return web.json_response(status=422)
-
-        webui_client_id = request_json['webui_client_id']
-        ComfyuiNodeWidgetRequests.focused_webui_client_id = webui_client_id
-        print(f'[sd-webui-comfyui] set client webui_client_id - \n{webui_client_id}')
-        return web.json_response()
 
 
 def workflow_ops_server_patch(instance, _loop):
@@ -141,7 +137,8 @@ def workflow_ops_server_patch(instance, _loop):
         workflow_type_id = params['workflow_type_id']
 
         try:
-            return web.json_response(external_code.get_default_workflow_json(workflow_type_id))
+            res = web.json_response(external_code.get_default_workflow_json(workflow_type_id))
+            return res
         except ValueError as e:
             return web.json_response(status=422, reason=str(e))
 

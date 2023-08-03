@@ -2,7 +2,9 @@ import functools
 import json
 import gradio as gr
 import torch
-from modules import shared, scripts, ui, sd_samplers
+import torchvision.transforms.functional
+
+from modules import shared, scripts, ui, sd_samplers, processing
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types
 from lib_comfyui.webui import callbacks, settings
 from lib_comfyui.comfyui.routes_extension import ComfyuiNodeWidgetRequests
@@ -86,18 +88,34 @@ class ComfyUIScript(scripts.Script):
             p.sample = functools.partial(self.p_sample_patch, original_function=p.sample, comfyui_queue_front=queue_front)
             p.comfyui_patches.add('sample')
 
+        if isinstance(p, processing.StableDiffusionProcessingImg2Img) and 'init' not in p.comfyui_patches:
+            p.init = functools.partial(self.p_img2img_init, original_function=p.init, p_ref=p, comfyui_queue_front=queue_front)
+            p.comfyui_patches.add('init')
+
     def p_sample_patch(self, *args, original_function, comfyui_queue_front: bool, **kwargs):
         x = original_function(*args, **kwargs)
         if getattr(shared.opts, 'comfyui_enabled', True):
-            preprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
+            postprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
                 input_batch=x.to(device='cpu'),
                 workflow_type=default_workflow_types.postprocess_latent_workflow_type,
                 tab=self.get_xxx2img_str(),
                 queue_front=comfyui_queue_front,
             )
-            x = torch.stack(preprocessed_x).to(device=x.device)
+            x = torch.stack(postprocessed_x).to(device=x.device)
 
         return x
+
+    def p_img2img_init(self, *args, original_function, p_ref: processing.StableDiffusionProcessingImg2Img, comfyui_queue_front: bool, **kwargs):
+        if getattr(shared.opts, 'comfyui_enabled', True):
+            preprocessed_images = ComfyuiNodeWidgetRequests.start_workflow_sync(
+                input_batch=[torchvision.transforms.functional.pil_to_tensor(image) for image in p_ref.init_images],
+                workflow_type=default_workflow_types.preprocess_workflow_type,
+                tab='img2img',
+                queue_front=comfyui_queue_front,
+            )
+            p_ref.init_images = [torchvision.transforms.functional.to_pil_image(image) for image in preprocessed_images]
+
+        return original_function(*args, **kwargs)
 
     def postprocess_batch_list(self, p, pp, queue_front, batch_number, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):
@@ -113,9 +131,6 @@ class ComfyUIScript(scripts.Script):
             tab=self.get_xxx2img_str(),
             queue_front=queue_front,
         )
-
-        if batch_results is None or 'error' in batch_results:
-            return
 
         batch_size_factor = max(1, len(batch_results) // len(pp.images))
 

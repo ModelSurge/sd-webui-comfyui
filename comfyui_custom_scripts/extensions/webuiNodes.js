@@ -3,17 +3,12 @@ import { app } from "/scripts/app.js";
 
 function createVoidWidget(node, name) {
     const widget = {
-        i: 0,
         type: "customtext",
         name,
         get value() {
-            widget.requestUpdate();
-            return `${widget.i}`;
+            return `${Math.random()}`;
         },
         set value(x) {},
-        requestUpdate() {
-            widget.i++;
-        }
     };
     widget.parent = node;
     node.addCustomWidget(widget);

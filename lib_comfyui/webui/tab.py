@@ -6,6 +6,7 @@ import gradio as gr
 import install_comfyui
 from lib_comfyui import external_code, ipc
 from lib_comfyui.webui import settings
+from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
 
 
 def create_tab():
@@ -34,7 +35,7 @@ def create_tab():
 
             install_button.click(automatic_install_comfyui, inputs=[install_path], outputs=[installed_feedback], show_progress=True)
 
-    return [(tab, 'ComfyUI', 'comfyui_webui_root')]
+    return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]
 
 
 @ipc.restrict_to_process('webui')
@@ -74,8 +75,8 @@ def get_comfyui_app_html():
         <div id="comfyui_webui_container">
             <iframe
                 src="{settings.get_comfyui_client_url()}"
-                workflow_type_id="sandbox_tab"
-                class="comfyui-embedded-widget"
+                workflow_type_id="{sandbox_tab_workflow_type.get_ids()[0]}"
+                class="comfyui-embedded-widget comfyui-embedded-widget-display"
                 style="width:100%; height:100%;">
             </iframe>
         </div>

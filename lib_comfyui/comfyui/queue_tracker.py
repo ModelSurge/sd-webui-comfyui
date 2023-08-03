@@ -23,7 +23,7 @@ class PromptQueueTracker:
                     PromptQueueTracker.put_event.set()
 
                 return original_put(item, *args, **kwargs)
-        
+
         prompt_queue.put = functools.partial(patched_put, original_put=prompt_queue.put)
 
         # task_done

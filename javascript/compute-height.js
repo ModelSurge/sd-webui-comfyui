@@ -10,8 +10,8 @@ function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
     const newWorkflowType = JSON.parse(workflowTypes)[newWorkflowName];
     const newIFrameElement = document.querySelector(`#comfyui_${newWorkflowType}`);
     const oldIFrameElement = newIFrameElement.parentElement.querySelector(".comfyui-embedded-widget-display");
-    newIFrameElement.classList.add("comfyui-embedded-widget-display");
     oldIFrameElement.classList.remove("comfyui-embedded-widget-display");
+    newIFrameElement.classList.add("comfyui-embedded-widget-display");
 }
 
 const WORKFLOW_IDS = [

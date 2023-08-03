@@ -5,12 +5,11 @@ import os
 import runpy
 from lib_comfyui import (
     custom_extension_injector,
-    webui_paths,
     ipc,
-    polling_client,
-    queue_tracker,
     parallel_utils,
 )
+from lib_comfyui.comfyui import routes_extension, queue_tracker
+from lib_comfyui.webui import paths
 
 
 original_print = builtins.print
@@ -39,7 +38,7 @@ def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
     sys.argv[1:] = cli_args
 
     print('[sd-webui-comfyui]', 'Injecting custom extensions...')
-    webui_paths.share_webui_folder_paths(webui_folder_paths)
+    paths.share_webui_folder_paths(webui_folder_paths)
     patch_comfyui()
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
     runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')
@@ -48,5 +47,5 @@ def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
 @ipc.restrict_to_process('comfyui')
 def patch_comfyui():
     custom_extension_injector.register_webui_extensions()
-    polling_client.patch_server_routes()
+    routes_extension.patch_server_routes()
     queue_tracker.patch_prompt_queue()

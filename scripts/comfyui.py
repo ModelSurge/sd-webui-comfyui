@@ -3,8 +3,9 @@ import json
 import gradio as gr
 import torch
 from modules import shared, scripts, ui, sd_samplers
-from lib_comfyui import comfyui_context, webui_callbacks, webui_settings, global_state, platform_utils, external_code, default_workflow_types
-from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
+from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types
+from lib_comfyui.webui import callbacks, settings
+from lib_comfyui.comfyui.routes_extension import ComfyuiNodeWidgetRequests
 
 
 class ComfyUIScript(scripts.Script):
@@ -51,7 +52,7 @@ class ComfyUIScript(scripts.Script):
         return queue_front,
 
     def get_iframes_html(self, is_img2img: bool) -> str:
-        comfyui_client_url = webui_settings.get_comfyui_client_url()
+        comfyui_client_url = settings.get_comfyui_client_url()
 
         iframes = []
         first_loop = True
@@ -134,6 +135,6 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     return original_function(p, x, *args, **kwargs)
 
 
-webui_callbacks.register_callbacks()
+callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 comfyui_context.init_webui_base_dir()

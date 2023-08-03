@@ -1,20 +1,21 @@
-from lib_comfyui import comfyui_adapter, webui_tab, webui_settings, ipc, comfyui_context
+from lib_comfyui import comfyui_process, ipc, comfyui_context
+from lib_comfyui.webui import tab, settings
 
 
 def on_ui_tabs():
-    return webui_tab.create_tab()
+    return tab.create_tab()
 
 
 def on_ui_settings():
-    return webui_settings.create_section()
+    return settings.create_section()
 
 
 def on_app_started(_gr_root, _fast_api):
-    comfyui_adapter.start()
+    comfyui_process.start()
 
 
 def on_script_unloaded():
-    comfyui_adapter.stop()
+    comfyui_process.stop()
 
 
 @ipc.restrict_to_process('webui')

@@ -4,11 +4,12 @@ import sys
 import textwrap
 import gradio as gr
 import install_comfyui
-from lib_comfyui import webui_settings, external_code, ipc
+from lib_comfyui import external_code, ipc
+from lib_comfyui.webui import settings
 
 
 def create_tab():
-    install_location = webui_settings.get_install_location()
+    install_location = settings.get_install_location()
     with gr.Blocks() as tab:
         gr.HTML(f"""
             <div id="comfyui_workflow_type_id_list">
@@ -72,7 +73,7 @@ def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
             <iframe
-                src="{webui_settings.get_comfyui_client_url()}"
+                src="{settings.get_comfyui_client_url()}"
                 workflow_type_id="sandbox_tab"
                 class="comfyui-embedded-widget"
                 style="width:100%; height:100%;">

@@ -1,11 +1,12 @@
-from lib_comfyui import webui_settings, ipc
+from lib_comfyui import ipc
+from lib_comfyui.webui import settings
 
 
 COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 
 def get_comfyui_args():
-    args = webui_settings.get_additional_argv() + extract_comfyui_argv()
+    args = settings.get_additional_argv() + extract_comfyui_argv()
     deduplicate_comfyui_args(args)
     return args
 

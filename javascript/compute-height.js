@@ -4,7 +4,7 @@ function uuidv4() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 }
 
-const CLIENT_KEY = uuidv4();
+const WEBUI_CLIENT_KEY = uuidv4();
 
 function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
     const newWorkflowType = JSON.parse(workflowTypes)[newWorkflowName];
@@ -26,10 +26,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
 });
 
 function onComfyuiTabLoaded(callback) {
-    const comfyui_document = getComfyuiContainer();
+    const container = getComfyuiContainer();
     const tab_nav = getTabNav();
 
-    if (comfyui_document === null || tab_nav === null) {
+    if (container === null || tab_nav === null) {
         // webui not yet ready, try again in a bit
         setTimeout(() => { onComfyuiTabLoaded(callback); }, POLLING_TIMEOUT);
         return;
@@ -50,10 +50,10 @@ function setupComfyuiTabEvents() {
 
 function setupReloadOnErrorEvent() {
     WORKFLOW_IDS.forEach(id => {
-        const comfyui_frame = document.querySelector(`#comfyui_${id}`);
-        comfyui_frame.addEventListener("error", () => {
+        const comfyuiFrame = document.querySelector(`#comfyui_${id}`);
+        comfyuiFrame.addEventListener("error", () => {
             setTimeout(() => {
-                reloadFrameElement(comfyui_frame);
+                reloadFrameElement(comfyuiFrame);
             }, POLLING_TIMEOUT);
         });
     });
@@ -61,8 +61,8 @@ function setupReloadOnErrorEvent() {
 
 function reloadComfyuiIFrames() {
     WORKFLOW_IDS.forEach(id => {
-        const comfyui_frame = document.querySelector(`#comfyui_${id}`);
-        reloadFrameElement(comfyui_frame);
+        const comfyuiFrame = document.querySelector(`#comfyui_${id}`);
+        reloadFrameElement(comfyuiFrame);
         forceFeedIdToIFrame(id);
     });
 }
@@ -84,8 +84,8 @@ function setupToggleFooterEvent() {
 
 function updateComfyuiTabHeight() {
     const container = getComfyuiContainer();
-    const tab_nav_bottom = getTabNav().getBoundingClientRect().bottom;
-    container.style.height = `calc(100% - ${tab_nav_bottom}px)`;
+    const tabNavBottom = getTabNav().getBoundingClientRect().bottom;
+    container.style.height = `calc(100% - ${tabNavBottom}px)`;
 }
 
 function updateFooterStyle() {
@@ -142,7 +142,7 @@ function forceFeedIdToIFrame(workflowId) {
         if(received) return;
         const frameEl = document.querySelector(`#comfyui_${workflowId}`);
         const targetOrigin = frameEl.src;
-        const message = `${workflowId}.${CLIENT_KEY}`;
+        const message = `${workflowId}.${WEBUI_CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);
         setTimeout(() => feed(), POLLING_TIMEOUT);
     };

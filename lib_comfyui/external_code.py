@@ -60,7 +60,7 @@ def add_workflow_type(new_workflow_type: WorkflowType) -> None:
 def get_workflow_types(tabs: Tabs = ALL_TABS) -> List[WorkflowType]:
     """
     Get the list of currently registered workflows
-    To update the workflows list, see `add_workflow` or `set_workflows`
+    To update the workflows list, see `add_workflow_type` or `set_workflow_types`
     """
     if isinstance(tabs, str):
         tabs = (tabs,)

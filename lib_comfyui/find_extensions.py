@@ -1,8 +1,10 @@
 import os.path
-from modules.extensions import list_extensions, active
+from lib_comfyui import ipc
 
 
+@ipc.run_in_process('webui')
 def get_extension_paths_to_load():
+    from modules.extensions import list_extensions, active
     list_extensions()
     active_paths = [e.path for e in active()]
     root_node_paths = []

@@ -1,9 +1,9 @@
+import atexit
 import builtins
 import sys
 import os
 import runpy
 from lib_comfyui import (
-    argv_conversion,
     custom_extension_injector,
     webui_paths,
     ipc,
@@ -11,7 +11,6 @@ from lib_comfyui import (
     queue_tracker,
     parallel_utils,
 )
-import atexit
 
 
 original_print = builtins.print
@@ -34,6 +33,7 @@ def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
     start_comfyui(comfyui_path, webui_folder_paths, cli_args)
 
 
+@ipc.restrict_to_process('comfyui')
 def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
     sys.path.insert(0, comfyui_path)
     sys.argv[1:] = cli_args
@@ -45,6 +45,7 @@ def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
     runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')
 
 
+@ipc.restrict_to_process('comfyui')
 def patch_comfyui():
     custom_extension_injector.register_webui_extensions()
     polling_client.patch_server_routes()

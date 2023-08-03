@@ -3,7 +3,7 @@ import sys
 from lib_comfyui import parallel_utils, platform_utils
 
 
-def confine_to(process_id):
+def run_in_process(process_id):
     def annotation(function):
         def wrapper(*args, **kwargs):
             global current_process_id
@@ -11,6 +11,20 @@ def confine_to(process_id):
                 return function(*args, **kwargs)
             else:
                 return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+
+        return wrapper
+
+    return annotation
+
+
+def restrict_to_process(process_id):
+    def annotation(function):
+        def wrapper(*args, **kwargs):
+            global current_process_id
+            if process_id != current_process_id:
+                raise RuntimeError(f'Can only call function {function.__module__}.{function.__qualname__} from {process_id} process. Current process is {current_process_id}')
+
+            return function(*args, **kwargs)
 
         return wrapper
 

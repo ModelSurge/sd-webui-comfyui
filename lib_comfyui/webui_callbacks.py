@@ -1,5 +1,6 @@
+from lib_comfyui import comfyui_adapter, webui_tab, webui_settings, ipc, comfyui_context
+ipc.restrict_to_process('webui')(lambda: None)()
 from modules import script_callbacks
-from lib_comfyui import comfyui_adapter, webui_tab, webui_settings
 
 
 def on_ui_tabs():

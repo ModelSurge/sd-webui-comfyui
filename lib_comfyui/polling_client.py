@@ -1,11 +1,8 @@
 import asyncio
 import multiprocessing
 from typing import List
-
 import torch
-from lib_comfyui.parallel_utils import clear_queue, StoppableThread
-from lib_comfyui import ipc, global_state, comfyui_context, torch_utils, external_code
-from lib_comfyui.queue_tracker import PromptQueueTracker
+from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code, queue_tracker
 
 
 # rest is ran on comfyui's server side
@@ -18,13 +15,13 @@ class ComfyuiNodeWidgetRequests:
     loop = None
     focused_webui_client_id = None
 
-    @ipc.confine_to('comfyui')
+    @ipc.restrict_to_process('comfyui')
     @staticmethod
     def send(request_params):
         cls = ComfyuiNodeWidgetRequests
         if cls.focused_webui_client_id is None:
             return None
-        clear_queue(cls.finished_comfyui_queue)
+        parallel_utils.clear_queue(cls.finished_comfyui_queue)
         webui_client_id = cls.focused_webui_client_id
         cls.last_params = request_params
         cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_params['workflowType']].set)
@@ -32,7 +29,7 @@ class ComfyuiNodeWidgetRequests:
 
         return result
 
-    @ipc.confine_to('comfyui')
+    @ipc.run_in_process('comfyui')
     @staticmethod
     def start_workflow_sync(
         input_batch: List[torch.Tensor],
@@ -43,7 +40,7 @@ class ComfyuiNodeWidgetRequests:
         global_state.node_inputs = input_batch
         global_state.node_outputs = []
 
-        PromptQueueTracker.setup_tracker_id()
+        queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
         response = ComfyuiNodeWidgetRequests.send({
@@ -56,7 +53,7 @@ class ComfyuiNodeWidgetRequests:
         if response is None or 'error' in response:
             return response
 
-        PromptQueueTracker.wait_until_done()
+        queue_tracker.wait_until_done()
 
         return global_state.node_outputs
 

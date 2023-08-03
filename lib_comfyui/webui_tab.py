@@ -3,9 +3,8 @@ import os
 import sys
 import textwrap
 import gradio as gr
-from modules import shared
 import install_comfyui
-from lib_comfyui import comfyui_adapter, webui_settings, external_code
+from lib_comfyui import webui_settings, external_code, ipc
 
 
 def create_tab():
@@ -37,7 +36,9 @@ def create_tab():
     return [(tab, 'ComfyUI', 'comfyui_webui_root')]
 
 
+@ipc.restrict_to_process('webui')
 def automatic_install_comfyui(install_location):
+    from modules import shared
     install_location = install_location.strip()
     if not install_location:
         install_location = install_comfyui.default_install_location
@@ -70,6 +71,6 @@ Alternatively, if you don't have ComfyUI installed, you can install it with this
 def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
-            <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_sandbox_tab" class="comfyui-embedded-widget" style="width:100%; height:100%;"></iframe>
+            <iframe src="{webui_settings.get_comfyui_client_url()}" id="{external_code.get_iframe_id('sandbox_tab')}" class="comfyui-embedded-widget" style="width:100%; height:100%;"></iframe>
         </div>
     ''')

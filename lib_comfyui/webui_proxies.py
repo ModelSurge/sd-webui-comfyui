@@ -99,7 +99,7 @@ class WebuiModelProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args, **kwargs), device=self.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_model_apply(*args, **kwargs):
         from modules import shared, devices
@@ -124,7 +124,7 @@ class WebuiModelProxy:
 
         return res
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_model_getattr(item):
         from modules import shared
@@ -158,7 +158,7 @@ class WebuiClipWrapper:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiClipWrapper.sd_clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_clip_tokenize_with_weights(text, return_word_ids=False):
         from modules import shared
@@ -194,7 +194,7 @@ class WebuiClipProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiClipProxy.sd_clip_encode_token_weights(*args, **kwargs), device=self.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_clip_encode_token_weights(token_weight_pairs_list):
         from modules import shared
@@ -233,7 +233,7 @@ class WebuiClipProxy:
 
         return res
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_clip_getattr(item):
         from modules import shared
@@ -277,7 +277,7 @@ class WebuiVaeProxy:
         res = torch_utils.deep_to(WebuiVaeProxy.sd_vae_encode(*args, **kwargs), device=self.device)
         return DistributionProxy(res)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_vae_encode(*args, **kwargs):
         from modules import shared, devices
@@ -293,7 +293,7 @@ class WebuiVaeProxy:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(WebuiVaeProxy.sd_vae_decode(*args, **kwargs), device=self.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_vae_decode(*args, **kwargs):
         from modules import shared, devices
@@ -321,7 +321,7 @@ class WebuiVaeProxy:
 
         return res
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_vae_getattr(item):
         from modules import shared
@@ -338,13 +338,13 @@ class DistributionProxy:
         return self.sample_proxy
 
 
-@ipc.confine_to('webui')
+@ipc.run_in_process('webui')
 def free_webui_memory():
     gc.collect(1)
     torch.cuda.empty_cache()
 
 
-@ipc.confine_to('comfyui')
+@ipc.restrict_to_process('comfyui')
 def raise_on_unsupported_model_type(config):
     import comfy
     if type(config) not in (
@@ -354,7 +354,7 @@ def raise_on_unsupported_model_type(config):
         raise NotImplementedError(f'Webui model type {type(config).__name__} is not yet supported')
 
 
-@ipc.confine_to('comfyui')
+@ipc.restrict_to_process('comfyui')
 def get_comfy_model_config():
     import comfy
     with open(sd_model_get_config()) as f:
@@ -366,7 +366,7 @@ def get_comfy_model_config():
     return comfy.model_detection.model_config_from_unet_config(unet_config)
 
 
-@ipc.confine_to('webui')
+@ipc.run_in_process('webui')
 def sd_model_get_config():
     from modules import shared, sd_models, sd_models_config
     return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())

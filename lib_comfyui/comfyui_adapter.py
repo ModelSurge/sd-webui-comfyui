@@ -3,14 +3,16 @@ import os
 from torch import multiprocessing
 from lib_comfyui import comfyui_pre_main, webui_settings, webui_paths, ipc, torch_utils, webui_proxies, argv_conversion
 from lib_comfyui.comfyui_context import ComfyuiContext
-from modules import shared
 
 
 comfyui_process = None
 multiprocessing_spawn = multiprocessing.get_context('spawn')
 
 
+@ipc.restrict_to_process('webui')
 def start():
+    from modules import shared
+
     install_location = webui_settings.get_install_location()
     if not os.path.exists(install_location):
         return

@@ -1,19 +1,21 @@
 import sys
-import modules.scripts as scripts
 from lib_comfyui import ipc
 
 
-base_dir = scripts.basedir()
+__base_dir = None
+if ipc.current_process_id == 'webui':
+    from modules import scripts
+    __base_dir = scripts.basedir()
 
 
-@ipc.confine_to('webui')
+@ipc.run_in_process('webui')
 def get_webui_base_dir():
-    return base_dir
+    return __base_dir
 
 
 class ComfyuiContext:
     def __init__(self):
-        self.sys_path_to_add = base_dir
+        self.sys_path_to_add = get_webui_base_dir()
 
     def __enter__(self):
         self.original_sys_path = list(sys.path)

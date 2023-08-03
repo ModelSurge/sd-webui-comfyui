@@ -1,6 +1,5 @@
 import threading
 from queue import Empty
-
 from torch import multiprocessing
 import multiprocessing.queues
 from lib_comfyui import platform_utils

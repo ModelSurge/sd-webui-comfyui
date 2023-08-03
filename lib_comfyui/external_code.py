@@ -2,7 +2,7 @@ import dataclasses
 import json
 from pathlib import Path
 from typing import List, Tuple, Union, Optional
-from lib_comfyui import global_state, ipc
+from lib_comfyui import global_state
 
 
 ALL_TABS = ...

@@ -59,18 +59,29 @@ class ComfyUIScript(scripts.Script):
         return controls
 
     def get_alwayson_ui(self, is_img2img: bool):
+        xxx2img = self.get_xxx2img_str(is_img2img)
+
         with gr.Row():
             queue_front = gr.Checkbox(label='Queue front', elem_id=self.elem_id('queue_front'), value=True)
-            workflows = external_code.get_workflow_display_names(self.get_xxx2img_str(is_img2img))
-            gr.Dropdown(label='Workflow type', choices=workflows, value=workflows[0], elem_id=self.elem_id('workflow_type'))
+            workflow_display_names = external_code.get_workflow_display_names(xxx2img)
+            workflow_type = gr.Dropdown(label='Workflow type', choices=workflow_display_names, value=workflow_display_names[0], elem_id=self.elem_id('workflow_type'))
+            workflow_types = dict(zip(workflow_display_names, external_code.get_workflow_ids(xxx2img)))
+            workflow_type.change(
+                fn=None,
+                _js='changeCurrentWorkflow',
+                inputs=[gr.Text(json.dumps(workflow_types), interactive=False, visible=False), workflow_type],
+            )
+
         with gr.Row():
             gr.HTML(value=self.get_iframes_html(is_img2img))
+
         with gr.Row():
             refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id=self.elem_id('refresh_button'))
             refresh_button.click(
                 fn=None,
                 _js='reloadComfyuiIFrames'
             )
+
         return queue_front,
 
     def get_iframes_html(self, is_img2img: bool) -> str:
@@ -94,7 +105,7 @@ class ComfyUIScript(scripts.Script):
             """)
 
         return f"""
-            <div id="comfyui_iframes">
+            <div class="comfyui_iframes">
                 {''.join(iframes)}
             </div>
         """

@@ -5,6 +5,16 @@ function uuidv4() {
 }
 
 const CLIENT_KEY = uuidv4();
+
+function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
+    console.log(workflowTypes, newWorkflowName);
+    const newWorkflowType = JSON.parse(workflowTypes)[newWorkflowName];
+    const newIFrameElement = document.querySelector(`#comfyui_${newWorkflowType}`);
+    const oldIFrameElement = newIFrameElement.parentElement.querySelector(".comfyui-embedded-widget-display");
+    newIFrameElement.classList.add("comfyui-embedded-widget-display");
+    oldIFrameElement.classList.remove("comfyui-embedded-widget-display");
+}
+
 const FRAME_IDS = [
     'comfyui_sandbox_tab',
     'comfyui_postprocess_txt2img',

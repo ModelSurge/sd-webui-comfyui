@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
 });
 
 function onComfyuiTabLoaded(callback) {
-    const textbox = getWorkflowIdsElement();
+    const textbox = getWorkflowTypeIdsElement();
     const container = getComfyuiContainer();
     const tabNav = getTabNav();
 
@@ -35,7 +35,7 @@ function onComfyuiTabLoaded(callback) {
 let WORKFLOW_TYPE_IDS = [];
 
 function setupComfyuiTabEvents() {
-    WORKFLOW_TYPE_IDS = JSON.parse(getWorkflowIdsElement().innerText);
+    WORKFLOW_TYPE_IDS = JSON.parse(getWorkflowTypeIdsElement().innerText);
 
     setupReloadOnErrorEvent();
     setupResizeTabEvent();
@@ -112,7 +112,7 @@ function getComfyuiContainer() {
     return document.getElementById("comfyui_webui_container") ?? null;
 }
 
-function getWorkflowIdsElement() {
+function getWorkflowTypeIdsElement() {
     return document.getElementById('comfyui_workflow_type_id_list') ?? null;
 }
 

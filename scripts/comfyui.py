@@ -81,10 +81,23 @@ class ComfyUIScript(scripts.Script):
         if not getattr(shared.opts, 'comfyui_enabled', True):
             return
 
-        p.sample = functools.partial(self.sample_patch, original_function=p.sample)
+        p.comfyui_patches = getattr(p, 'comfyui_patches', set())
+        if 'sample' not in p.comfyui_patches:
+            p.sample = functools.partial(self.p_sample_patch, original_function=p.sample, comfyui_queue_front=queue_front)
+            p.comfyui_patches.add('sample')
 
-    def sample_patch(self, *args, original_function, **kwargs):
-        return original_function(*args, **kwargs)
+    def p_sample_patch(self, *args, original_function, comfyui_queue_front: bool, **kwargs):
+        x = original_function(*args, **kwargs)
+        if getattr(shared.opts, 'comfyui_enabled', True):
+            preprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
+                input_batch=x.to(device='cpu'),
+                workflow_type=default_workflow_types.postprocess_latent_workflow_type,
+                tab=self.get_xxx2img_str(),
+                queue_front=comfyui_queue_front,
+            )
+            x = torch.stack(preprocessed_x).to(device=x.device)
+
+        return x
 
     def postprocess_batch_list(self, p, pp, queue_front, batch_number, **kwargs):
         if not getattr(shared.opts, 'comfyui_enabled', True):

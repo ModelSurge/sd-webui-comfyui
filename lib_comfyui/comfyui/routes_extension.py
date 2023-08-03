@@ -131,6 +131,10 @@ def polling_server_patch(instance, loop):
         print(f'[sd-webui-comfyui] set client webui_client_id - \n{webui_client_id}')
         return web.json_response()
 
+
+def workflow_ops_server_patch(instance, _loop):
+    from aiohttp import web
+
     @instance.routes.get("/sd-webui-comfyui/default_workflow")
     async def get_default_workflow(request):
         params = request.rel_url.query
@@ -155,3 +159,4 @@ def add_server__init__patch(callback):
 
 def patch_server_routes():
     add_server__init__patch(polling_server_patch)
+    add_server__init__patch(workflow_ops_server_patch)

@@ -12,12 +12,17 @@ preprocess_latent_workflow_type = external_code.WorkflowType(
     base_id='preprocess_latent',
     display_name='Preprocess (latent)',
     tabs='img2img',
-    default_workflow=default_workflows_dir / 'preprocess_latent.json',
+    default_workflow=default_workflows_dir / 'process_latent.json',
 )
 postprocess_workflow_type = external_code.WorkflowType(
     base_id='postprocess',
     display_name='Postprocess',
-    default_workflow=default_workflows_dir / 'postprocess.json',
+    default_workflow=default_workflows_dir / 'process_image.json',
+)
+postprocess_latent_workflow_type = external_code.WorkflowType(
+    base_id='postprocess_latent',
+    display_name='Postprocess (latent)',
+    default_workflow=default_workflows_dir / 'process_latent.json',
 )
 
 
@@ -25,6 +30,7 @@ def add_default_workflow_types():
     workflow_types = [
         sandbox_tab_workflow_type,
         postprocess_workflow_type,
+        postprocess_latent_workflow_type,
         preprocess_latent_workflow_type,
     ]
 

@@ -7,7 +7,6 @@ function uuidv4() {
 const CLIENT_KEY = uuidv4();
 
 function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
-    console.log(workflowTypes, newWorkflowName);
     const newWorkflowType = JSON.parse(workflowTypes)[newWorkflowName];
     const newIFrameElement = document.querySelector(`#comfyui_${newWorkflowType}`);
     const oldIFrameElement = newIFrameElement.parentElement.querySelector(".comfyui-embedded-widget-display");
@@ -15,11 +14,11 @@ function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
     oldIFrameElement.classList.remove("comfyui-embedded-widget-display");
 }
 
-const FRAME_IDS = [
-    'comfyui_sandbox_tab',
-    'comfyui_postprocess_txt2img',
-    'comfyui_postprocess_img2img',
-    'comfyui_preprocess_latent_img2img',
+const WORKFLOW_IDS = [
+    'sandbox_tab',
+    'postprocess_txt2img',
+    'postprocess_img2img',
+    'preprocess_latent_img2img',
 ];
 
 document.addEventListener("DOMContentLoaded", (e) => {
@@ -46,12 +45,12 @@ function setupComfyuiTabEvents() {
 
     updateComfyuiTabHeight();
 
-    FRAME_IDS.forEach(id => forceFeedIdToIFrame(id));
+    WORKFLOW_IDS.forEach(id => forceFeedIdToIFrame(id));
 }
 
 function setupReloadOnErrorEvent() {
-    FRAME_IDS.forEach(id => {
-        const comfyui_frame = document.querySelector(`#${id}`);
+    WORKFLOW_IDS.forEach(id => {
+        const comfyui_frame = document.querySelector(`#comfyui_${id}`);
         comfyui_frame.addEventListener("error", () => {
             setTimeout(() => {
                 reloadFrameElement(comfyui_frame);
@@ -61,8 +60,8 @@ function setupReloadOnErrorEvent() {
 }
 
 function reloadComfyuiIFrames() {
-    FRAME_IDS.forEach(id => {
-        const comfyui_frame = document.querySelector(`#${id}`);
+    WORKFLOW_IDS.forEach(id => {
+        const comfyui_frame = document.querySelector(`#comfyui_${id}`);
         reloadFrameElement(comfyui_frame);
         forceFeedIdToIFrame(id);
     });
@@ -129,22 +128,21 @@ function reloadFrameElement(iframeElement) {
     iframeElement.src = oldSrc;
 }
 
-function forceFeedIdToIFrame(frameId) {
+function forceFeedIdToIFrame(workflowId) {
     let received = false;
-    let messageToReceive = frameId;
+    let messageToReceive = workflowId;
 
     window.addEventListener('message', (event) => {
         if(messageToReceive !== event.data) return;
         console.log(`[sd-webui-comfyui][webui] hs - ${event.data}`);
         received = true;
-
     });
 
     const feed = () => {
         if(received) return;
-        const frameEl = document.querySelector(`#${frameId}`);
+        const frameEl = document.querySelector(`#comfyui_${workflowId}`);
         const targetOrigin = frameEl.src;
-        const message = `${frameEl.getAttribute('id')}.${CLIENT_KEY}`;
+        const message = `${workflowId}.${CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);
         setTimeout(() => feed(), POLLING_TIMEOUT);
     };

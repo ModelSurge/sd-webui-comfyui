@@ -73,14 +73,15 @@ function onElementDomIdRegistered(callback) {
 }
 
 function patchUiEnv(thisClientId) {
-    if(thisClientId !== 'comfyui_general_tab') {
+    if(thisClientId !== 'sandbox_tab') {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
-        patchSavingMechanism(thisClientId);
+        patchSavingMechanism();
+        loadDefaultGraph(thisClientId);
     }
 }
 
-function patchSavingMechanism(thisClientId) {
+function patchSavingMechanism() {
     if(app.graph === undefined) {
         setTimeout(patchSavingMechanism, POLLING_TIMEOUT);
         return;
@@ -110,14 +111,11 @@ function patchSavingMechanism(thisClientId) {
         saveButton.click();
         app.graph.serialize = app.graph.patched_serialize;
     };
-
-    loadDefaultGraph(thisClientId);
 }
 
 async function loadDefaultGraph(thisClientId) {
     const response = await api.fetchApi("/sd-webui-comfyui/default_workflow?" + new URLSearchParams({
         client_id: thisClientId,
-        bar: 2,
     }), {
         method: "GET",
         headers: {

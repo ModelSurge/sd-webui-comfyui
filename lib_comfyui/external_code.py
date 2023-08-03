@@ -93,7 +93,7 @@ def get_workflow_display_names(tabs: Tabs = ALL_TABS) -> List[str]:
 
 def get_default_workflow_json(iframe_id: str) -> dict:
     for workflow in get_workflows():
-        if iframe_id in map(get_iframe_id, workflow.get_ids()):
+        if iframe_id in workflow.get_ids():
             return json.loads(workflow.default_workflow)
 
     raise ValueError(iframe_id)

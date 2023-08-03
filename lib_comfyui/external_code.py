@@ -1,5 +1,7 @@
 import dataclasses
-from typing import List, Tuple, Union
+import json
+from pathlib import Path
+from typing import List, Tuple, Union, Optional
 from lib_comfyui import global_state, ipc
 
 
@@ -12,11 +14,15 @@ class Workflow:
     base_id: str
     display_name: str
     tabs: Tabs = ALL_TABS
-    default_workflow: dict = None
+    default_workflow: Optional[Union[str, Path]] = None
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
             self.tabs = (self.tabs,)
+
+        if isinstance(self.default_workflow, Path):
+            with open(str(self.default_workflow), 'r') as f:
+                self.default_workflow = f.read()
 
     def get_ids(self, tabs: Tabs = ALL_TABS) -> List[str]:
         if isinstance(tabs, str):
@@ -83,6 +89,14 @@ def get_workflow_ids(tabs: Tabs = ALL_TABS) -> List[str]:
 
 def get_workflow_display_names(tabs: Tabs = ALL_TABS) -> List[str]:
     return [workflow.display_name for workflow in get_workflows(tabs)]
+
+
+def get_default_workflow_json(iframe_id: str) -> dict:
+    for workflow in get_workflows():
+        if iframe_id in map(get_iframe_id, workflow.get_ids()):
+            return json.loads(workflow.default_workflow)
+
+    raise ValueError(iframe_id)
 
 
 def get_iframe_id(workflow_id: str) -> str:

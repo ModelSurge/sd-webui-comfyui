@@ -1,11 +1,10 @@
 import asyncio
 import json
 import multiprocessing
-import os
 from pathlib import Path
 
 from lib_comfyui.parallel_utils import clear_queue, StoppableThread
-from lib_comfyui import ipc, global_state, comfyui_context, torch_utils
+from lib_comfyui import ipc, global_state, comfyui_context, torch_utils, external_code
 from lib_comfyui.queue_tracker import PromptQueueTracker
 
 
@@ -139,16 +138,13 @@ def polling_server_patch(instance, loop):
     @instance.routes.get("/sd-webui-comfyui/default_workflow")
     async def get_default_workflow(request):
         params = request.rel_url.query
-        client_id = params['client_id']
+        workflow_id = params['client_id']
 
-        default_workflows_path = Path(comfyui_context.get_webui_base_dir()) / 'workflows' / 'default'
-        default_workflows = os.listdir(str(default_workflows_path))
-        for default_workflow in default_workflows:
-            if str(Path(default_workflow).stem) in client_id:
-                with open(str(default_workflows_path / default_workflow)) as f:
-                    return web.json_response(json.loads(f.read()))
+        try:
+            return web.json_response(external_code.get_default_workflow_json(workflow_id))
+        except ValueError as e:
+            return web.json_response(status=422, reason=str(e))
 
-        return web.json_response(status=422)
 
 def add_server__init__patch(callback):
     import server

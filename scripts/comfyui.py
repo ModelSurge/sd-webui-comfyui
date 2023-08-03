@@ -11,30 +11,29 @@ from modules import shared, ui, sd_samplers
 
 
 def add_default_workflows():
-    external_code.add_workflow(external_code.Workflow(
-        base_id='sandbox_tab',
-        display_name='Sandbox',
-        tabs=(),
-    ))
+    workflows_dir = Path(scripts.basedir(), 'workflows', 'default')
 
-    with open(str(Path(scripts.basedir()) / 'workflows' / 'default' / 'postprocess.json'), 'r') as f:
-        postprocess_workflow = json.loads(f.read())
+    workflows = [
+        external_code.Workflow(
+            base_id='sandbox_tab',
+            display_name='Sandbox',
+            tabs=(),
+        ),
+        external_code.Workflow(
+            base_id='postprocess',
+            display_name='Postprocess',
+            default_workflow=workflows_dir / 'postprocess.json',
+        ),
+        external_code.Workflow(
+            base_id='preprocess_latent',
+            display_name='Preprocess (latent)',
+            tabs='img2img',
+            default_workflow=workflows_dir / 'preprocess_latent.json',
+        ),
+    ]
 
-    external_code.add_workflow(external_code.Workflow(
-        base_id='postprocess',
-        display_name='Postprocess',
-        default_workflow=postprocess_workflow,
-    ))
-
-    with open(str(Path(scripts.basedir()) / 'workflows' / 'default' / 'preprocess_latent.json'), 'r') as f:
-        preprocess_workflow = json.loads(f.read())
-
-    external_code.add_workflow(external_code.Workflow(
-        base_id='preprocess_latent',
-        display_name='Preprocess (latent)',
-        tabs='img2img',
-        default_workflow=preprocess_workflow,
-    ))
+    for workflow in workflows:
+        external_code.add_workflow(workflow)
 
 
 add_default_workflows()

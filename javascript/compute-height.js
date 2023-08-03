@@ -14,22 +14,16 @@ function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
     newIFrameElement.classList.add("comfyui-embedded-widget-display");
 }
 
-const WORKFLOW_IDS = [
-    'sandbox_tab',
-    'postprocess_txt2img',
-    'postprocess_img2img',
-    'preprocess_latent_img2img',
-];
-
 document.addEventListener("DOMContentLoaded", (e) => {
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
 
 function onComfyuiTabLoaded(callback) {
+    const textbox = getWorkflowIdsElement();
     const container = getComfyuiContainer();
-    const tab_nav = getTabNav();
+    const tabNav = getTabNav();
 
-    if (container === null || tab_nav === null) {
+    if (textbox === null || container === null || tabNav === null) {
         // webui not yet ready, try again in a bit
         setTimeout(() => { onComfyuiTabLoaded(callback); }, POLLING_TIMEOUT);
         return;
@@ -38,7 +32,11 @@ function onComfyuiTabLoaded(callback) {
     callback();
 }
 
+let WORKFLOW_IDS = [];
+
 function setupComfyuiTabEvents() {
+    WORKFLOW_IDS = JSON.parse(getWorkflowIdsElement().innerText);
+
     setupReloadOnErrorEvent();
     setupResizeTabEvent();
     setupToggleFooterEvent();
@@ -114,8 +112,8 @@ function getComfyuiContainer() {
     return document.getElementById("comfyui_webui_container") ?? null;
 }
 
-function getComfyuiIFrameElement() {
-    return document.querySelector('comfyui_general_tab') ?? null;
+function getWorkflowIdsElement() {
+    return document.getElementById('comfyui_workflow_id_list') ?? null;
 }
 
 function getFooter() {

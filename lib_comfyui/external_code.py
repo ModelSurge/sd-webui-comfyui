@@ -5,7 +5,7 @@ from typing import List, Tuple, Union, Optional
 from lib_comfyui import global_state, ipc
 
 
-ALL_TABS = ('txt2img', 'img2img')
+ALL_TABS = ...
 Tabs = Union[str, Tuple[str]]
 
 
@@ -13,12 +13,14 @@ Tabs = Union[str, Tuple[str]]
 class Workflow:
     base_id: str
     display_name: str
-    tabs: Tabs = ALL_TABS
+    tabs: Tabs = ('txt2img', 'img2img')
     default_workflow: Optional[Union[str, Path]] = None
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
             self.tabs = (self.tabs,)
+
+        assert self.tabs, "tabs must not be empty"
 
         if isinstance(self.default_workflow, Path):
             with open(str(self.default_workflow), 'r') as f:
@@ -31,7 +33,7 @@ class Workflow:
         return [
             f'{self.base_id}_{tab}'
             for tab in self.tabs
-            if tab in tabs
+            if tabs == ALL_TABS or tab in tabs
         ]
 
 
@@ -67,7 +69,7 @@ def get_workflows(tabs: Tabs = ALL_TABS) -> List[Workflow]:
     return [
         workflow
         for workflow in getattr(global_state, 'workflows', [])
-        if any(tab in tabs for tab in workflow.tabs)
+        if tabs == ALL_TABS or any(tab in tabs for tab in workflow.tabs)
     ]
 
 

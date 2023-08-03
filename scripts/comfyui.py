@@ -11,24 +11,24 @@ from modules import shared, ui, sd_samplers
 
 
 def add_default_workflows():
-    workflows_dir = Path(scripts.basedir(), 'workflows', 'default')
+    default_workflows_dir = Path(scripts.basedir(), 'workflows', 'default')
 
     workflows = [
         external_code.Workflow(
-            base_id='sandbox_tab',
-            display_name='Sandbox',
-            tabs=(),
+            base_id='sandbox',
+            display_name='ComfyUI',
+            tabs='tab',
         ),
         external_code.Workflow(
             base_id='postprocess',
             display_name='Postprocess',
-            default_workflow=workflows_dir / 'postprocess.json',
+            default_workflow=default_workflows_dir / 'postprocess.json',
         ),
         external_code.Workflow(
             base_id='preprocess_latent',
             display_name='Preprocess (latent)',
             tabs='img2img',
-            default_workflow=workflows_dir / 'preprocess_latent.json',
+            default_workflow=default_workflows_dir / 'preprocess_latent.json',
         ),
     ]
 
@@ -54,8 +54,7 @@ class ComfyUIScript(scripts.Script):
     def ui(self, is_img2img):
         global_state.is_ui_instantiated = True
         with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
-            controls = self.get_alwayson_ui(is_img2img)
-        return controls
+            return self.get_alwayson_ui(is_img2img)
 
     def get_alwayson_ui(self, is_img2img: bool):
         xxx2img = self.get_xxx2img_str(is_img2img)

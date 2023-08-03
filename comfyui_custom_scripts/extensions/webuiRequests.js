@@ -123,7 +123,11 @@ async function loadDefaultGraph(thisClientId) {
         },
         cache: "no-store",
     });
-    app.loadGraphData(await response.json());
+    const response_json = await response.json();
+    if (response_json === null) {
+        return;
+    }
+    app.loadGraphData(response_json);
 }
 
 onElementDomIdRegistered(longPolling);

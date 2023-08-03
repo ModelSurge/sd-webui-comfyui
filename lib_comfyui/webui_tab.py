@@ -1,15 +1,21 @@
+import json
 import os
 import sys
 import textwrap
 import gradio as gr
 from modules import shared
 import install_comfyui
-from lib_comfyui import comfyui_adapter, webui_settings
+from lib_comfyui import comfyui_adapter, webui_settings, external_code
 
 
 def create_tab():
     install_location = webui_settings.get_install_location()
     with gr.Blocks() as tab:
+        gr.HTML(f"""
+            <div id="comfyui_workflow_id_list">
+                {json.dumps(external_code.get_workflow_ids())}
+            </div>
+        """, visible=False)
         if os.path.exists(install_location):
             gr.HTML(get_comfyui_app_html())
         else:

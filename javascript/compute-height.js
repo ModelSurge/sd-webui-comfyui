@@ -8,7 +8,7 @@ const WEBUI_CLIENT_KEY = uuidv4();
 
 function changeDisplayedWorkflow(workflowTypes, newWorkflowName) {
     const newWorkflowType = JSON.parse(workflowTypes)[newWorkflowName];
-    const newIFrameElement = document.querySelector(`#comfyui_${newWorkflowType}`);
+    const newIFrameElement = getWorkflowTypeIFrame(newWorkflowType);
     const oldIFrameElement = newIFrameElement.parentElement.querySelector(".comfyui-embedded-widget-display");
     oldIFrameElement.classList.remove("comfyui-embedded-widget-display");
     newIFrameElement.classList.add("comfyui-embedded-widget-display");
@@ -32,10 +32,10 @@ function onComfyuiTabLoaded(callback) {
     callback();
 }
 
-let WORKFLOW_IDS = [];
+let WORKFLOW_TYPE_IDS = [];
 
 function setupComfyuiTabEvents() {
-    WORKFLOW_IDS = JSON.parse(getWorkflowIdsElement().innerText);
+    WORKFLOW_TYPE_IDS = JSON.parse(getWorkflowIdsElement().innerText);
 
     setupReloadOnErrorEvent();
     setupResizeTabEvent();
@@ -43,12 +43,12 @@ function setupComfyuiTabEvents() {
 
     updateComfyuiTabHeight();
 
-    WORKFLOW_IDS.forEach(id => forceFeedIdToIFrame(id));
+    WORKFLOW_TYPE_IDS.forEach(id => forceFeedIdToIFrame(id));
 }
 
 function setupReloadOnErrorEvent() {
-    WORKFLOW_IDS.forEach(id => {
-        const comfyuiFrame = document.querySelector(`#comfyui_${id}`);
+    WORKFLOW_TYPE_IDS.forEach(id => {
+        const comfyuiFrame = getWorkflowTypeIFrame(id);
         comfyuiFrame.addEventListener("error", () => {
             setTimeout(() => {
                 reloadFrameElement(comfyuiFrame);
@@ -58,8 +58,8 @@ function setupReloadOnErrorEvent() {
 }
 
 function reloadComfyuiIFrames() {
-    WORKFLOW_IDS.forEach(id => {
-        const comfyuiFrame = document.querySelector(`#comfyui_${id}`);
+    WORKFLOW_TYPE_IDS.forEach(id => {
+        const comfyuiFrame = getWorkflowTypeIFrame(id);
         reloadFrameElement(comfyuiFrame);
         forceFeedIdToIFrame(id);
     });
@@ -113,7 +113,11 @@ function getComfyuiContainer() {
 }
 
 function getWorkflowIdsElement() {
-    return document.getElementById('comfyui_workflow_id_list') ?? null;
+    return document.getElementById('comfyui_workflow_type_id_list') ?? null;
+}
+
+function getWorkflowTypeIFrame(workflowTypeId) {
+    return document.querySelector(`[workflow_type_id="${workflowTypeId}"]`);
 }
 
 function getFooter() {
@@ -138,7 +142,7 @@ function forceFeedIdToIFrame(workflowId) {
 
     const feed = () => {
         if(received) return;
-        const frameEl = document.querySelector(`#comfyui_${workflowId}`);
+        const frameEl = getWorkflowTypeIFrame(workflowId);
         const targetOrigin = frameEl.src;
         const message = `${workflowId}.${WEBUI_CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);

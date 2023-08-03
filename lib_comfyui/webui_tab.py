@@ -11,8 +11,8 @@ def create_tab():
     install_location = webui_settings.get_install_location()
     with gr.Blocks() as tab:
         gr.HTML(f"""
-            <div id="comfyui_workflow_id_list">
-                {json.dumps(external_code.get_workflow_ids())}
+            <div id="comfyui_workflow_type_id_list">
+                {json.dumps(external_code.get_workflow_type_ids())}
             </div>
         """, visible=False)
         if os.path.exists(install_location):
@@ -71,6 +71,11 @@ Alternatively, if you don't have ComfyUI installed, you can install it with this
 def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
-            <iframe src="{webui_settings.get_comfyui_client_url()}" id="{external_code.get_iframe_id('sandbox_tab')}" class="comfyui-embedded-widget" style="width:100%; height:100%;"></iframe>
+            <iframe
+                src="{webui_settings.get_comfyui_client_url()}"
+                workflow_type_id="sandbox_tab"
+                class="comfyui-embedded-widget"
+                style="width:100%; height:100%;">
+            </iframe>
         </div>
     ''')

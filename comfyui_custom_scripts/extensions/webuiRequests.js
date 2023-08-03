@@ -16,7 +16,7 @@ const request_map = new Map([
     }],
 ]);
 
-async function longPolling(thisClientId, webuiClientKey, startupResponse) {
+async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) {
     let clientResponse = startupResponse;
 
     try {
@@ -28,13 +28,13 @@ async function longPolling(thisClientId, webuiClientKey, startupResponse) {
                 },
                 cache: "no-store",
                 body: JSON.stringify({
-                    comfyui_iframe_id: thisClientId,
+                    workflow_type_id: thisWorkflowTypeId,
                     webui_client_id: webuiClientKey,
                     request: clientResponse,
                 }),
             });
             const json = await response.json();
-            console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${json.request}`);
+            console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${thisWorkflowTypeId} - ${json.request}`);
             clientResponse = await request_map.get(json.request)(json);
         }
     }
@@ -44,40 +44,40 @@ async function longPolling(thisClientId, webuiClientKey, startupResponse) {
     }
     finally {
         setTimeout(() => {
-            longPolling(thisClientId, webuiClientKey, clientResponse);
+            longPolling(thisWorkflowTypeId, webuiClientKey, clientResponse);
         }, 100);
     }
 }
 
 
 function onElementDomIdRegistered(callback) {
-    let thisClientId = undefined;
+    let thisWorkflowTypeId = undefined;
     let webuiClientKey = undefined;
 
     window.addEventListener("message", (event) => {
         if(event.data.length > 100) return;
-        if(thisClientId) {
-            event.source.postMessage(thisClientId, event.origin);
+        if(thisWorkflowTypeId) {
+            event.source.postMessage(thisWorkflowTypeId, event.origin);
             return;
         };
         const messageData = event.data.split('.');
-        thisClientId = messageData[0];
+        thisWorkflowTypeId = messageData[0];
         webuiClientKey = messageData[1];
-        console.log(`[sd-webui-comfyui][comfyui] REGISTERED ELEMENT TAG ID - ${thisClientId}/${webuiClientKey}`);
-        event.source.postMessage(thisClientId, event.origin);
-        patchUiEnv(thisClientId);
+        console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - ${thisWorkflowTypeId}/${webuiClientKey}`);
+        event.source.postMessage(thisWorkflowTypeId, event.origin);
+        patchUiEnv(thisWorkflowTypeId);
         const clientResponse = 'register_cid';
         console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
-        callback(thisClientId, webuiClientKey, clientResponse);
+        callback(thisWorkflowTypeId, webuiClientKey, clientResponse);
     });
 }
 
-function patchUiEnv(thisClientId) {
-    if(thisClientId !== 'sandbox_tab') {
+function patchUiEnv(thisWorkflowTypeId) {
+    if(thisWorkflowTypeId !== 'sandbox_tab') {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         patchSavingMechanism();
-        loadDefaultGraph(thisClientId);
+        loadDefaultGraph(thisWorkflowTypeId);
     }
 }
 
@@ -113,9 +113,9 @@ function patchSavingMechanism() {
     };
 }
 
-async function loadDefaultGraph(thisClientId) {
+async function loadDefaultGraph(workflowTypeId) {
     const response = await api.fetchApi("/sd-webui-comfyui/default_workflow?" + new URLSearchParams({
-        client_id: thisClientId,
+        workflow_type_id: workflowTypeId,
     }), {
         method: "GET",
         headers: {

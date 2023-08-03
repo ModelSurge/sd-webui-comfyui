@@ -3,7 +3,7 @@ import json
 import gradio as gr
 import torch
 from modules import shared, scripts, ui, sd_samplers
-from lib_comfyui import comfyui_context, webui_callbacks, webui_settings, global_state, platform_utils, external_code, default_workflows
+from lib_comfyui import comfyui_context, webui_callbacks, webui_settings, global_state, platform_utils, external_code, default_workflow_types
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
 
 
@@ -29,9 +29,9 @@ class ComfyUIScript(scripts.Script):
 
         with gr.Row():
             queue_front = gr.Checkbox(label='Queue front', elem_id=self.elem_id('queue_front'), value=True)
-            workflow_display_names = external_code.get_workflow_display_names(xxx2img)
-            workflow_type = gr.Dropdown(label='Workflow type', choices=workflow_display_names, value=workflow_display_names[0], elem_id=self.elem_id('workflow_type'))
-            workflow_types = dict(zip(workflow_display_names, external_code.get_workflow_ids(xxx2img)))
+            workflow_type_display_names = external_code.get_workflow_type_display_names(xxx2img)
+            workflow_type = gr.Dropdown(label='Workflow type', choices=workflow_type_display_names, value=workflow_type_display_names[0], elem_id=self.elem_id('displayed_workflow_type'))
+            workflow_types = dict(zip(workflow_type_display_names, external_code.get_workflow_type_ids(xxx2img)))
             workflow_type.change(
                 fn=None,
                 _js='changeDisplayedWorkflow',
@@ -55,7 +55,7 @@ class ComfyUIScript(scripts.Script):
 
         iframes = []
         first_loop = True
-        for workflow_id in external_code.get_workflow_ids(self.get_xxx2img_str(is_img2img)):
+        for workflow_type_id in external_code.get_workflow_type_ids(self.get_xxx2img_str(is_img2img)):
             html_classes = ['comfyui-embedded-widget']
             if first_loop:
                 first_loop = False
@@ -64,7 +64,7 @@ class ComfyUIScript(scripts.Script):
             iframes.append(f"""
                 <iframe
                     src="{comfyui_client_url}"
-                    id="{external_code.get_iframe_id(workflow_id)}"
+                    workflow_type_id="{workflow_type_id}"
                     class="{' '.join(html_classes)}"
                     style="width:100%; height:500px;">
                 </iframe>
@@ -95,7 +95,7 @@ class ComfyUIScript(scripts.Script):
 
         batch_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
             input_batch=pp.images,
-            workflow=default_workflows.postprocess_workflow,
+            workflow_type=default_workflow_types.postprocess_workflow_type,
             tab=self.get_xxx2img_str(),
             queue_front=queue_front,
         )
@@ -125,7 +125,7 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     if getattr(shared.opts, 'comfyui_enabled', True):
         preprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
             input_batch=x.to(device='cpu'),
-            workflow=default_workflows.preprocess_latent_workflow,
+            workflow_type=default_workflow_types.preprocess_latent_workflow_type,
             tab='img2img',
             queue_front=True,
         )
@@ -135,5 +135,5 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
 
 
 webui_callbacks.register_callbacks()
-default_workflows.add_default_workflows()
+default_workflow_types.add_default_workflow_types()
 comfyui_context.init_webui_base_dir()

@@ -33,7 +33,7 @@ class ComfyuiNodeWidgetRequests:
     @staticmethod
     def start_workflow_sync(
         input_batch: List[torch.Tensor],
-        workflow: external_code.Workflow,
+        workflow_type: external_code.WorkflowType,
         tab: str,
         queue_front: bool,
     ):
@@ -45,7 +45,7 @@ class ComfyuiNodeWidgetRequests:
         # unsafe queue tracking
         response = ComfyuiNodeWidgetRequests.send({
             'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-            'workflowType': workflow.get_ids(tab)[0],
+            'workflowType': workflow_type.get_ids(tab)[0],
             'requiredNodeTypes': [],
             'queueFront': queue_front,
         })
@@ -65,29 +65,29 @@ class ComfyuiNodeWidgetRequests:
         cls.loop = loop
 
     @classmethod
-    def add_client(cls, comfyui_iframe_id, webui_client_id):
+    def add_client(cls, workflow_type_id, webui_client_id):
         if webui_client_id not in cls.comfyui_iframe_ids:
             cls.comfyui_iframe_ids[webui_client_id] = set()
         if webui_client_id not in cls.param_events:
             cls.param_events[webui_client_id] = {}
-        if comfyui_iframe_id in cls.comfyui_iframe_ids[webui_client_id]:
+        if workflow_type_id in cls.comfyui_iframe_ids[webui_client_id]:
             return
 
         # REMOVE THIS AT SOME POINT
         ComfyuiNodeWidgetRequests.focused_webui_client_id = webui_client_id
 
-        cls.param_events[webui_client_id][comfyui_iframe_id] = asyncio.Event()
-        cls.comfyui_iframe_ids[webui_client_id].add(comfyui_iframe_id)
-        print(f'[sd-webui-comfyui] registered new ComfyUI client - {comfyui_iframe_id}')
+        cls.param_events[webui_client_id][workflow_type_id] = asyncio.Event()
+        cls.comfyui_iframe_ids[webui_client_id].add(workflow_type_id)
+        print(f'[sd-webui-comfyui] registered new ComfyUI client - {workflow_type_id}')
 
     @classmethod
     async def handle_response(cls, response):
         cls.finished_comfyui_queue.put(response)
 
     @classmethod
-    async def handle_request(cls, comfyui_iframe_id, webui_client_id):
-        await cls.param_events[webui_client_id][comfyui_iframe_id].wait()
-        cls.param_events[webui_client_id][comfyui_iframe_id].clear()
+    async def handle_request(cls, workflow_type_id, webui_client_id):
+        await cls.param_events[webui_client_id][workflow_type_id].wait()
+        cls.param_events[webui_client_id][workflow_type_id].clear()
         return cls.last_params
 
 
@@ -101,21 +101,21 @@ def polling_server_patch(instance, loop):
         response = await response.json()
         if 'webui_client_id' not in response:
             return web.json_response(status=422)
-        if 'comfyui_iframe_id' not in response:
+        if 'workflow_type_id' not in response:
             return web.json_response(status=422)
 
         webui_client_id = response['webui_client_id']
-        comfyui_iframe_id = response['comfyui_iframe_id']
+        workflow_type_id = response['workflow_type_id']
 
         if not (webui_client_id in ComfyuiNodeWidgetRequests.comfyui_iframe_ids
-                and comfyui_iframe_id in ComfyuiNodeWidgetRequests.comfyui_iframe_ids[webui_client_id]):
-            ComfyuiNodeWidgetRequests.add_client(comfyui_iframe_id, webui_client_id)
+                and workflow_type_id in ComfyuiNodeWidgetRequests.comfyui_iframe_ids[webui_client_id]):
+            ComfyuiNodeWidgetRequests.add_client(workflow_type_id, webui_client_id)
         else:
             if 'error' in response:
-                print(f"[sd-webui-comfyui] Client {comfyui_iframe_id}-{webui_client_id} encountered an error - \n{response['error']}")
+                print(f"[sd-webui-comfyui] Client {workflow_type_id}-{webui_client_id} encountered an error - \n{response['error']}")
             await ComfyuiNodeWidgetRequests.handle_response(response)
 
-        request = await ComfyuiNodeWidgetRequests.handle_request(comfyui_iframe_id, webui_client_id)
+        request = await ComfyuiNodeWidgetRequests.handle_request(workflow_type_id, webui_client_id)
         print(f'[sd-webui-comfyui] send request - \n{request}')
         return web.json_response(request)
 
@@ -133,10 +133,10 @@ def polling_server_patch(instance, loop):
     @instance.routes.get("/sd-webui-comfyui/default_workflow")
     async def get_default_workflow(request):
         params = request.rel_url.query
-        workflow_id = params['client_id']
+        workflow_type_id = params['workflow_type_id']
 
         try:
-            return web.json_response(external_code.get_default_workflow_json(workflow_id))
+            return web.json_response(external_code.get_default_workflow_json(workflow_type_id))
         except ValueError as e:
             return web.json_response(status=422, reason=str(e))
 

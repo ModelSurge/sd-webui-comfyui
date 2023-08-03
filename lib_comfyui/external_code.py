@@ -10,7 +10,7 @@ Tabs = Union[str, Tuple[str]]
 
 
 @dataclasses.dataclass
-class Workflow:
+class WorkflowType:
     base_id: str
     display_name: str
     tabs: Tabs = ('txt2img', 'img2img')
@@ -37,69 +37,80 @@ class Workflow:
         ]
 
 
-def add_workflow(new_workflow: Workflow) -> None:
+def add_workflow_type(new_workflow_type: WorkflowType) -> None:
     """
     Register a new workflow type
-    You can also call this function to dynamically add a workflow type in the ui
+    You cannot call this function after the extension ui has been created
     """
-    workflows = get_workflows()
+    workflows = get_workflow_types()
 
     for existing_workflow in workflows:
-        if existing_workflow.base_id == new_workflow.base_id:
-            raise ValueError(f'The workflow id {new_workflow.base_id} already exists')
-        if existing_workflow.display_name == new_workflow.display_name:
-            raise ValueError(f'The workflow display name {new_workflow.display_name} is already in use by workflow {existing_workflow.base_id}')
+        if existing_workflow.base_id == new_workflow_type.base_id:
+            raise ValueError(f'The id {new_workflow_type.base_id} already exists')
+        if existing_workflow.display_name == new_workflow_type.display_name:
+            raise ValueError(f'The display name {new_workflow_type.display_name} is already in use by workflow type {existing_workflow.base_id}')
 
     if getattr(global_state, 'is_ui_instantiated', False):
-        raise NotImplementedError('Cannot yet modify workflows after the ui has been instantiated')
+        raise NotImplementedError('Cannot modify workflow types after the ui has been instantiated')
 
-    workflows.append(new_workflow)
-    set_workflows(workflows)
+    workflows.append(new_workflow_type)
+    set_workflow_types(workflows)
 
 
-def get_workflows(tabs: Tabs = ALL_TABS) -> List[Workflow]:
+def get_workflow_types(tabs: Tabs = ALL_TABS) -> List[WorkflowType]:
     """
     Get the list of currently registered workflows
-    To update the workflows, do not modify this list directly
-    Instead, have a look at the other functions
+    To update the workflows list, see `add_workflow` or `set_workflows`
     """
     if isinstance(tabs, str):
         tabs = (tabs,)
 
     return [
-        workflow
-        for workflow in getattr(global_state, 'workflows', [])
-        if tabs == ALL_TABS or any(tab in tabs for tab in workflow.tabs)
+        workflow_type
+        for workflow_type in getattr(global_state, 'workflow_types', [])
+        if tabs == ALL_TABS or any(tab in tabs for tab in workflow_type.tabs)
     ]
 
 
-def set_workflows(workflows: List[Workflow]) -> None:
+def set_workflow_types(workflows: List[WorkflowType]) -> None:
+    """
+    Set the list of currently registered workflows
+    You cannot call this function after the extension ui has been created
+    """
     if getattr(global_state, 'is_ui_instantiated', False):
-        raise NotImplementedError('Cannot yet modify workflows after the ui has been instantiated')
+        raise NotImplementedError('Cannot modify workflow types after the ui has been instantiated')
 
-    setattr(global_state, 'workflows', workflows)
+    setattr(global_state, 'workflow_types', workflows)
 
 
-def get_workflow_ids(tabs: Tabs = ALL_TABS) -> List[str]:
+def get_workflow_type_ids(tabs: Tabs = ALL_TABS) -> List[str]:
+    """
+    Get all workflow type ids of all currently registered workflows
+    Multiple ids can be assigned to each workflow type depending on how many tabs it is to be displayed on
+
+    Args:
+        tabs (Tabs): whitelist of tabs for which to return the ids
+    Returns:
+        list of ids for the given tabs
+    """
     res = []
 
-    for workflow in get_workflows(tabs):
-        res.extend(workflow.get_ids(tabs))
+    for workflow_type in get_workflow_types(tabs):
+        res.extend(workflow_type.get_ids(tabs))
 
     return res
 
 
-def get_workflow_display_names(tabs: Tabs = ALL_TABS) -> List[str]:
-    return [workflow.display_name for workflow in get_workflows(tabs)]
+def get_workflow_type_display_names(tabs: Tabs = ALL_TABS) -> List[str]:
+    """
+    Get the list of display names for
+    """
+    return [workflow_type.display_name for workflow_type in get_workflow_types(tabs)]
 
 
-def get_default_workflow_json(workflow_id: str) -> dict:
-    for workflow in get_workflows():
-        if workflow_id in workflow.get_ids():
-            return json.loads(workflow.default_workflow)
+def get_default_workflow_json(workflow_type_id: str) -> dict:
+    for workflow_type in get_workflow_types():
+        if workflow_type_id in workflow_type.get_ids():
+            return json.loads(workflow_type.default_workflow)
 
-    raise ValueError(workflow_id)
-
-
-def get_iframe_id(workflow_id: str) -> str:
-    return f'comfyui_{workflow_id}'
+    raise ValueError(workflow_type_id)

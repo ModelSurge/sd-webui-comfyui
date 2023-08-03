@@ -1,45 +1,10 @@
 import functools
 import json
-from pathlib import Path
 import gradio as gr
 import torch
-
-import modules.scripts as scripts
-from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils, external_code
+from modules import shared, scripts, ui, sd_samplers
+from lib_comfyui import comfyui_context, webui_callbacks, webui_settings, global_state, platform_utils, external_code, default_workflows
 from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
-from modules import shared, ui, sd_samplers
-
-
-default_workflows_dir = Path(scripts.basedir(), 'workflows', 'default')
-sandbox_tab_workflow = external_code.Workflow(
-    base_id='sandbox',
-    display_name='ComfyUI',
-    tabs='tab',
-)
-preprocess_latent_workflow = external_code.Workflow(
-    base_id='preprocess_latent',
-    display_name='Preprocess (latent)',
-    tabs='img2img',
-    default_workflow=default_workflows_dir / 'preprocess_latent.json',
-)
-postprocess_workflow = external_code.Workflow(
-    base_id='postprocess',
-    display_name='Postprocess',
-    default_workflow=default_workflows_dir / 'postprocess.json',
-)
-
-def add_default_workflows():
-    workflows = [
-        sandbox_tab_workflow,
-        postprocess_workflow,
-        preprocess_latent_workflow,
-    ]
-
-    for workflow in workflows:
-        external_code.add_workflow(workflow)
-
-
-add_default_workflows()
 
 
 class ComfyUIScript(scripts.Script):
@@ -69,7 +34,7 @@ class ComfyUIScript(scripts.Script):
             workflow_types = dict(zip(workflow_display_names, external_code.get_workflow_ids(xxx2img)))
             workflow_type.change(
                 fn=None,
-                _js='changeCurrentWorkflow',
+                _js='changeDisplayedWorkflow',
                 inputs=[gr.Text(json.dumps(workflow_types), interactive=False, visible=False), workflow_type],
             )
 
@@ -130,7 +95,7 @@ class ComfyUIScript(scripts.Script):
 
         batch_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
             input_batch=pp.images,
-            workflow=postprocess_workflow,
+            workflow=default_workflows.postprocess_workflow,
             tab=self.get_xxx2img_str(),
             queue_front=queue_front,
         )
@@ -160,7 +125,7 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     if getattr(shared.opts, 'comfyui_enabled', True):
         preprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
             input_batch=x.to(device='cpu'),
-            workflow=preprocess_latent_workflow,
+            workflow=default_workflows.preprocess_latent_workflow,
             tab='img2img',
             queue_front=True,
         )
@@ -170,3 +135,5 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
 
 
 webui_callbacks.register_callbacks()
+default_workflows.add_default_workflows()
+comfyui_context.init_webui_base_dir()

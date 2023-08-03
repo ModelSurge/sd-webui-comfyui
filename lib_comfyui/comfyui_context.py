@@ -3,13 +3,19 @@ from lib_comfyui import ipc
 
 
 __base_dir = None
-if ipc.current_process_id == 'webui':
+
+
+@ipc.restrict_to_process('webui')
+def init_webui_base_dir():
+    global __base_dir
     from modules import scripts
-    __base_dir = scripts.basedir()
+    if __base_dir is None:
+        __base_dir = scripts.basedir()
 
 
 @ipc.run_in_process('webui')
 def get_webui_base_dir():
+    init_webui_base_dir()
     return __base_dir
 
 

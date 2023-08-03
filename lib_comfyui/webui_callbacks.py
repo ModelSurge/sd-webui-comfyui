@@ -1,6 +1,4 @@
 from lib_comfyui import comfyui_adapter, webui_tab, webui_settings, ipc, comfyui_context
-ipc.restrict_to_process('webui')(lambda: None)()
-from modules import script_callbacks
 
 
 def on_ui_tabs():
@@ -19,7 +17,9 @@ def on_script_unloaded():
     comfyui_adapter.stop()
 
 
+@ipc.restrict_to_process('webui')
 def register_callbacks():
+    from modules import script_callbacks
     script_callbacks.on_ui_tabs(on_ui_tabs)
     script_callbacks.on_ui_settings(on_ui_settings)
     script_callbacks.on_app_started(on_app_started)

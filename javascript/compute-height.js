@@ -6,7 +6,7 @@ function uuidv4() {
 
 const WEBUI_CLIENT_KEY = uuidv4();
 
-function changeCurrentWorkflow(workflowTypes, newWorkflowName) {
+function changeDisplayedWorkflow(workflowTypes, newWorkflowName) {
     const newWorkflowType = JSON.parse(workflowTypes)[newWorkflowName];
     const newIFrameElement = document.querySelector(`#comfyui_${newWorkflowType}`);
     const oldIFrameElement = newIFrameElement.parentElement.querySelector(".comfyui-embedded-widget-display");

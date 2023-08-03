@@ -1,9 +1,9 @@
 {
-  "last_node_id": 317,
-  "last_link_id": 575,
+  "last_node_id": 417,
+  "last_link_id": 675,
   "nodes": [
     {
-      "id": 316,
+      "id": 416,
       "type": "LatentFromWebui",
       "pos": [
         16,
@@ -21,7 +21,7 @@
           "name": "LATENT",
           "type": "LATENT",
           "links": [
-            575
+            675
           ],
           "shape": 3,
           "slot_index": 0
@@ -35,7 +35,7 @@
       ]
     },
     {
-      "id": 317,
+      "id": 417,
       "type": "LatentToWebui",
       "pos": [
         537,
@@ -52,7 +52,7 @@
         {
           "name": "latents",
           "type": "LATENT",
-          "link": 575
+          "link": 675
         }
       ],
       "properties": {
@@ -65,10 +65,10 @@
   ],
   "links": [
     [
-      575,
-      316,
+      675,
+      416,
       0,
-      317,
+      417,
       0,
       "LATENT"
     ]

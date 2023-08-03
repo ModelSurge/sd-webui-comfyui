@@ -1,8 +1,8 @@
 import asyncio
-import json
 import multiprocessing
-from pathlib import Path
+from typing import List
 
+import torch
 from lib_comfyui.parallel_utils import clear_queue, StoppableThread
 from lib_comfyui import ipc, global_state, comfyui_context, torch_utils, external_code
 from lib_comfyui.queue_tracker import PromptQueueTracker
@@ -34,22 +34,22 @@ class ComfyuiNodeWidgetRequests:
 
     @ipc.confine_to('comfyui')
     @staticmethod
-    def start_workflow_sync(batch, workflow_type, is_img2img, required_node_types, queue_front):
-        xxx2img = ("img2img" if is_img2img else "txt2img")
-        output_key = f'{xxx2img}_node_outputs'
-        input_key = f'{xxx2img}_node_inputs'
-        setattr(global_state, input_key, batch)
-        setattr(global_state, 'tab_name', xxx2img)
-        if output_key in global_state:
-            delattr(global_state, output_key)
+    def start_workflow_sync(
+        input_batch: List[torch.Tensor],
+        workflow: external_code.Workflow,
+        tab: str,
+        queue_front: bool,
+    ):
+        global_state.node_inputs = input_batch
+        global_state.node_outputs = []
 
         PromptQueueTracker.setup_tracker_id()
 
         # unsafe queue tracking
         response = ComfyuiNodeWidgetRequests.send({
             'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-            'workflowType': f'comfyui_{workflow_type}_{xxx2img}',
-            'requiredNodeTypes': required_node_types,
+            'workflowType': workflow.get_ids(tab)[0],
+            'requiredNodeTypes': [],
             'queueFront': queue_front,
         })
 
@@ -58,9 +58,7 @@ class ComfyuiNodeWidgetRequests:
 
         PromptQueueTracker.wait_until_done()
 
-        results = getattr(global_state, output_key, [])
-
-        return results
+        return global_state.node_outputs
 
     @classmethod
     def init_request_listener(cls, loop):

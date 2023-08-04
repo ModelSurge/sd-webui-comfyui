@@ -88,7 +88,7 @@ def clear_workflow_types() -> None:
     Clear the list of currently registered workflows
     You cannot call this function after the extension ui has been created
     """
-    global_state.workflow_types = []
+    set_workflow_types([])
 
 
 def get_workflow_type_ids(tabs: Tabs = ALL_TABS) -> List[str]:

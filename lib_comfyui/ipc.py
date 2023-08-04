@@ -54,9 +54,14 @@ current_process_queues = {}
 
 
 def reset_state():
+    assert not callback_listeners_started(), 'can only reset the ipc state when callback listeners are stopped'
+
     current_process_callback_listeners['webui'] = parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified))
     current_process_queues['comfyui'] = parallel_utils.CallbackQueue(call_fully_qualified)
     gc.collect()
+
+
+reset_state()
 
 
 def get_current_process_queues():
@@ -64,10 +69,16 @@ def get_current_process_queues():
 
 
 def start_callback_listeners():
+    assert not callback_listeners_started()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
 
 
 def stop_callback_listeners():
+    assert callback_listeners_started()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()
+
+
+def callback_listeners_started():
+    return any(callback_listener.is_running() for callback_listener in current_process_callback_listeners.values())

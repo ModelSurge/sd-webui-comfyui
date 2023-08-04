@@ -107,6 +107,9 @@ class CallbackWatcher:
         self.producer_thread = StoppableThread(target=thread_loop, daemon=True)
         self.producer_thread.start()
 
+    def is_running(self):
+        return self.producer_thread.is_running()
+
     def stop(self):
         if self.producer_thread is None:
             return

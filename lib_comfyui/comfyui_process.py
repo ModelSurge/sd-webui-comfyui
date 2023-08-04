@@ -1,7 +1,7 @@
 import os
 from torch import multiprocessing
 from lib_comfyui import ipc, torch_utils, argv_conversion
-from lib_comfyui.webui import settings, paths
+from lib_comfyui.webui import settings
 from lib_comfyui.comfyui import pre_main
 from lib_comfyui.comfyui_context import ComfyuiContext
 
@@ -33,7 +33,6 @@ def start_comfyui_process(install_location):
             target=pre_main.main,
             args=(
                 install_location,
-                paths.get_folder_paths(),
                 {**ipc.get_current_process_queues(), **ipc.current_process_queues},
                 argv_conversion.get_comfyui_args(),
             ),

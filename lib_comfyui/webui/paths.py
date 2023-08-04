@@ -5,15 +5,16 @@ from lib_comfyui import ipc
 
 
 @ipc.restrict_to_process('comfyui')
-def share_webui_folder_paths(folder_paths: dict):
+def share_webui_folder_paths():
+    folder_paths = get_webui_folder_paths()
     from folder_paths import add_model_folder_path
     for folder_id, folder_paths in folder_paths.items():
         for folder_path in folder_paths:
             add_model_folder_path(folder_id, folder_path)
 
 
-@ipc.restrict_to_process('webui')
-def get_folder_paths() -> dict:
+@ipc.run_in_process('webui')
+def get_webui_folder_paths() -> dict:
     from modules import paths, shared
     from modules import sd_models
     return {

@@ -16,7 +16,7 @@ def comfyui_print(*args, **kwargs):
     return original_print('[ComfyUI]', *args, **kwargs)
 
 
-def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
+def main(comfyui_path, process_queues, cli_args):
     builtins.print = comfyui_print
     process_queue = process_queues['comfyui']
     ipc.current_process_callback_listeners = {
@@ -27,16 +27,16 @@ def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
     ipc.current_process_queues.update(process_queues)
     ipc.current_process_id = 'comfyui'
     ipc.start_callback_listeners()
-    start_comfyui(comfyui_path, webui_folder_paths, cli_args)
+    start_comfyui(comfyui_path, cli_args)
 
 
 @ipc.restrict_to_process('comfyui')
-def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
+def start_comfyui(comfyui_path, cli_args):
     sys.path.insert(0, comfyui_path)
     sys.argv[1:] = cli_args
 
     print('[sd-webui-comfyui]', 'Injecting custom extensions...')
-    paths.share_webui_folder_paths(webui_folder_paths)
+    paths.share_webui_folder_paths()
     patch_comfyui()
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
     runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')

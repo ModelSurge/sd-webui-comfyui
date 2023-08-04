@@ -134,9 +134,9 @@ function reloadFrameElement(iframeElement) {
     iframeElement.src = oldSrc;
 }
 
-function forceFeedIdToIFrame(workflowId) {
+function forceFeedIdToIFrame(workflowTypeId) {
     let received = false;
-    let messageToReceive = workflowId;
+    let messageToReceive = workflowTypeId;
 
     window.addEventListener('message', (event) => {
         if(messageToReceive !== event.data) return;
@@ -146,9 +146,9 @@ function forceFeedIdToIFrame(workflowId) {
 
     const feed = () => {
         if(received) return;
-        const frameEl = getWorkflowTypeIFrame(workflowId);
+        const frameEl = getWorkflowTypeIFrame(workflowTypeId);
         const targetOrigin = frameEl.src;
-        const message = `${workflowId}.${WEBUI_CLIENT_KEY}`;
+        const message = `${workflowTypeId}.${WEBUI_CLIENT_KEY}`;
         frameEl.contentWindow.postMessage(message, targetOrigin);
         setTimeout(() => feed(), POLLING_TIMEOUT);
     };

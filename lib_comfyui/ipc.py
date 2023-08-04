@@ -61,9 +61,6 @@ def reset_state():
     gc.collect()
 
 
-reset_state()
-
-
 def get_current_process_queues():
     return {k: v.queue for k, v in current_process_callback_listeners.items()}
 
@@ -82,3 +79,6 @@ def stop_callback_listeners():
 
 def callback_listeners_started():
     return any(callback_listener.is_running() for callback_listener in current_process_callback_listeners.values())
+
+
+reset_state()

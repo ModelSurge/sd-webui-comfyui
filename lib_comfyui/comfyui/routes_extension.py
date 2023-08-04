@@ -1,4 +1,5 @@
 import asyncio
+import json
 import multiprocessing
 from typing import List
 import torch
@@ -34,12 +35,11 @@ class ComfyuiNodeWidgetRequests:
     @ipc.run_in_process('comfyui')
     @staticmethod
     def start_workflow_sync(
-        input_batch: List[torch.Tensor],
-        workflow_type: external_code.WorkflowType,
-        tab: str,
+        batch_input: List[torch.Tensor],
+        workflow_type_id: str,
         queue_front: bool,
     ):
-        global_state.node_inputs = input_batch
+        global_state.node_inputs = batch_input
         global_state.node_outputs = []
 
         queue_tracker.setup_tracker_id()
@@ -47,7 +47,7 @@ class ComfyuiNodeWidgetRequests:
         # unsafe queue tracking
         ComfyuiNodeWidgetRequests.send({
             'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-            'workflowType': workflow_type.get_ids(tab)[0],
+            'workflowType': workflow_type_id,
             'requiredNodeTypes': [],
             'queueFront': queue_front,
         })
@@ -141,7 +141,7 @@ def workflow_ops_server_patch(instance, _loop):
         workflow_type_id = params['workflow_type_id']
 
         try:
-            res = web.json_response(external_code.get_default_workflow_json(workflow_type_id))
+            res = web.json_response(json.loads(external_code.get_default_workflow_json(workflow_type_id)))
             return res
         except ValueError as e:
             return web.json_response(status=422, reason=str(e))

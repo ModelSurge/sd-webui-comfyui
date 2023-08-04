@@ -1,8 +1,7 @@
 import functools
 import torch
 import torchvision.transforms.functional as F
-from lib_comfyui import ipc, global_state, default_workflow_types
-from lib_comfyui.comfyui.routes_extension import ComfyuiNodeWidgetRequests
+from lib_comfyui import ipc, global_state, default_workflow_types, external_code
 
 
 __original_create_sampler = None
@@ -35,11 +34,10 @@ def create_sampler_hijack(name: str, model, original_function):
 @ipc.restrict_to_process('webui')
 def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     if getattr(global_state, 'enabled', True):
-        preprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
-            input_batch=x.to(device='cpu'),
+        preprocessed_x = external_code.run_workflow(
             workflow_type=default_workflow_types.preprocess_latent_workflow_type,
             tab='img2img',
-            queue_front=getattr(global_state, 'queue_front', True),
+            batch_input=x.to(device='cpu'),
         )
         x = torch.stack(preprocessed_x).to(device=x.device)
 
@@ -65,11 +63,10 @@ def patch_processing(p):
 def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     x = original_function(*args, **kwargs)
     if getattr(global_state, 'enabled', True):
-        postprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
-            input_batch=x.to(device='cpu'),
+        postprocessed_x = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_latent_workflow_type,
             tab='img2img' if is_img2img else 'txt2img',
-            queue_front=getattr(global_state, 'queue_front', True),
+            batch_input=x.to(device='cpu'),
         )
         x = torch.stack(postprocessed_x).to(device=x.device)
 
@@ -78,11 +75,10 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
 
 def p_img2img_init(*args, original_function, p_ref, **kwargs):
     if getattr(global_state, 'enabled', True):
-        preprocessed_images = ComfyuiNodeWidgetRequests.start_workflow_sync(
-            input_batch=[F.pil_to_tensor(image) for image in p_ref.init_images],
+        preprocessed_images = external_code.run_workflow(
             workflow_type=default_workflow_types.preprocess_workflow_type,
             tab='img2img',
-            queue_front=getattr(global_state, 'queue_front', True),
+            batch_input=[F.pil_to_tensor(image) for image in p_ref.init_images],
         )
         p_ref.init_images = [F.to_pil_image(image) for image in preprocessed_images]
 

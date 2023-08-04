@@ -91,11 +91,10 @@ class ComfyUIScript(scripts.Script):
         if len(pp.images) == 0:
             return
 
-        batch_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
-            input_batch=pp.images,
+        batch_results = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_workflow_type,
             tab=self.get_xxx2img_str(),
-            queue_front=getattr(global_state, 'queue_front', True),
+            batch_input=pp.images,
         )
 
         batch_size_factor = max(1, len(batch_results) // len(pp.images))

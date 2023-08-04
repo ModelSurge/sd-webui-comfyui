@@ -51,7 +51,6 @@ async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) 
     }
 }
 
-
 function onElementDomIdRegistered(callback) {
     let thisWorkflowTypeId = undefined;
     let webuiClientKey = undefined;

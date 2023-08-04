@@ -19,11 +19,11 @@ document.addEventListener("DOMContentLoaded", (e) => {
 });
 
 function onComfyuiTabLoaded(callback) {
-    const textbox = getWorkflowTypeIds();
+    const workflowTypeIds = getWorkflowTypeIds();
     const container = getComfyuiContainer();
     const tabNav = getTabNav();
 
-    if (textbox === null || container === null || tabNav === null) {
+    if (workflowTypeIds === null || container === null || tabNav === null) {
         // webui not yet ready, try again in a bit
         setTimeout(() => { onComfyuiTabLoaded(callback); }, POLLING_TIMEOUT);
         return;

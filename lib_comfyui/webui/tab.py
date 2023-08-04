@@ -1,22 +1,16 @@
-import json
 import os
 import sys
 import textwrap
 import gradio as gr
 import install_comfyui
 from lib_comfyui import external_code, ipc
-from lib_comfyui.webui import settings
+from lib_comfyui.webui import settings, gradio_utils
 from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
 
 
 def create_tab():
     install_location = settings.get_install_location()
     with gr.Blocks() as tab:
-        gr.HTML(f"""
-            <div id="comfyui_workflow_type_id_list">
-                {json.dumps(external_code.get_workflow_type_ids())}
-            </div>
-        """, visible=False)
         if os.path.exists(install_location):
             gr.HTML(get_comfyui_app_html())
         else:
@@ -34,6 +28,18 @@ def create_tab():
                     installed_feedback = gr.Markdown()
 
             install_button.click(automatic_install_comfyui, inputs=[install_path], outputs=[installed_feedback], show_progress=True)
+
+        gradio_utils.ExtensionDynamicProperty(
+            key=f"workflow_type_ids",
+            value=external_code.get_workflow_type_ids(),
+        )
+        gradio_utils.ExtensionDynamicProperty(
+            key=f"workflow_type_display_name_map",
+            value=dict(zip(
+                external_code.get_workflow_type_display_names(),
+                external_code.get_workflow_type_ids(),
+            )),
+        )
 
     return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]
 

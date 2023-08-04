@@ -10,6 +10,10 @@ Tabs = Union[str, Tuple[str]]
 
 @dataclasses.dataclass
 class WorkflowType:
+    """
+    Describes a unique type of ComfyUI workflow
+    """
+
     base_id: str
     display_name: str
     tabs: Tabs = ('txt2img', 'img2img')

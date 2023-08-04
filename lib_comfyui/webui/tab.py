@@ -30,11 +30,11 @@ def create_tab():
             install_button.click(automatic_install_comfyui, inputs=[install_path], outputs=[installed_feedback], show_progress=True)
 
         gradio_utils.ExtensionDynamicProperty(
-            key=f"workflow_type_ids",
+            key='workflow_type_ids',
             value=external_code.get_workflow_type_ids(),
         )
         gradio_utils.ExtensionDynamicProperty(
-            key=f"workflow_type_display_name_map",
+            key='workflow_type_display_name_map',
             value=dict(zip(
                 external_code.get_workflow_type_display_names(),
                 external_code.get_workflow_type_ids(),

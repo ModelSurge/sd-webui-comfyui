@@ -16,7 +16,7 @@ const request_map = new Map([
     }]
 ]);
 
-async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) {
+async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {
     let clientResponse = startupResponse;
 
     try {
@@ -28,14 +28,14 @@ async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) 
                 },
                 cache: "no-store",
                 body: JSON.stringify({
-                    workflow_type_id: thisWorkflowTypeId,
+                    workflow_type_id: workflowTypeId,
                     webui_client_id: webuiClientKey,
                     response: clientResponse,
                 }),
             });
             const json = await response.json();
             if (json.request !== '/sd-webui-comfyui/webui_request_timeout') {
-                console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${thisWorkflowTypeId} - ${json.request}`);
+                console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${workflowTypeId} - ${json.request}`);
             }
             clientResponse = await request_map.get(json.request)(json);
         }
@@ -46,46 +46,43 @@ async function longPolling(thisWorkflowTypeId, webuiClientKey, startupResponse) 
     }
     finally {
         setTimeout(() => {
-            longPolling(thisWorkflowTypeId, webuiClientKey, clientResponse);
+            longPolling(workflowTypeId, webuiClientKey, clientResponse);
         }, 100);
     }
 }
 
 function onElementDomIdRegistered(callback) {
-    let thisWorkflowTypeId = undefined;
-    let webuiClientKey = undefined;
+    let registered = false;
 
     window.addEventListener("message", (event) => {
-        if(event.data.length > 100) return;
-        if(thisWorkflowTypeId) {
-            event.source.postMessage(thisWorkflowTypeId, event.origin);
+        const data = event.data;
+        if (registered || !data || !data.workflowTypeId) {
             return;
-        };
-        const messageData = event.data.split('.');
-        thisWorkflowTypeId = messageData[0];
-        webuiClientKey = messageData[1];
-        console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - ${thisWorkflowTypeId}/${webuiClientKey}`);
-        event.source.postMessage(thisWorkflowTypeId, event.origin);
-        patchUiEnv(thisWorkflowTypeId);
+        }
+
+        console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${data.workflowTypeDisplayName}" (${data.workflowTypeId}) / ${data.webuiClientId}`);
+        event.source.postMessage(data.workflowTypeId, event.origin);
+        patchUiEnv(data.workflowTypeId);
         const clientResponse = 'register_cid';
         console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
-        callback(thisWorkflowTypeId, webuiClientKey, clientResponse);
+        callback(data.workflowTypeId, data.webuiClientId, clientResponse);
+        registered = true;
     });
 }
 
-async function patchUiEnv(thisWorkflowTypeId) {
+async function patchUiEnv(workflowTypeId) {
     if (!app.graph) {
-        setTimeout(() => patchUiEnv(thisWorkflowTypeId), POLLING_TIMEOUT);
+        setTimeout(() => patchUiEnv(workflowTypeId), POLLING_TIMEOUT);
         return;
     }
 
-    if (thisWorkflowTypeId.endsWith('_txt2img') || thisWorkflowTypeId.endsWith('_img2img')) {
+    if (workflowTypeId.endsWith('_txt2img') || workflowTypeId.endsWith('_img2img')) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         patchSavingMechanism();
     }
 
-    await patchDefaultGraph(thisWorkflowTypeId);
+    await patchDefaultGraph(workflowTypeId);
 }
 
 function patchSavingMechanism() {

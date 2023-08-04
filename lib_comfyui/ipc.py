@@ -23,7 +23,7 @@ def restrict_to_process(process_id):
         def wrapper(*args, **kwargs):
             global current_process_id
             if process_id != current_process_id:
-                raise RuntimeError(f'Can only call function {function.__module__}.{function.__qualname__} from {process_id} process. Current process is {current_process_id}')
+                raise RuntimeError(f'Can only call function {function.__module__}.{function.__qualname__} from process {process_id}. Current process is {current_process_id}')
 
             return function(*args, **kwargs)
 

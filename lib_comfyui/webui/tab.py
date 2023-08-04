@@ -35,10 +35,11 @@ def create_tab():
         )
         gradio_utils.ExtensionDynamicProperty(
             key='workflow_type_display_name_map',
-            value=dict(zip(
-                external_code.get_workflow_type_display_names(),
-                external_code.get_workflow_type_ids(),
-            )),
+            value={
+                workflow_type_id: workflow_type.display_name
+                for workflow_type in external_code.get_workflow_types()
+                for workflow_type_id in workflow_type.get_ids()
+            },
         )
 
     return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]

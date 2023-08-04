@@ -25,6 +25,20 @@ const ext = {
             },
         };
     },
+    async beforeRegisterNodeDef(node, nodeData) {
+        let display_name_patched = false;
+
+        window.addEventListener("message", (event) => {
+            const data = event.data;
+            if (display_name_patched || !data || !data.workflowTypeId) {
+                return;
+            }
+
+            nodeData.display_name = `${data.workflowTypeDisplayName}: ${nodeData.display_name}`;
+            node.title = nodeData.display_name;
+            display_name_patched = true;
+        });
+    },
 };
 
 app.registerExtension(ext);

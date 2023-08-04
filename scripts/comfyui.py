@@ -1,9 +1,7 @@
-import json
-
 import gradio as gr
 from modules import shared, scripts, ui
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types
-from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils
+from lib_comfyui.webui import callbacks, settings, workflow_patcher
 
 
 class ComfyUIScript(scripts.Script):
@@ -33,16 +31,30 @@ class ComfyUIScript(scripts.Script):
                 value=True,
             )
             workflow_type_display_names = external_code.get_workflow_type_display_names(xxx2img)
+            workflow_type_display_name_map = dict(zip(
+                workflow_type_display_names,
+                external_code.get_workflow_type_ids(xxx2img),
+            ))
             workflow_display_name = gr.Dropdown(
                 label='Edit workflow type',
                 choices=workflow_type_display_names,
                 value=workflow_type_display_names[0],
                 elem_id=self.elem_id('displayed_workflow_type'),
             )
+            current_workflow_type_id = gr.Text(
+                value=workflow_type_display_name_map[workflow_display_name.value],
+                visible=False,
+                interactive=False,
+            )
             workflow_display_name.change(
+                fn=workflow_type_display_name_map.get,
+                inputs=[workflow_display_name],
+                outputs=[current_workflow_type_id],
+            )
+            current_workflow_type_id.change(
                 fn=None,
                 _js='changeDisplayedWorkflowType',
-                inputs=[workflow_display_name],
+                inputs=[current_workflow_type_id],
             )
 
         with gr.Row():

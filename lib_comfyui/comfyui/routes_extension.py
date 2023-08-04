@@ -1,6 +1,5 @@
 import asyncio
 import json
-import multiprocessing
 from typing import List
 import torch
 from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
@@ -9,8 +8,6 @@ from lib_comfyui.comfyui import queue_tracker
 
 # rest is ran on comfyui's server side
 class ComfyuiNodeWidgetRequests:
-    start_comfyui_queue = multiprocessing.Queue()
-    finished_comfyui_queue = multiprocessing.Queue()
     comfyui_iframe_ids = {}
     param_events = {}
     last_request = None
@@ -24,13 +21,9 @@ class ComfyuiNodeWidgetRequests:
         if cls.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
-        parallel_utils.clear_queue(cls.finished_comfyui_queue)
         webui_client_id = cls.focused_webui_client_id
         cls.last_request = request_params
         cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_request['workflowType']].set)
-        result = cls.finished_comfyui_queue.get(timeout=10)
-
-        return result
 
     @ipc.run_in_process('comfyui')
     @staticmethod
@@ -80,17 +73,14 @@ class ComfyuiNodeWidgetRequests:
         print(f'[sd-webui-comfyui] registered new ComfyUI client - {workflow_type_id}')
 
     @classmethod
-    async def handle_response(cls, response):
-        cls.finished_comfyui_queue.put(response)
-
-    @classmethod
-    async def handle_request(cls, workflow_type_id, webui_client_id):
+    async def create_client_request(cls, workflow_type_id, webui_client_id):
+        client_event = cls.param_events[webui_client_id][workflow_type_id]
         try:
-            await asyncio.wait_for(cls.param_events[webui_client_id][workflow_type_id].wait(), timeout=0.5)
+            await asyncio.wait_for(client_event.wait(), timeout=0.5)
         except asyncio.TimeoutError:
             return {'request': '/sd-webui-comfyui/webui_request_timeout',}
 
-        cls.param_events[webui_client_id][workflow_type_id].clear()
+        client_event.clear()
         print(f'[sd-webui-comfyui] send request - \n{cls.last_request}')
         return cls.last_request
 
@@ -125,10 +115,7 @@ def polling_server_patch(instance, loop):
         ):
             ComfyuiNodeWidgetRequests.add_client(workflow_type_id, webui_client_id)
 
-        if response_value not in ('register_cid', 'timeout'):
-            await ComfyuiNodeWidgetRequests.handle_response(response)
-
-        request = await ComfyuiNodeWidgetRequests.handle_request(workflow_type_id, webui_client_id)
+        request = await ComfyuiNodeWidgetRequests.create_client_request(workflow_type_id, webui_client_id)
         return web.json_response(request)
 
 

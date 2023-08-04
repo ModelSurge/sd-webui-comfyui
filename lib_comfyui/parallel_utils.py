@@ -108,7 +108,7 @@ class CallbackWatcher:
         self.producer_thread.start()
 
     def is_running(self):
-        return self.producer_thread.is_running()
+        return self.producer_thread and self.producer_thread.is_running()
 
     def stop(self):
         if self.producer_thread is None:

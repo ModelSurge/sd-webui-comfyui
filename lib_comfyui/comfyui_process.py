@@ -1,5 +1,7 @@
 import atexit
 import os
+import threading
+
 from torch import multiprocessing
 from lib_comfyui import ipc, torch_utils, argv_conversion
 from lib_comfyui.webui import settings, paths
@@ -22,6 +24,7 @@ def start():
     if not getattr(shared.opts, 'comfyui_enabled', True):
         return
 
+    ipc.reset_state()
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
     start_comfyui_process(install_location)
@@ -50,6 +53,7 @@ def stop():
     atexit.unregister(ipc.stop_callback_listeners)
 
 
+@ipc.restrict_to_process('webui')
 def stop_comfyui_process():
     global comfyui_process
     if comfyui_process is None:

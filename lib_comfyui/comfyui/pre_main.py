@@ -1,4 +1,3 @@
-import atexit
 import builtins
 import sys
 import os
@@ -28,7 +27,6 @@ def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
     ipc.current_process_queues.update(process_queues)
     ipc.current_process_id = 'comfyui'
     ipc.start_callback_listeners()
-    atexit.register(ipc.stop_callback_listeners)
     start_comfyui(comfyui_path, webui_folder_paths, cli_args)
 
 

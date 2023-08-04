@@ -59,7 +59,9 @@ class CallbackQueue:
 
     def wait_for_consumer(self, timeout: float = None):
         consumer_ready = self.consumer_ready_event.wait(timeout)
-        self.consumer_ready_event.clear()
+        if consumer_ready:
+            self.consumer_ready_event.clear()
+
         return consumer_ready
 
     def get(self, *self_args, args=None, kwargs=None, **self_kwargs):

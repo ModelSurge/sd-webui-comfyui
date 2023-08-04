@@ -51,26 +51,24 @@ def patch_processing(p):
     from modules import processing
 
     p.sd_webui_comfyui_patches = getattr(p, 'sd_webui_comfyui_patches', set())
+    is_img2img = isinstance(p, processing.StableDiffusionProcessingImg2Img)
 
     if 'sample' not in p.sd_webui_comfyui_patches:
-        p.sample = functools.partial(p_sample_patch, original_function=p.sample, p_ref=p)
+        p.sample = functools.partial(p_sample_patch, original_function=p.sample, is_img2img=is_img2img)
         p.sd_webui_comfyui_patches.add('sample')
 
-    if isinstance(p, processing.StableDiffusionProcessingImg2Img) and 'init' not in p.sd_webui_comfyui_patches:
+    if is_img2img and 'init' not in p.sd_webui_comfyui_patches:
         p.init = functools.partial(p_img2img_init, original_function=p.init, p_ref=p)
         p.sd_webui_comfyui_patches.add('init')
 
 
-@ipc.restrict_to_process('webui')
-def p_sample_patch(*args, original_function, p_ref, **kwargs):
-    from modules import processing
-
+def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     x = original_function(*args, **kwargs)
     if getattr(global_state, 'enabled', True):
         postprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
             input_batch=x.to(device='cpu'),
             workflow_type=default_workflow_types.postprocess_latent_workflow_type,
-            tab='img2img' if isinstance(p_ref, processing.StableDiffusionProcessingImg2Img) else 'txt2img',
+            tab='img2img' if is_img2img else 'txt2img',
             queue_front=getattr(global_state, 'queue_front', True),
         )
         x = torch.stack(postprocessed_x).to(device=x.device)
@@ -78,7 +76,6 @@ def p_sample_patch(*args, original_function, p_ref, **kwargs):
     return x
 
 
-@ipc.restrict_to_process('webui')
 def p_img2img_init(*args, original_function, p_ref, **kwargs):
     if getattr(global_state, 'enabled', True):
         preprocessed_images = ComfyuiNodeWidgetRequests.start_workflow_sync(

@@ -2,7 +2,7 @@ import json
 import gradio as gr
 
 from modules import shared, scripts, ui
-from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types
+from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, ipc
 from lib_comfyui.webui import callbacks, settings, workflow_patcher
 from lib_comfyui.comfyui.routes_extension import ComfyuiNodeWidgetRequests
 

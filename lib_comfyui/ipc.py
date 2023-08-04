@@ -1,3 +1,4 @@
+import gc
 import importlib
 import sys
 from lib_comfyui import parallel_utils, platform_utils
@@ -48,18 +49,18 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
 
 
 current_process_id = 'webui'
-current_process_callback_listeners = {
-    'webui': parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified)),
-}
+current_process_callback_listeners = {}
+current_process_queues = {}
+
+
+def reset_state():
+    current_process_callback_listeners['webui'] = parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified))
+    current_process_queues['comfyui'] = parallel_utils.CallbackQueue(call_fully_qualified)
+    gc.collect()
 
 
 def get_current_process_queues():
     return {k: v.queue for k, v in current_process_callback_listeners.items()}
-
-
-current_process_queues = {
-    'comfyui': parallel_utils.CallbackQueue(call_fully_qualified)
-}
 
 
 def start_callback_listeners():

@@ -75,20 +75,21 @@ function onElementDomIdRegistered(callback) {
 }
 
 async function patchUiEnv(thisWorkflowTypeId) {
-    if(thisWorkflowTypeId.endsWith('_txt2img') || thisWorkflowTypeId.endsWith('_img2img')) {
-        const menuToHide = document.querySelector('.comfy-menu');
-        menuToHide.style.display = 'none';
-        patchSavingMechanism();
-        await patchDefaultGraph(thisWorkflowTypeId);
-    }
-}
-
-function patchSavingMechanism() {
-    if(app.graph === undefined) {
-        setTimeout(patchSavingMechanism, POLLING_TIMEOUT);
+    if (!app.graph) {
+        setTimeout(() => patchUiEnv(thisWorkflowTypeId), POLLING_TIMEOUT);
         return;
     }
 
+    if (thisWorkflowTypeId.endsWith('_txt2img') || thisWorkflowTypeId.endsWith('_img2img')) {
+        const menuToHide = document.querySelector('.comfy-menu');
+        menuToHide.style.display = 'none';
+        patchSavingMechanism();
+    }
+
+    await patchDefaultGraph(thisWorkflowTypeId);
+}
+
+function patchSavingMechanism() {
     app.graph.original_serialize = app.graph.serialize;
     app.graph.patched_serialize = () => JSON.parse(localStorage.getItem('workflow'));
     app.graph.serialize = app.graph.patched_serialize;
@@ -126,7 +127,7 @@ async function patchDefaultGraph(workflowTypeId) {
         cache: "no-store",
     });
     const defaultGraph = await response.json();
-    if (defaultGraph === null) {
+    if (!defaultGraph) {
         return;
     }
 

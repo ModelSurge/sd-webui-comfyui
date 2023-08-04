@@ -1,7 +1,7 @@
 import dataclasses
 import json
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union
 from lib_comfyui import global_state
 
 
@@ -14,7 +14,7 @@ class WorkflowType:
     base_id: str
     display_name: str
     tabs: Tabs = ('txt2img', 'img2img')
-    default_workflow: Optional[Union[str, Path]] = None
+    default_workflow: Union[str, Path] = json.dumps(None)
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
@@ -80,7 +80,15 @@ def set_workflow_types(workflows: List[WorkflowType]) -> None:
     if getattr(global_state, 'is_ui_instantiated', False):
         raise NotImplementedError('Cannot modify workflow types after the ui has been instantiated')
 
-    setattr(global_state, 'workflow_types', workflows)
+    global_state.workflow_types = workflows
+
+
+def clear_workflow_types() -> None:
+    """
+    Clear the list of currently registered workflows
+    You cannot call this function after the extension ui has been created
+    """
+    global_state.workflow_types = []
 
 
 def get_workflow_type_ids(tabs: Tabs = ALL_TABS) -> List[str]:

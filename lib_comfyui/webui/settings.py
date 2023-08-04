@@ -1,6 +1,6 @@
 import sys
 import textwrap
-from lib_comfyui import ipc
+from lib_comfyui import ipc, global_state
 import install_comfyui
 
 
@@ -17,6 +17,14 @@ def create_section():
         '', 'Address of the ComfyUI server as seen from the webui. Only used by the extension to load the ComfyUI iframe (requires reload UI)',
         component_args={'placeholder': 'Leave empty to use the --listen address of the ComfyUI server'}, section=section))
 
+    shared.opts.onchange('comfyui_enabled', update_enabled)
+
+
+@ipc.restrict_to_process('webui')
+def update_enabled():
+    from modules import shared
+    global_state.enabled = shared.opts.data.get('comfyui_enabled', True)
+
 
 @ipc.restrict_to_process('webui')
 def get_install_location():
@@ -32,6 +40,7 @@ def get_additional_argv():
     return [arg.strip() for arg in shared.opts.data.get('comfyui_additional_args', '').split()]
 
 
+@ipc.restrict_to_process('webui')
 def get_setting_value(setting_key):
     webui_argv = get_additional_argv()
     index = webui_argv.index(setting_key) if setting_key in webui_argv else -1

@@ -1,12 +1,9 @@
-import functools
 import json
 import gradio as gr
-import torch
-import torchvision.transforms.functional
 
-from modules import shared, scripts, ui, sd_samplers, processing
+from modules import shared, scripts, ui
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types
-from lib_comfyui.webui import callbacks, settings
+from lib_comfyui.webui import callbacks, settings, workflow_patcher
 from lib_comfyui.comfyui.routes_extension import ComfyuiNodeWidgetRequests
 
 
@@ -80,45 +77,14 @@ class ComfyUIScript(scripts.Script):
         """
 
     def process(self, p, queue_front, **kwargs):
-        if not getattr(shared.opts, 'comfyui_enabled', True):
+        if not getattr(global_state, 'enabled', True):
             return
 
-        p.comfyui_patches = getattr(p, 'comfyui_patches', set())
-        if 'sample' not in p.comfyui_patches:
-            p.sample = functools.partial(self.p_sample_patch, original_function=p.sample, comfyui_queue_front=queue_front)
-            p.comfyui_patches.add('sample')
+        global_state.queue_front = queue_front
+        workflow_patcher.patch_processing(p)
 
-        if isinstance(p, processing.StableDiffusionProcessingImg2Img) and 'init' not in p.comfyui_patches:
-            p.init = functools.partial(self.p_img2img_init, original_function=p.init, p_ref=p, comfyui_queue_front=queue_front)
-            p.comfyui_patches.add('init')
-
-    def p_sample_patch(self, *args, original_function, comfyui_queue_front: bool, **kwargs):
-        x = original_function(*args, **kwargs)
-        if getattr(shared.opts, 'comfyui_enabled', True):
-            postprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
-                input_batch=x.to(device='cpu'),
-                workflow_type=default_workflow_types.postprocess_latent_workflow_type,
-                tab=self.get_xxx2img_str(),
-                queue_front=comfyui_queue_front,
-            )
-            x = torch.stack(postprocessed_x).to(device=x.device)
-
-        return x
-
-    def p_img2img_init(self, *args, original_function, p_ref: processing.StableDiffusionProcessingImg2Img, comfyui_queue_front: bool, **kwargs):
-        if getattr(shared.opts, 'comfyui_enabled', True):
-            preprocessed_images = ComfyuiNodeWidgetRequests.start_workflow_sync(
-                input_batch=[torchvision.transforms.functional.pil_to_tensor(image) for image in p_ref.init_images],
-                workflow_type=default_workflow_types.preprocess_workflow_type,
-                tab='img2img',
-                queue_front=comfyui_queue_front,
-            )
-            p_ref.init_images = [torchvision.transforms.functional.to_pil_image(image) for image in preprocessed_images]
-
-        return original_function(*args, **kwargs)
-
-    def postprocess_batch_list(self, p, pp, queue_front, batch_number, **kwargs):
-        if not getattr(shared.opts, 'comfyui_enabled', True):
+    def postprocess_batch_list(self, p, pp, *args, **kwargs):
+        if not getattr(global_state, 'enabled', True):
             return
         if getattr(shared.state, 'interrupted', False):
             return
@@ -129,7 +95,7 @@ class ComfyUIScript(scripts.Script):
             input_batch=pp.images,
             workflow_type=default_workflow_types.postprocess_workflow_type,
             tab=self.get_xxx2img_str(),
-            queue_front=queue_front,
+            queue_front=getattr(global_state, 'queue_front', True),
         )
 
         batch_size_factor = max(1, len(batch_results) // len(pp.images))
@@ -141,28 +107,7 @@ class ComfyUIScript(scripts.Script):
         pp.images.extend(batch_results)
 
 
-def create_sampler_hijack(name: str, model, original_function):
-    sampler = original_function(name, model)
-    sampler.sample_img2img = functools.partial(sample_img2img_hijack, original_function=sampler.sample_img2img)
-    return sampler
-
-
-sd_samplers.create_sampler = functools.partial(create_sampler_hijack, original_function=sd_samplers.create_sampler)
-
-
-def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
-    if getattr(shared.opts, 'comfyui_enabled', True):
-        preprocessed_x = ComfyuiNodeWidgetRequests.start_workflow_sync(
-            input_batch=x.to(device='cpu'),
-            workflow_type=default_workflow_types.preprocess_latent_workflow_type,
-            tab='img2img',
-            queue_front=True,
-        )
-        x = torch.stack(preprocessed_x).to(device=x.device)
-
-    return original_function(p, x, *args, **kwargs)
-
-
 callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 comfyui_context.init_webui_base_dir()
+workflow_patcher.apply_patches()

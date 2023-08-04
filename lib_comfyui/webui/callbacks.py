@@ -1,5 +1,5 @@
 from lib_comfyui import comfyui_process, ipc, comfyui_context
-from lib_comfyui.webui import tab, settings
+from lib_comfyui.webui import tab, settings, workflow_patcher
 
 
 def on_ui_tabs():
@@ -16,6 +16,7 @@ def on_app_started(_gr_root, _fast_api):
 
 def on_script_unloaded():
     comfyui_process.stop()
+    workflow_patcher.clear_patches()
 
 
 @ipc.restrict_to_process('webui')

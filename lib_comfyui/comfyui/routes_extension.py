@@ -1,6 +1,5 @@
 import asyncio
 import multiprocessing
-import queue
 from typing import List
 import torch
 from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
@@ -13,7 +12,7 @@ class ComfyuiNodeWidgetRequests:
     finished_comfyui_queue = multiprocessing.Queue()
     comfyui_iframe_ids = {}
     param_events = {}
-    last_params = None
+    last_request = None
     loop = None
     focused_webui_client_id = None
 
@@ -26,8 +25,8 @@ class ComfyuiNodeWidgetRequests:
 
         parallel_utils.clear_queue(cls.finished_comfyui_queue)
         webui_client_id = cls.focused_webui_client_id
-        cls.last_params = request_params
-        cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_params['workflowType']].set)
+        cls.last_request = request_params
+        cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_request['workflowType']].set)
         result = cls.finished_comfyui_queue.get(timeout=10)
 
         return result
@@ -87,13 +86,13 @@ class ComfyuiNodeWidgetRequests:
     @classmethod
     async def handle_request(cls, workflow_type_id, webui_client_id):
         try:
-            await asyncio.wait_for(cls.param_events[webui_client_id][workflow_type_id].wait(), timeout=1)
+            await asyncio.wait_for(cls.param_events[webui_client_id][workflow_type_id].wait(), timeout=0.5)
         except asyncio.TimeoutError:
             return {'request': '/sd-webui-comfyui/webui_request_timeout',}
 
         cls.param_events[webui_client_id][workflow_type_id].clear()
-        print(f'[sd-webui-comfyui] send request - \n{cls.last_params}')
-        return cls.last_params
+        print(f'[sd-webui-comfyui] send request - \n{cls.last_request}')
+        return cls.last_request
 
 
 def polling_server_patch(instance, loop):
@@ -114,14 +113,19 @@ def polling_server_patch(instance, loop):
         webui_client_id = response['webui_client_id']
         workflow_type_id = response['workflow_type_id']
 
-        if 'error' in response['response']:
+        if isinstance(response, dict) and 'error' in response['response']:
             print(f"[sd-webui-comfyui] Client {workflow_type_id}-{webui_client_id} encountered an error - \n{response['response']['error']}")
 
-        command = response['response']
+        response_value = response['response']
 
-        if command == 'register_cid':
+        if (
+            response_value == 'register_cid' or
+            webui_client_id not in ComfyuiNodeWidgetRequests.comfyui_iframe_ids or
+            workflow_type_id not in ComfyuiNodeWidgetRequests.comfyui_iframe_ids[webui_client_id]
+        ):
             ComfyuiNodeWidgetRequests.add_client(workflow_type_id, webui_client_id)
-        elif command != 'timeout':
+
+        if response_value not in ('register_cid', 'timeout'):
             await ComfyuiNodeWidgetRequests.handle_response(response)
 
         request = await ComfyuiNodeWidgetRequests.handle_request(workflow_type_id, webui_client_id)

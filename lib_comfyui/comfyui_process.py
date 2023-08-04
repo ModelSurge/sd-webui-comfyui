@@ -21,6 +21,7 @@ def start():
     if not getattr(shared.opts, 'comfyui_enabled', True):
         return
 
+    ipc.reset_state()
     ipc.start_callback_listeners()
     start_comfyui_process(install_location)
 
@@ -44,7 +45,6 @@ def start_comfyui_process(install_location):
 def stop():
     stop_comfyui_process()
     ipc.stop_callback_listeners()
-    ipc.reset_state()
 
 
 @ipc.restrict_to_process('webui')

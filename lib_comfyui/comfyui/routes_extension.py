@@ -8,7 +8,7 @@ from lib_comfyui.comfyui import queue_tracker
 
 # rest is ran on comfyui's server side
 class ComfyuiNodeWidgetRequests:
-    comfyui_iframe_ids = {}
+    workflow_type_ids = {}
     param_events = {}
     last_request = None
     loop = None
@@ -58,18 +58,18 @@ class ComfyuiNodeWidgetRequests:
 
     @classmethod
     def add_client(cls, workflow_type_id, webui_client_id):
-        if webui_client_id not in cls.comfyui_iframe_ids:
-            cls.comfyui_iframe_ids[webui_client_id] = set()
+        if webui_client_id not in cls.workflow_type_ids:
+            cls.workflow_type_ids[webui_client_id] = set()
         if webui_client_id not in cls.param_events:
             cls.param_events[webui_client_id] = {}
-        if workflow_type_id in cls.comfyui_iframe_ids[webui_client_id]:
+        if workflow_type_id in cls.workflow_type_ids[webui_client_id]:
             return
 
         # REMOVE THIS AT SOME POINT
         ComfyuiNodeWidgetRequests.focused_webui_client_id = webui_client_id
 
         cls.param_events[webui_client_id][workflow_type_id] = asyncio.Event()
-        cls.comfyui_iframe_ids[webui_client_id].add(workflow_type_id)
+        cls.workflow_type_ids[webui_client_id].add(workflow_type_id)
         print(f'[sd-webui-comfyui] registered new ComfyUI client - {workflow_type_id}')
 
     @classmethod
@@ -110,8 +110,8 @@ def polling_server_patch(instance, loop):
 
         if (
             response_value == 'register_cid' or
-            webui_client_id not in ComfyuiNodeWidgetRequests.comfyui_iframe_ids or
-            workflow_type_id not in ComfyuiNodeWidgetRequests.comfyui_iframe_ids[webui_client_id]
+            webui_client_id not in ComfyuiNodeWidgetRequests.workflow_type_ids or
+            workflow_type_id not in ComfyuiNodeWidgetRequests.workflow_type_ids[webui_client_id]
         ):
             ComfyuiNodeWidgetRequests.add_client(workflow_type_id, webui_client_id)
 
@@ -119,7 +119,7 @@ def polling_server_patch(instance, loop):
         return web.json_response(request)
 
 
-def workflow_ops_server_patch(instance, _loop):
+def workflow_type_ops_server_patch(instance, _loop):
     from aiohttp import web
 
     @instance.routes.get("/sd-webui-comfyui/default_workflow")
@@ -147,4 +147,4 @@ def add_server__init__patch(callback):
 
 def patch_server_routes():
     add_server__init__patch(polling_server_patch)
-    add_server__init__patch(workflow_ops_server_patch)
+    add_server__init__patch(workflow_type_ops_server_patch)

@@ -34,7 +34,7 @@ const ext = {
                 return;
             }
 
-            nodeData.display_name = `${data.workflowTypeDisplayName}: ${nodeData.display_name}`;
+            nodeData.display_name = `${nodeData.display_name} - ${data.workflowTypeDisplayName}`;
             node.title = nodeData.display_name;
             display_name_patched = true;
         });

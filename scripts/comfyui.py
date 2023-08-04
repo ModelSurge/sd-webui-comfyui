@@ -30,24 +30,24 @@ class ComfyUIScript(scripts.Script):
                 elem_id=self.elem_id('queue_front'),
                 value=True,
             )
-            workflow_type_display_names = external_code.get_workflow_type_display_names(xxx2img)
-            workflow_type_display_name_map = dict(zip(
-                workflow_type_display_names,
-                external_code.get_workflow_type_ids(xxx2img),
-            ))
+            workflow_types = external_code.get_workflow_types(xxx2img)
+            workflow_type_ids = {
+                workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
+                for workflow_type in workflow_types
+            }
             workflow_display_name = gr.Dropdown(
                 label='Edit workflow type',
-                choices=workflow_type_display_names,
-                value=workflow_type_display_names[0],
+                choices=[workflow_type.display_name for workflow_type in workflow_types],
+                value=workflow_types[0].display_name,
                 elem_id=self.elem_id('displayed_workflow_type'),
             )
             current_workflow_type_id = gr.Text(
-                value=workflow_type_display_name_map[workflow_display_name.value],
+                value=workflow_type_ids[workflow_display_name.value],
                 visible=False,
                 interactive=False,
             )
             workflow_display_name.change(
-                fn=workflow_type_display_name_map.get,
+                fn=workflow_type_ids.get,
                 inputs=[workflow_display_name],
                 outputs=[current_workflow_type_id],
             )

@@ -31,6 +31,7 @@ class ComfyUIScript(scripts.Script):
                 value=True,
             )
             workflow_types = external_code.get_workflow_types(xxx2img)
+            first_workflow_type = workflow_types[0]
             workflow_type_ids = {
                 workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
                 for workflow_type in workflow_types
@@ -38,11 +39,11 @@ class ComfyUIScript(scripts.Script):
             workflow_display_name = gr.Dropdown(
                 label='Edit workflow type',
                 choices=[workflow_type.display_name for workflow_type in workflow_types],
-                value=workflow_types[0].display_name,
+                value=first_workflow_type.display_name,
                 elem_id=self.elem_id('displayed_workflow_type'),
             )
             current_workflow_type_id = gr.Text(
-                value=workflow_type_ids[workflow_display_name.value],
+                value=workflow_type_ids[first_workflow_type.display_name],
                 visible=False,
                 interactive=False,
             )
@@ -58,10 +59,13 @@ class ComfyUIScript(scripts.Script):
             )
 
         with gr.Row():
-            gr.HTML(value=self.get_iframes_html(is_img2img))
+            gr.HTML(value=self.get_iframes_html(is_img2img, workflow_type_ids[first_workflow_type.display_name]))
 
         with gr.Row():
-            refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id=self.elem_id('refresh_button'))
+            refresh_button = gr.Button(
+                value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)',
+                elem_id=self.elem_id('refresh_button'),
+            )
             refresh_button.click(
                 fn=None,
                 _js='reloadComfyuiIFrames'
@@ -69,15 +73,13 @@ class ComfyUIScript(scripts.Script):
 
         return queue_front,
 
-    def get_iframes_html(self, is_img2img: bool) -> str:
+    def get_iframes_html(self, is_img2img: bool, first_workflow_type_id: str) -> str:
         comfyui_client_url = settings.get_comfyui_client_url()
 
         iframes = []
-        first_loop = True
         for workflow_type_id in external_code.get_workflow_type_ids(self.get_xxx2img_str(is_img2img)):
             html_classes = ['comfyui-embedded-widget']
-            if first_loop:
-                first_loop = False
+            if workflow_type_id == first_workflow_type_id:
                 html_classes.append('comfyui-embedded-widget-display')
 
             iframes.append(f"""

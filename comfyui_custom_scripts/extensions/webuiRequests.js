@@ -51,22 +51,29 @@ async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {
     }
 }
 
-function onElementDomIdRegistered(callback) {
-    let registered = false;
+async function onElementDomIdRegistered(callback) {
+    const iframeInfo = await createIframeRegisteredEvent();
+    console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${iframeInfo.workflowTypeDisplayName}" (${iframeInfo.workflowTypeId}) / ${iframeInfo.webuiClientId}`);
 
-    window.addEventListener("message", (event) => {
-        const data = event.data;
-        if (registered || !data || !data.workflowTypeId) {
-            return;
-        }
+    event.source.postMessage(iframeInfo.workflowTypeId, event.origin);
+    await patchUiEnv(iframeInfo.workflowTypeId);
+    const clientResponse = 'register_cid';
+    console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
+    await callback(iframeInfo.workflowTypeId, iframeInfo.webuiClientId, clientResponse);
+}
 
-        console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${data.workflowTypeDisplayName}" (${data.workflowTypeId}) / ${data.webuiClientId}`);
-        event.source.postMessage(data.workflowTypeId, event.origin);
-        patchUiEnv(data.workflowTypeId);
-        const clientResponse = 'register_cid';
-        console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
-        callback(data.workflowTypeId, data.webuiClientId, clientResponse);
-        registered = true;
+export function createIframeRegisteredEvent() {
+    return new Promise(resolve => {
+        let resolved = false;
+        window.addEventListener("message", event => {
+            const data = event.data;
+            if (resolved || !data || !data.workflowTypeId) {
+                return;
+            }
+
+            resolved = true;
+            resolve(data);
+        });
     });
 }
 

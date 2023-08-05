@@ -1,5 +1,6 @@
 import torch
 from lib_comfyui import global_state
+from lib_comfyui.comfyui.webui_io import NODE_DISPLAY_NAME_MAPPINGS
 
 
 class WebuiImageInput:
@@ -85,11 +86,4 @@ NODE_CLASS_MAPPINGS = {
     "ImageToWebui": WebuiImageOutput,
     "LatentFromWebui": WebuiLatentInput,
     "LatentToWebui": WebuiLatentOutput,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "ImageFromWebui": 'Image From Webui',
-    "ImageToWebui": 'Image To Webui',
-    "LatentFromWebui": 'Latent From Webui',
-    "LatentToWebui": 'Latent To Webui',
 }

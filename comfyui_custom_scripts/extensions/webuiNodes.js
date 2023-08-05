@@ -1,4 +1,5 @@
 import { app } from "/scripts/app.js";
+import { createIframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiRequests.js";
 
 
 function createVoidWidget(node, name) {
@@ -26,19 +27,17 @@ const ext = {
         };
     },
     async beforeRegisterNodeDef(node, nodeData) {
-        let display_name_patched = false;
+        const iframeInfo = await iframeRegisteredEvent;
 
-        window.addEventListener("message", (event) => {
-            const data = event.data;
-            if (display_name_patched || !data || !data.workflowTypeId) {
-                return;
-            }
+        if (!Object.keys(iframeInfo.webuiIoNodeDisplayNameMappings).includes(nodeData.name)) {
+            return;
+        }
 
-            nodeData.display_name = `${nodeData.display_name} - ${data.workflowTypeDisplayName}`;
-            node.title = nodeData.display_name;
-            display_name_patched = true;
-        });
+        nodeData.display_name = `${nodeData.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
+        node.title = nodeData.display_name;
     },
 };
 
 app.registerExtension(ext);
+
+const iframeRegisteredEvent = createIframeRegisteredEvent();

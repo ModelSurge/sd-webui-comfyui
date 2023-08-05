@@ -1,3 +1,5 @@
+import atexit
+import signal
 import builtins
 import sys
 import os
@@ -26,7 +28,13 @@ def main(comfyui_path, process_queues, cli_args):
     ipc.current_process_queues.clear()
     ipc.current_process_queues.update(process_queues)
     ipc.current_process_id = 'comfyui'
+    atexit.register(ipc.stop_callback_listeners)
     ipc.start_callback_listeners()
+
+    def sigint_handler(sig, frame):
+        exit()
+
+    signal.signal(signal.SIGINT, sigint_handler)
     start_comfyui(comfyui_path, cli_args)
 
 

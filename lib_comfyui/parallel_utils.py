@@ -102,7 +102,7 @@ class CallbackWatcher:
     def start(self):
         def thread_loop():
             while self.producer_thread.is_running():
-                self.queue.attend_consumer(timeout=1)
+                self.queue.attend_consumer(timeout=0.5)
 
         self.producer_thread = StoppableThread(target=thread_loop, daemon=True)
         self.producer_thread.start()

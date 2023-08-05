@@ -1,6 +1,6 @@
 import gradio as gr
 from modules import shared, scripts, ui
-from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types
+from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher
 
 
@@ -129,3 +129,4 @@ callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 comfyui_context.init_webui_base_dir()
 workflow_patcher.apply_patches()
+comfyui_process.restore_webui_sigint_handler()

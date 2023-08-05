@@ -69,12 +69,14 @@ def start_callback_listeners():
     assert not callback_listeners_started()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
+    print('[sd-webui-comfyui]', 'started callback listeners for process', current_process_id)
 
 
 def stop_callback_listeners():
     assert callback_listeners_started()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()
+    print('[sd-webui-comfyui]', 'stopped callback listeners for process', current_process_id)
 
 
 def callback_listeners_started():

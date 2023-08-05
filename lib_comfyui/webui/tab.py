@@ -5,6 +5,7 @@ import gradio as gr
 import install_comfyui
 from lib_comfyui import external_code, ipc
 from lib_comfyui.webui import settings, gradio_utils
+from lib_comfyui.comfyui import webui_io
 from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
 
 
@@ -41,6 +42,10 @@ def create_tab():
                 for workflow_type_id in workflow_type.get_ids()
             },
         )
+        gradio_utils.ExtensionDynamicProperty(
+            key='webui_io_node_display_name_mappings',
+            value=webui_io.NODE_DISPLAY_NAME_MAPPINGS,
+        )
 
     return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]
 
@@ -72,7 +77,7 @@ comfyui_install_instructions_markdown = '''
 ## ComfyUI extension
 It looks like your ComfyUI installation isn't set up yet!  
 If you already have ComfyUI installed on your computer, go to `Settings > ComfyUI`, and set the proper install location.  
-  
+
 Alternatively, if you don't have ComfyUI installed, you can install it with this button:
 '''
 

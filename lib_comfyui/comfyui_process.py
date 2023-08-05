@@ -1,3 +1,5 @@
+import atexit
+import signal
 import os
 from torch import multiprocessing
 from lib_comfyui import ipc, torch_utils, argv_conversion
@@ -23,6 +25,7 @@ def start():
 
     ipc.reset_state()
     ipc.start_callback_listeners()
+    atexit.register(stop)
     start_comfyui_process(install_location)
 
 
@@ -43,6 +46,7 @@ def start_comfyui_process(install_location):
 
 
 def stop():
+    atexit.unregister(stop)
     stop_comfyui_process()
     ipc.stop_callback_listeners()
 
@@ -55,3 +59,12 @@ def stop_comfyui_process():
 
     comfyui_process.terminate()
     comfyui_process = None
+
+
+# remove this when comfyui starts using subprocess with an isolated venv
+def restore_webui_sigint_handler():
+    print('[sd-webui-comfyui]', 'restoring graceful SIGINT handler for the webui process')
+    def sigint_handler(sig, frame):
+        exit()
+
+    signal.signal(signal.SIGINT, sigint_handler)

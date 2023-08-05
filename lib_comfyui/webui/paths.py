@@ -6,17 +6,16 @@ from lib_comfyui import ipc
 
 @ipc.restrict_to_process('comfyui')
 def share_webui_folder_paths():
-    folder_paths = get_webui_folder_paths()
     from folder_paths import add_model_folder_path
-    for folder_id, folder_paths in folder_paths.items():
+    webui_folder_paths = get_webui_folder_paths()
+    for folder_id, folder_paths in webui_folder_paths.items():
         for folder_path in folder_paths:
             add_model_folder_path(folder_id, folder_path)
 
 
 @ipc.run_in_process('webui')
 def get_webui_folder_paths() -> dict:
-    from modules import paths, shared
-    from modules import sd_models
+    from modules import paths, shared, sd_models
     return {
         'checkpoints': [sd_models.model_path] + ([shared.cmd_opts.ckpt_dir] if shared.cmd_opts.ckpt_dir else []),
         'vae': [os.path.join(paths.models_path, 'VAE')] + ([shared.cmd_opts.vae_dir] if shared.cmd_opts.vae_dir else []),

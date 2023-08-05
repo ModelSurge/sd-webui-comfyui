@@ -128,7 +128,7 @@ async function patchDefaultGraph(workflowTypeId) {
     app.loadGraphData();
 }
 
-export const iframeRegisteredEvent = new Promise(resolve => {
+const iframeRegisteredEvent = new Promise(resolve => {
     let resolved = false;
     window.addEventListener("message", event => {
         const data = event.data;
@@ -153,3 +153,7 @@ const appReadyEvent = new Promise(resolve => {
 });
 
 onElementDomIdRegistered(longPolling);
+
+export {
+    iframeRegisteredEvent,
+}

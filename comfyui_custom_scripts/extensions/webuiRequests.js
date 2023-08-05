@@ -62,26 +62,8 @@ async function onElementDomIdRegistered(callback) {
     await callback(iframeInfo.workflowTypeId, iframeInfo.webuiClientId, clientResponse);
 }
 
-export function createIframeRegisteredEvent() {
-    return new Promise(resolve => {
-        let resolved = false;
-        window.addEventListener("message", event => {
-            const data = event.data;
-            if (resolved || !data || !data.workflowTypeId) {
-                return;
-            }
-
-            resolved = true;
-            resolve(data);
-        });
-    });
-}
-
 async function patchUiEnv(workflowTypeId) {
-    if (!app.graph) {
-        setTimeout(() => patchUiEnv(workflowTypeId), POLLING_TIMEOUT);
-        return;
-    }
+    await appReadyEvent;
 
     if (workflowTypeId.endsWith('_txt2img') || workflowTypeId.endsWith('_img2img')) {
         const menuToHide = document.querySelector('.comfy-menu');
@@ -145,5 +127,31 @@ async function patchDefaultGraph(workflowTypeId) {
 
     app.loadGraphData();
 }
+
+export function createIframeRegisteredEvent() {
+    return new Promise(resolve => {
+        let resolved = false;
+        window.addEventListener("message", event => {
+            const data = event.data;
+            if (resolved || !data || !data.workflowTypeId) {
+                return;
+            }
+
+            resolved = true;
+            resolve(data);
+        });
+    });
+}
+
+const appReadyEvent = new Promise(resolve => {
+    const appReadyOrRecursiveSetTimeout = () => {
+        if (app.graph) {
+            resolve();
+        } else {
+            setTimeout(appReadyOrRecursiveSetTimeout, POLLING_TIMEOUT);
+        }
+    };
+    appReadyOrRecursiveSetTimeout();
+});
 
 onElementDomIdRegistered(longPolling);

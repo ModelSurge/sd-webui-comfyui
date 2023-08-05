@@ -29,7 +29,7 @@ const ext = {
     async beforeRegisterNodeDef(node, nodeData) {
         const iframeInfo = await iframeRegisteredEvent;
 
-        if (!Object.keys(iframeInfo.webuiIoNodeDisplayNameMappings).includes(nodeData.name)) {
+        if (!iframeInfo.webuiIoNodeNames.includes(nodeData.name)) {
             return;
         }
 

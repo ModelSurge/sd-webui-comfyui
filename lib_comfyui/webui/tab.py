@@ -43,8 +43,8 @@ def create_tab():
             },
         )
         gradio_utils.ExtensionDynamicProperty(
-            key='webui_io_node_display_name_mappings',
-            value=webui_io.NODE_DISPLAY_NAME_MAPPINGS,
+            key='webui_io_node_names',
+            value=list(webui_io.NODE_DISPLAY_NAME_MAPPINGS.keys()),
         )
 
     return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]

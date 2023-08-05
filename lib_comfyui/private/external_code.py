@@ -185,7 +185,7 @@ def run_workflow(
         ValueError: If workflow_type is not present on the given tab
         AssertionError: If multiple candidate ids exist for workflow_type
     """
-    from lib_comfyui.comfyui.routes_extension import ComfyuiNodeWidgetRequests
+    from lib_comfyui.comfyui.routes_extension import ComfyuiIFrameRequests
 
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
@@ -196,7 +196,7 @@ def run_workflow(
     if not candidate_ids:
         raise ValueError(f'Incompatible tab {tab} and workflow type {workflow_type.pretty_str()}. Valid tabs for the given workflow type: {workflow_type.tabs}')
 
-    return ComfyuiNodeWidgetRequests.start_workflow_sync(
+    return ComfyuiIFrameRequests.start_workflow_sync(
         batch_input=batch_input,
         workflow_type_id=candidate_ids[0],
         queue_front=queue_front,

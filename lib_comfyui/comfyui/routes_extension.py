@@ -7,7 +7,7 @@ from lib_comfyui.comfyui import queue_tracker
 
 
 # rest is ran on comfyui's server side
-class ComfyuiNodeWidgetRequests:
+class ComfyuiIFrameRequests:
     workflow_type_ids = {}
     param_events = {}
     last_request = None
@@ -17,7 +17,7 @@ class ComfyuiNodeWidgetRequests:
     @ipc.restrict_to_process('comfyui')
     @staticmethod
     def send(request_params):
-        cls = ComfyuiNodeWidgetRequests
+        cls = ComfyuiIFrameRequests
         if cls.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
@@ -38,7 +38,7 @@ class ComfyuiNodeWidgetRequests:
         queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
-        ComfyuiNodeWidgetRequests.send({
+        ComfyuiIFrameRequests.send({
             'request': '/sd-webui-comfyui/webui_request_queue_prompt',
             'workflowType': workflow_type_id,
             'requiredNodeTypes': [],
@@ -66,7 +66,7 @@ class ComfyuiNodeWidgetRequests:
             return
 
         # REMOVE THIS AT SOME POINT
-        ComfyuiNodeWidgetRequests.focused_webui_client_id = webui_client_id
+        ComfyuiIFrameRequests.focused_webui_client_id = webui_client_id
 
         cls.param_events[webui_client_id][workflow_type_id] = asyncio.Event()
         cls.workflow_type_ids[webui_client_id].add(workflow_type_id)
@@ -88,7 +88,7 @@ class ComfyuiNodeWidgetRequests:
 def polling_server_patch(instance, loop):
     from aiohttp import web
 
-    ComfyuiNodeWidgetRequests.init_request_listener(loop)
+    ComfyuiIFrameRequests.init_request_listener(loop)
 
     @instance.routes.post("/sd-webui-comfyui/webui_polling_server")
     async def webui_polling_server(response):
@@ -110,12 +110,12 @@ def polling_server_patch(instance, loop):
 
         if (
             response_value == 'register_cid' or
-            webui_client_id not in ComfyuiNodeWidgetRequests.workflow_type_ids or
-            workflow_type_id not in ComfyuiNodeWidgetRequests.workflow_type_ids[webui_client_id]
+            webui_client_id not in ComfyuiIFrameRequests.workflow_type_ids or
+            workflow_type_id not in ComfyuiIFrameRequests.workflow_type_ids[webui_client_id]
         ):
-            ComfyuiNodeWidgetRequests.add_client(workflow_type_id, webui_client_id)
+            ComfyuiIFrameRequests.add_client(workflow_type_id, webui_client_id)
 
-        request = await ComfyuiNodeWidgetRequests.create_client_request(workflow_type_id, webui_client_id)
+        request = await ComfyuiIFrameRequests.create_client_request(workflow_type_id, webui_client_id)
         return web.json_response(request)
 
 

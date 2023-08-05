@@ -1,5 +1,5 @@
 import { app } from "/scripts/app.js";
-import { createIframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiRequests.js";
+import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiRequests.js";
 
 
 function createVoidWidget(node, name) {
@@ -39,5 +39,3 @@ const ext = {
 };
 
 app.registerExtension(ext);
-
-const iframeRegisteredEvent = createIframeRegisteredEvent();

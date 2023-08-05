@@ -52,7 +52,7 @@ async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {
 }
 
 async function onElementDomIdRegistered(callback) {
-    const iframeInfo = await createIframeRegisteredEvent();
+    const iframeInfo = await iframeRegisteredEvent;
     console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${iframeInfo.workflowTypeDisplayName}" (${iframeInfo.workflowTypeId}) / ${iframeInfo.webuiClientId}`);
 
     event.source.postMessage(iframeInfo.workflowTypeId, event.origin);
@@ -128,20 +128,18 @@ async function patchDefaultGraph(workflowTypeId) {
     app.loadGraphData();
 }
 
-export function createIframeRegisteredEvent() {
-    return new Promise(resolve => {
-        let resolved = false;
-        window.addEventListener("message", event => {
-            const data = event.data;
-            if (resolved || !data || !data.workflowTypeId) {
-                return;
-            }
+export const iframeRegisteredEvent = new Promise(resolve => {
+    let resolved = false;
+    window.addEventListener("message", event => {
+        const data = event.data;
+        if (resolved || !data || !data.workflowTypeId) {
+            return;
+        }
 
-            resolved = true;
-            resolve(data);
-        });
+        resolved = true;
+        resolve(data);
     });
-}
+});
 
 const appReadyEvent = new Promise(resolve => {
     const appReadyOrRecursiveSetTimeout = () => {

@@ -2,7 +2,6 @@ import torch
 from lib_comfyui import global_state
 from lib_comfyui.comfyui.webui_io import NODE_DISPLAY_NAME_MAPPINGS
 
-
 class WebuiImageInput:
     @classmethod
     def INPUT_TYPES(cls):
@@ -42,6 +41,14 @@ class WebuiImageOutput:
         return []
 
 
+def get_sd_model_multiplier():
+    from lib_comfyui.webui.proxies import sd_model_get_config
+    import yaml
+    with open(sd_model_get_config(), 'r') as yaml_file:
+        config = yaml.safe_load(yaml_file)
+        return config['model']['params']['scale_factor']
+
+
 class WebuiLatentInput:
     @classmethod
     def INPUT_TYPES(cls):
@@ -56,12 +63,11 @@ class WebuiLatentInput:
     CATEGORY = "webui"
 
     def get_latents(self, void):
-        return {'samples': global_state.node_inputs},
+        multiplier = get_sd_model_multiplier()
+        return {'samples': global_state.node_inputs / multiplier},
 
 
 class WebuiLatentOutput:
-    images = None
-
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -77,7 +83,8 @@ class WebuiLatentOutput:
     OUTPUT_NODE = True
 
     def set_images(self, latents):
-        global_state.node_outputs += latents['samples'].to('cpu')
+        multiplier = get_sd_model_multiplier()
+        global_state.node_outputs += latents['samples'].to('cpu') * multiplier
         return []
 
 

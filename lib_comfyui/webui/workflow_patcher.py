@@ -2,6 +2,7 @@ import functools
 import torch
 import torchvision.transforms.functional as F
 from lib_comfyui import ipc, global_state, default_workflow_types, external_code
+from modules import shared
 
 
 __original_create_sampler = None
@@ -62,6 +63,8 @@ def patch_processing(p):
 
 def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     x = original_function(*args, **kwargs)
+    if getattr(shared.state, 'interrupted', False):
+        return x
     if getattr(global_state, 'enabled', True):
         postprocessed_x = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_latent_workflow_type,

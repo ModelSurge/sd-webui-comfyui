@@ -30,8 +30,6 @@ class TestIpcLock(unittest.TestCase):
 
         self.assertGreaterEqual(diff, timeout)
 
-    def test_
-
 
 if __name__ == '__main__':
     unittest.main()

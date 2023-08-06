@@ -28,7 +28,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install wait-for-it -r requirements-test.txt
+          pip install -r requirements-test.txt
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"
@@ -46,7 +46,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest -vv --junitxml=tests/results.xml --cov . --cov-report=xml --verify-base-url tests
+          python -m pytest -vv --junitxml=tests/results.xml tests
 
       - name: Upload main app output
         uses: actions/upload-artifact@v3

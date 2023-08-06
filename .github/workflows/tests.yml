@@ -45,7 +45,9 @@ jobs:
           PYTHONUNBUFFERED: "1"
 
       - name: Run tests
-        run: |
+        run: >
+          python -m coverage run
+          --data-file=.coverage.server
           python -m pytest -vv --junitxml=tests/results.xml --cov . --cov-report=xml --verify-base-url tests
 
       - name: Show coverage

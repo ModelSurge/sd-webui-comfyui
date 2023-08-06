@@ -28,7 +28,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install -r requirements-test.txt
+          pip install -r requirements.txt -r requirements-test.txt
         env:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
           PIP_PROGRESS_BAR: "off"

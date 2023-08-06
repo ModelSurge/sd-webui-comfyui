@@ -47,10 +47,3 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest -vv --junitxml=tests/results.xml tests
-
-      - name: Upload main app output
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: output
-          path: output.txt

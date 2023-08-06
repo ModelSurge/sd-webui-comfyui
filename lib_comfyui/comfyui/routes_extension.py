@@ -4,6 +4,7 @@ from typing import List
 import torch
 from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
+from lib_comfyui.webui import settings
 
 
 # rest is ran on comfyui's server side
@@ -32,6 +33,9 @@ class ComfyuiIFrameRequests:
         workflow_type_id: str,
         queue_front: bool,
     ):
+        if settings.shared_state.interrupted:
+            return batch_input
+
         global_state.node_inputs = batch_input
         global_state.node_outputs = []
 

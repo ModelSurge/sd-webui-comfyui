@@ -63,8 +63,6 @@ def patch_processing(p):
 
 def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     x = original_function(*args, **kwargs)
-    if getattr(shared.state, 'interrupted', False):
-        return x
     if getattr(global_state, 'enabled', True):
         postprocessed_x = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_latent_workflow_type,

@@ -107,8 +107,6 @@ class ComfyUIScript(scripts.Script):
     def postprocess_batch_list(self, p, pp, *args, **kwargs):
         if not getattr(global_state, 'enabled', True):
             return
-        if getattr(shared.state, 'interrupted', False):
-            return
         if len(pp.images) == 0:
             return
 

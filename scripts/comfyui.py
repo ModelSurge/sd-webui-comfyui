@@ -125,7 +125,7 @@ class ComfyUIScript(scripts.Script):
         pp.images.clear()
         pp.images.extend(batch_results)
 
-        iframe_requests.extend_infotext_with_comfyui_workflows(p)
+        iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_xxx2img_str())
 
 
 callbacks.register_callbacks()

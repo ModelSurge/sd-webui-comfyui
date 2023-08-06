@@ -15,7 +15,7 @@ class ComfyuiIFrameRequests:
     loop = None
     focused_webui_client_id = None
 
-    @ipc.restrict_to_process('comfyui')
+    @ipc.run_in_process('comfyui')
     @staticmethod
     def send(request_params):
         cls = ComfyuiIFrameRequests
@@ -95,10 +95,15 @@ class ComfyuiIFrameRequests:
         cls.finished_comfyui_queue.put(response)
 
 
-def extend_infotext_with_comfyui_workflows(p):
+def extend_infotext_with_comfyui_workflows(p, tab):
     workflow_types = external_code.get_workflow_types()
     for workflow_type in workflow_types:
+        workflow_type_ids = workflow_type.get_ids(tab)
+        if not workflow_type_ids:
+            continue
+
+        workflow_type_id = workflow_type_ids[0]
         p.extra_generation_params[workflow_type.base_id] = ComfyuiIFrameRequests.send({
-            'workflowType': workflow_type,
             'request': '/sd-webui-comfyui/webui_request_serialize_graph',
+            'workflowType': workflow_type_id,
         })

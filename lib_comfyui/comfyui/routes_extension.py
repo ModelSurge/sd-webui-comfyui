@@ -26,8 +26,8 @@ def polling_server_patch(instance, loop):
             print(f"[sd-webui-comfyui] Client {workflow_type_id}-{webui_client_id} encountered an error - \n{response['response']['error']}")
 
         response_value = response['response']
-
-        await ComfyuiIFrameRequests.handle_response(response)
+        if response_value != 'timeout':
+            await ComfyuiIFrameRequests.handle_response(response_value)
 
         if (
             response_value == 'register_cid' or

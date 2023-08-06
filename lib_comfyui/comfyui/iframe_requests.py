@@ -93,3 +93,12 @@ class ComfyuiIFrameRequests:
     @classmethod
     async def handle_response(cls, response):
         cls.finished_comfyui_queue.put(response)
+
+
+def extend_infotext_with_comfyui_workflows(p):
+    workflow_types = external_code.get_workflow_types()
+    for workflow_type in workflow_types:
+        p.extra_generation_params[workflow_type.base_id] = ComfyuiIFrameRequests.send({
+            'workflowType': workflow_type,
+            'request': '/sd-webui-comfyui/webui_request_serialize_graph',
+        })

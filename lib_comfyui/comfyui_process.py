@@ -4,14 +4,12 @@ import os
 import signal
 import subprocess
 import sys
-from torch import multiprocessing
 from lib_comfyui import ipc, torch_utils, argv_conversion, parallel_utils
 from lib_comfyui.webui import settings
 from lib_comfyui.comfyui import pre_main
 
 
 comfyui_process = None
-multiprocessing_spawn = multiprocessing.get_context('spawn')
 
 
 @ipc.restrict_to_process('webui')
@@ -65,13 +63,13 @@ def stop_comfyui_process():
     if comfyui_process is None:
         return
 
-    stop_comfyui_main_thread()
-    comfyui_process.join()
+    send_sigint_to_comfyui()
+    comfyui_process.wait()
     comfyui_process = None
 
 
 @ipc.run_in_process('comfyui')
-def stop_comfyui_main_thread():
+def send_sigint_to_comfyui():
     import _thread
     _thread.interrupt_main()
 

@@ -3,6 +3,7 @@ import multiprocessing.shared_memory
 import pickle
 import tempfile
 import threading
+import time
 from pathlib import Path
 from typing import Optional, Any
 from watchdog.observers import Observer
@@ -12,7 +13,7 @@ from watchdog.events import FileSystemEventHandler
 class CallbackWatcher:
     def __init__(self, callback, name: str):
         self._callback = callback
-        self._queue = CallbackQueue(name)
+        self._queue = CallbackProxy(name)
         self._producer_thread = None
 
     def start(self):
@@ -36,10 +37,10 @@ class CallbackWatcher:
         return self._producer_thread and self._producer_thread.is_running()
 
 
-class CallbackQueue:
+class CallbackProxy:
     def __init__(self, name):
-        self._res_payload = IpcPayload(f'{CallbackQueue.__name__}_res_payload_{name}')
-        self._args_payload = IpcPayload(f'{CallbackQueue.__name__}_args_payload_{name}')
+        self._res_payload = IpcPayload(f'{CallbackProxy.__name__}_res_payload_{name}')
+        self._args_payload = IpcPayload(f'{CallbackProxy.__name__}_args_payload_{name}')
 
     def start(self):
         self._res_payload.start()
@@ -173,17 +174,14 @@ class IpcEvent:
 
         try:
             self._alive_path.unlink()
-            print('event clear 4')
             self._event_path.unlink(missing_ok=True)
             with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')
         except PermissionError:
             self._alive_file = open(self._alive_path, 'a')
-            print('event is_set 5')
             if self._event_path.exists():
                 self._event.set()
         except FileNotFoundError:
-            print('event clear 6')
             self._event_path.unlink(missing_ok=True)
             with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')
@@ -204,7 +202,6 @@ class IpcEvent:
             self._observer = None
 
     def set(self):
-        print('event set 2')
         with open(self._event_path, 'a'):
             pass
 
@@ -214,11 +211,10 @@ class IpcEvent:
                 self._event_path.unlink(missing_ok=True)
                 break
             except PermissionError:
-                print('error retry 3')
+                time.sleep(0.01)  # reduces the number of retries drastically (~100 -> ~1)
                 continue
 
     def is_set(self):
-        print('event is_set 1')
         return self._event_path.exists()
 
     def wait(self, timeout=None):

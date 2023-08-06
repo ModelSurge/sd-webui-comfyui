@@ -23,8 +23,8 @@ def start():
     if not getattr(shared.opts, 'comfyui_enabled', True):
         return
 
-    ipc.current_process_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
-    ipc.current_process_queues = {'comfyui': parallel_utils.CallbackQueue('comfyui')}
+    ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
+    ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui')}
     ipc.start_callback_listeners()
     atexit.register(stop)
     start_comfyui_process(install_location)

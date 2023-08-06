@@ -20,8 +20,8 @@ def comfyui_print(*args, **kwargs):
 
 def main(comfyui_path, cli_args):
     builtins.print = comfyui_print
-    ipc.current_process_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
-    ipc.current_process_queues = {'webui': parallel_utils.CallbackQueue('webui')}
+    ipc.current_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
+    ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
     ipc.current_process_id = 'comfyui'
     atexit.register(ipc.stop_callback_listeners)
     ipc.start_callback_listeners()

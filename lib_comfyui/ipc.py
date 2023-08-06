@@ -9,7 +9,7 @@ def run_in_process(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+                return current_callback_proxies[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
 
         return wrapper
 
@@ -47,20 +47,16 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
 
 
 current_process_id = 'webui'
-current_process_callback_listeners = {}
-current_process_queues = {}
-
-
-def get_current_process_queues():
-    return {k: v.queue for k, v in current_process_callback_listeners.items()}
+current_callback_listeners = {}
+current_callback_proxies = {}
 
 
 def start_callback_listeners():
     assert not callback_listeners_started()
-    for callback_listener in current_process_callback_listeners.values():
+    for callback_listener in current_callback_listeners.values():
         callback_listener.start()
 
-    for callback_queue in current_process_queues.values():
+    for callback_queue in current_callback_proxies.values():
         callback_queue.start()
 
     print('[sd-webui-comfyui]', 'started callback listeners for process', current_process_id)
@@ -68,14 +64,14 @@ def start_callback_listeners():
 
 def stop_callback_listeners():
     assert callback_listeners_started()
-    for callback_queue in current_process_queues.values():
+    for callback_queue in current_callback_proxies.values():
         callback_queue.stop()
 
-    for callback_listener in current_process_callback_listeners.values():
+    for callback_listener in current_callback_listeners.values():
         callback_listener.stop()
 
     print('[sd-webui-comfyui]', 'stopped callback listeners for process', current_process_id)
 
 
 def callback_listeners_started():
-    return any(callback_listener.is_running() for callback_listener in current_process_callback_listeners.values())
+    return any(callback_listener.is_running() for callback_listener in current_callback_listeners.values())

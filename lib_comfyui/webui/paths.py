@@ -1,20 +1,21 @@
 import os
 import sys
 import importlib
-from modules import paths, shared, modelloader
-from modules.images import save_image
 from lib_comfyui import ipc
 
 
-def share_webui_folder_paths(folder_paths: dict):
+@ipc.restrict_to_process('comfyui')
+def share_webui_folder_paths():
     from folder_paths import add_model_folder_path
-    for folder_id, folder_paths in folder_paths.items():
+    webui_folder_paths = get_webui_folder_paths()
+    for folder_id, folder_paths in webui_folder_paths.items():
         for folder_path in folder_paths:
             add_model_folder_path(folder_id, folder_path)
 
 
-def get_folder_paths() -> dict:
-    from modules import sd_models
+@ipc.run_in_process('webui')
+def get_webui_folder_paths() -> dict:
+    from modules import paths, shared, sd_models
     return {
         'checkpoints': [sd_models.model_path] + ([shared.cmd_opts.ckpt_dir] if shared.cmd_opts.ckpt_dir else []),
         'vae': [os.path.join(paths.models_path, 'VAE')] + ([shared.cmd_opts.vae_dir] if shared.cmd_opts.vae_dir else []),
@@ -28,7 +29,9 @@ def get_folder_paths() -> dict:
 
 
 # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/f865d3e11647dfd6c7b2cdf90dde24680e58acd8/modules/modelloader.py#L137
+@ipc.restrict_to_process('webui')
 def get_upscaler_paths():
+    from modules import shared, modelloader
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
     # so we'll try to import any _model.py files before looking in __subclasses__
     modules_dir = os.path.join(shared.script_path, "modules")
@@ -64,7 +67,9 @@ def get_upscaler_paths():
 
 
 # see https://github.com/Mikubill/sd-webui-controlnet/blob/07bed6ccf8a468a45b2833cfdadc749927cbd575/scripts/global_state.py#L205
+@ipc.restrict_to_process('webui')
 def get_controlnet_paths():
+    from modules import shared
     controlnet_path = os.path.join(shared.extensions_dir, 'sd-webui-controlnet')
     try:
         sys.path.insert(0, controlnet_path)
@@ -84,6 +89,7 @@ def get_controlnet_paths():
     ]
 
 
-@ipc.confine_to('webui')
+@ipc.run_in_process('webui')
 def webui_save_image(*args, **kwargs):
+    from modules.images import save_image
     save_image(*args, **kwargs)

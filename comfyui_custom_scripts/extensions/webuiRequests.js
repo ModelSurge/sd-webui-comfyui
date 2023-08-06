@@ -11,12 +11,12 @@ const request_map = new Map([
         await app.queuePrompt(json.queueFront ? -1 : 0, 1);
         return 'queued_prompt_comfyui';
     }],
-    ['/sd-webui-comfyui/send_workflow_to_webui', async (json) => {
-        return localStorage.getItem("workflow");
-    }],
+    ['/sd-webui-comfyui/webui_request_timeout', async (json) => {
+        return 'timeout';
+    }]
 ]);
 
-async function longPolling(thisClientId, webuiClientKey, startupResponse) {
+async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {
     let clientResponse = startupResponse;
 
     try {
@@ -28,64 +28,53 @@ async function longPolling(thisClientId, webuiClientKey, startupResponse) {
                 },
                 cache: "no-store",
                 body: JSON.stringify({
-                    comfyui_iframe_id: thisClientId,
+                    workflow_type_id: workflowTypeId,
                     webui_client_id: webuiClientKey,
-                    request: clientResponse,
+                    response: clientResponse,
                 }),
             });
             const json = await response.json();
-            console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${json.request}`);
+            if (json.request !== '/sd-webui-comfyui/webui_request_timeout') {
+                console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${workflowTypeId} - ${json.request}`);
+            }
             clientResponse = await request_map.get(json.request)(json);
         }
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         clientResponse = {error: e};
     }
     finally {
         setTimeout(() => {
-            longPolling(thisClientId, webuiClientKey, clientResponse);
+            longPolling(workflowTypeId, webuiClientKey, clientResponse);
         }, 100);
     }
 }
 
+async function onElementDomIdRegistered(callback) {
+    const iframeInfo = await iframeRegisteredEvent;
+    console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${iframeInfo.workflowTypeDisplayName}" (${iframeInfo.workflowTypeId}) / ${iframeInfo.webuiClientId}`);
 
-function onElementDomIdRegistered(callback) {
-    let thisClientId = undefined;
-    let webuiClientKey = undefined;
-
-    window.addEventListener("message", (event) => {
-        if(event.data.length > 100) return;
-        if(thisClientId) {
-            event.source.postMessage(thisClientId, event.origin);
-            return;
-        };
-        const messageData = event.data.split('.');
-        thisClientId = messageData[0];
-        webuiClientKey = messageData[1];
-        console.log(`[sd-webui-comfyui][comfyui] REGISTERED ELEMENT TAG ID - ${thisClientId}/${webuiClientKey}`);
-        event.source.postMessage(thisClientId, event.origin);
-        patchUiEnv(thisClientId);
-        const clientResponse = 'register_cid';
-        console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
-        callback(thisClientId, webuiClientKey, clientResponse);
-    });
+    event.source.postMessage(iframeInfo.workflowTypeId, event.origin);
+    await patchUiEnv(iframeInfo.workflowTypeId);
+    const clientResponse = 'register_cid';
+    console.log(`[sd-webui-comfyui][comfyui] INIT LONG POLLING SERVER - ${clientResponse}`);
+    await callback(iframeInfo.workflowTypeId, iframeInfo.webuiClientId, clientResponse);
 }
 
-function patchUiEnv(thisClientId) {
-    if(thisClientId !== 'comfyui_general_tab') {
+async function patchUiEnv(workflowTypeId) {
+    await appReadyEvent;
+
+    if (workflowTypeId.endsWith('_txt2img') || workflowTypeId.endsWith('_img2img')) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         patchSavingMechanism();
     }
+
+    await patchDefaultGraph(workflowTypeId);
 }
 
 function patchSavingMechanism() {
-    if(app.graph === undefined) {
-        setTimeout(patchSavingMechanism, POLLING_TIMEOUT);
-        return;
-    }
-
     app.graph.original_serialize = app.graph.serialize;
     app.graph.patched_serialize = () => JSON.parse(localStorage.getItem('workflow'));
     app.graph.serialize = app.graph.patched_serialize;
@@ -110,11 +99,61 @@ function patchSavingMechanism() {
         saveButton.click();
         app.graph.serialize = app.graph.patched_serialize;
     };
-    setTimeout(() => fetch('/webui_scripts/sd-webui-comfyui/default_workflows/postprocess.json')
-        .then(response => response.json())
-        .then(data => {
-            app.loadGraphData(data);
-        }), POLLING_TIMEOUT);
 }
 
+async function patchDefaultGraph(workflowTypeId) {
+    const response = await api.fetchApi("/sd-webui-comfyui/default_workflow?" + new URLSearchParams({
+        workflow_type_id: workflowTypeId,
+    }), {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        cache: "no-store",
+    });
+    const defaultGraph = await response.json();
+    if (!defaultGraph) {
+        return;
+    }
+
+    app.original_loadGraphData = app.loadGraphData;
+    app.loadGraphData = (graphData) => {
+        if (!graphData) {
+            return app.original_loadGraphData(defaultGraph);
+        } else {
+            return app.original_loadGraphData(graphData);
+        }
+    };
+
+    app.loadGraphData();
+}
+
+const iframeRegisteredEvent = new Promise(resolve => {
+    let resolved = false;
+    window.addEventListener("message", event => {
+        const data = event.data;
+        if (resolved || !data || !data.workflowTypeId) {
+            return;
+        }
+
+        resolved = true;
+        resolve(data);
+    });
+});
+
+const appReadyEvent = new Promise(resolve => {
+    const appReadyOrRecursiveSetTimeout = () => {
+        if (app.graph) {
+            resolve();
+        } else {
+            setTimeout(appReadyOrRecursiveSetTimeout, POLLING_TIMEOUT);
+        }
+    };
+    appReadyOrRecursiveSetTimeout();
+});
+
 onElementDomIdRegistered(longPolling);
+
+export {
+    iframeRegisteredEvent,
+}

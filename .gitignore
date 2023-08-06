@@ -130,4 +130,4 @@ dmypy.json
 
 .idea/
 
-**/ComfyUI/
+/ComfyUI/

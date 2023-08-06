@@ -1,22 +1,25 @@
+import atexit
+import signal
 import builtins
 import sys
 import os
 import runpy
 from lib_comfyui import (
-    argv_conversion,
     custom_extension_injector,
-    webui_paths,
     ipc,
-    polling_client,
-    queue_tracker,
     parallel_utils,
 )
-import atexit
+from lib_comfyui.comfyui import routes_extension, queue_tracker
+from lib_comfyui.webui import paths
 
 
-def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
-    original_print = builtins.print
-    builtins.print = lambda *args, **kwargs: original_print('[ComfyUI]', *args, **kwargs)
+original_print = builtins.print
+def comfyui_print(*args, **kwargs):
+    return original_print('[ComfyUI]', *args, **kwargs)
+
+
+def main(comfyui_path, process_queues, cli_args):
+    builtins.print = comfyui_print
     process_queue = process_queues['comfyui']
     ipc.current_process_callback_listeners = {
         'comfyui': parallel_utils.CallbackWatcher(process_queue)
@@ -25,23 +28,30 @@ def main(comfyui_path, webui_folder_paths, process_queues, cli_args):
     ipc.current_process_queues.clear()
     ipc.current_process_queues.update(process_queues)
     ipc.current_process_id = 'comfyui'
-    ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
-    start_comfyui(comfyui_path, webui_folder_paths, cli_args)
+    ipc.start_callback_listeners()
+
+    def sigint_handler(sig, frame):
+        exit()
+
+    signal.signal(signal.SIGINT, sigint_handler)
+    start_comfyui(comfyui_path, cli_args)
 
 
-def start_comfyui(comfyui_path, webui_folder_paths, cli_args):
+@ipc.restrict_to_process('comfyui')
+def start_comfyui(comfyui_path, cli_args):
     sys.path.insert(0, comfyui_path)
     sys.argv[1:] = cli_args
 
     print('[sd-webui-comfyui]', 'Injecting custom extensions...')
-    webui_paths.share_webui_folder_paths(webui_folder_paths)
+    paths.share_webui_folder_paths()
     patch_comfyui()
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
     runpy.run_path(os.path.join(comfyui_path, 'main.py'), {}, '__main__')
 
 
+@ipc.restrict_to_process('comfyui')
 def patch_comfyui():
     custom_extension_injector.register_webui_extensions()
-    polling_client.patch_server_routes()
+    routes_extension.patch_server_routes()
     queue_tracker.patch_prompt_queue()

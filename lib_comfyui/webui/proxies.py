@@ -4,10 +4,11 @@ import sys
 import yaml
 import textwrap
 import torch
-from lib_comfyui import webui_settings, ipc, torch_utils
+from lib_comfyui import ipc, torch_utils
+from lib_comfyui.webui import settings
 
 
-class WebuiModelPatcher:
+class ModelPatcher:
     def __init__(self, model):
         self.model = model
         self.load_device = model.device
@@ -59,7 +60,7 @@ class WebuiModelPatcher:
         return functools.partial(getattr(comfy.sd.ModelPatcher, item), self)
 
 
-class WebuiModelProxy:
+class Model:
     @property
     def model_config(self):
         return get_comfy_model_config()
@@ -97,9 +98,9 @@ class WebuiModelProxy:
         args = torch_utils.deep_to(args, device='cpu')
         del kwargs['transformer_options']
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiModelProxy.sd_model_apply(*args, **kwargs), device=self.device)
+        return torch_utils.deep_to(Model.sd_model_apply(*args, **kwargs), device=self.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_model_apply(*args, **kwargs):
         from modules import shared, devices
@@ -118,13 +119,13 @@ class WebuiModelProxy:
         if item in self.__dict__:
             return self.__dict__[item]
 
-        res = WebuiModelProxy.sd_model_getattr(item)
+        res = Model.sd_model_getattr(item)
         if item != "device":
             res = torch_utils.deep_to(res, device=self.device)
 
         return res
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_model_getattr(item):
         from modules import shared
@@ -133,14 +134,14 @@ class WebuiModelProxy:
         return res
 
 
-class WebuiClipWrapper:
+class ClipWrapper:
     def __init__(self, proxy):
         self.cond_stage_model = proxy
-        self.patcher = WebuiModelPatcher(self.cond_stage_model)
+        self.patcher = ModelPatcher(self.cond_stage_model)
 
     @property
     def layer_idx(self):
-        clip_skip = webui_settings.opts.CLIP_stop_at_last_layers
+        clip_skip = settings.opts.CLIP_stop_at_last_layers
         return -clip_skip if clip_skip > 1 else None
 
     def clone(self, *args, **kwargs):
@@ -156,9 +157,9 @@ class WebuiClipWrapper:
     def tokenize(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiClipWrapper.sd_clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
+        return torch_utils.deep_to(ClipWrapper.sd_clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_clip_tokenize_with_weights(text, return_word_ids=False):
         from modules import shared
@@ -181,7 +182,7 @@ class WebuiClipWrapper:
         return functools.partial(getattr(comfy.sd.CLIP, item), self)
 
 
-class WebuiClipProxy:
+class Clip:
     def clip_layer(self, layer_idx, *args, **kwargs):
         soft_raise(f'cannot control webui clip skip from comfyui. Tried to stop at layer {layer_idx}')
         return
@@ -192,9 +193,9 @@ class WebuiClipProxy:
     def encode_token_weights(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiClipProxy.sd_clip_encode_token_weights(*args, **kwargs), device=self.device)
+        return torch_utils.deep_to(Clip.sd_clip_encode_token_weights(*args, **kwargs), device=self.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_clip_encode_token_weights(token_weight_pairs_list):
         from modules import shared
@@ -227,13 +228,13 @@ class WebuiClipProxy:
         if item in self.__dict__:
             return self.__dict__[item]
 
-        res = WebuiClipProxy.sd_clip_getattr(item)
+        res = Clip.sd_clip_getattr(item)
         if item != "device":
             res = torch_utils.deep_to(res, device=self.device)
 
         return res
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_clip_getattr(item):
         from modules import shared
@@ -242,7 +243,7 @@ class WebuiClipProxy:
         return res
 
 
-class WebuiVaeWrapper:
+class VaeWrapper:
     def __init__(self, proxy):
         self.first_stage_model = proxy
 
@@ -266,7 +267,7 @@ class WebuiVaeWrapper:
         return functools.partial(getattr(comfy.sd.VAE, item), self)
 
 
-class WebuiVaeProxy:
+class Vae:
     def state_dict(self):
         soft_raise('accessing the webui checkpoint state dict from comfyui is not yet suppported')
         return {}
@@ -274,10 +275,10 @@ class WebuiVaeProxy:
     def encode(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        res = torch_utils.deep_to(WebuiVaeProxy.sd_vae_encode(*args, **kwargs), device=self.device)
+        res = torch_utils.deep_to(Vae.sd_vae_encode(*args, **kwargs), device=self.device)
         return DistributionProxy(res)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_vae_encode(*args, **kwargs):
         from modules import shared, devices
@@ -291,9 +292,9 @@ class WebuiVaeProxy:
     def decode(self, *args, **kwargs):
         args = torch_utils.deep_to(args, device='cpu')
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
-        return torch_utils.deep_to(WebuiVaeProxy.sd_vae_decode(*args, **kwargs), device=self.device)
+        return torch_utils.deep_to(Vae.sd_vae_decode(*args, **kwargs), device=self.device)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_vae_decode(*args, **kwargs):
         from modules import shared, devices
@@ -315,13 +316,13 @@ class WebuiVaeProxy:
         if item in self.__dict__:
             return self.__dict__[item]
 
-        res = WebuiVaeProxy.sd_vae_getattr(item)
+        res = Vae.sd_vae_getattr(item)
         if item != "device":
             res = torch_utils.deep_to(res, device=self.device)
 
         return res
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def sd_vae_getattr(item):
         from modules import shared
@@ -338,13 +339,13 @@ class DistributionProxy:
         return self.sample_proxy
 
 
-@ipc.confine_to('webui')
+@ipc.run_in_process('webui')
 def free_webui_memory():
     gc.collect(1)
     torch.cuda.empty_cache()
 
 
-@ipc.confine_to('comfyui')
+@ipc.restrict_to_process('comfyui')
 def raise_on_unsupported_model_type(config):
     import comfy
     if type(config) not in (
@@ -354,7 +355,7 @@ def raise_on_unsupported_model_type(config):
         raise NotImplementedError(f'Webui model type {type(config).__name__} is not yet supported')
 
 
-@ipc.confine_to('comfyui')
+@ipc.restrict_to_process('comfyui')
 def get_comfy_model_config():
     import comfy
     with open(sd_model_get_config()) as f:
@@ -366,7 +367,7 @@ def get_comfy_model_config():
     return comfy.model_detection.model_config_from_unet_config(unet_config)
 
 
-@ipc.confine_to('webui')
+@ipc.run_in_process('webui')
 def sd_model_get_config():
     from modules import shared, sd_models, sd_models_config
     return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())

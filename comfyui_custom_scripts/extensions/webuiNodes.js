@@ -1,19 +1,15 @@
 import { app } from "/scripts/app.js";
+import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiRequests.js";
 
 
 function createVoidWidget(node, name) {
     const widget = {
-        i: 0,
         type: "customtext",
         name,
         get value() {
-            widget.requestUpdate();
-            return `${widget.i}`;
+            return `${Math.random()}{Date.now()}`;
         },
         set value(x) {},
-        requestUpdate() {
-            widget.i++;
-        }
     };
     widget.parent = node;
     node.addCustomWidget(widget);
@@ -29,6 +25,16 @@ const ext = {
                 createVoidWidget(node, inputName);
             },
         };
+    },
+    async beforeRegisterNodeDef(node, nodeData) {
+        const iframeInfo = await iframeRegisteredEvent;
+
+        if (!iframeInfo.webuiIoNodeNames.includes(nodeData.name)) {
+            return;
+        }
+
+        nodeData.display_name = `${nodeData.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
+        node.title = nodeData.display_name;
     },
 };
 

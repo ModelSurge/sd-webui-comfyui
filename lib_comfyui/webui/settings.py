@@ -1,11 +1,12 @@
 import sys
 import textwrap
-from lib_comfyui import ipc
-from modules import shared
+from lib_comfyui import ipc, global_state
 import install_comfyui
 
 
+@ipc.restrict_to_process('webui')
 def create_section():
+    from modules import shared
     section = ('comfyui', "ComfyUI")
     shared.opts.add_option('comfyui_enabled', shared.OptionInfo(True, 'Enable sd-webui-comfyui extension', section=section))
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
@@ -16,17 +17,30 @@ def create_section():
         '', 'Address of the ComfyUI server as seen from the webui. Only used by the extension to load the ComfyUI iframe (requires reload UI)',
         component_args={'placeholder': 'Leave empty to use the --listen address of the ComfyUI server'}, section=section))
 
+    shared.opts.onchange('comfyui_enabled', update_enabled)
 
+
+@ipc.restrict_to_process('webui')
+def update_enabled():
+    from modules import shared
+    global_state.enabled = shared.opts.data.get('comfyui_enabled', True)
+
+
+@ipc.restrict_to_process('webui')
 def get_install_location():
+    from modules import shared
     install_location = install_comfyui.default_install_location
     install_location = shared.opts.data.get('comfyui_install_location', install_location).strip()
     return install_location
 
 
+@ipc.restrict_to_process('webui')
 def get_additional_argv():
+    from modules import shared
     return [arg.strip() for arg in shared.opts.data.get('comfyui_additional_args', '').split()]
 
 
+@ipc.restrict_to_process('webui')
 def get_setting_value(setting_key):
     webui_argv = get_additional_argv()
     index = webui_argv.index(setting_key) if setting_key in webui_argv else -1
@@ -34,11 +48,15 @@ def get_setting_value(setting_key):
     return setting_value
 
 
+@ipc.restrict_to_process('webui')
 def get_port():
+    from modules import shared
     return get_setting_value('--port') or getattr(shared.cmd_opts, 'comfyui_port', 8188)
 
 
+@ipc.restrict_to_process('webui')
 def get_comfyui_client_url():
+    from modules import shared
     loopback_address = '127.0.0.1'
     server_url = get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)
     client_url = shared.opts.data.get('comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
@@ -57,9 +75,10 @@ class WebuiOptions:
     def __getattr__(self, item):
         return WebuiOptions.opts_getattr(item)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def opts_getattr(item):
+        from modules import shared
         return getattr(shared.opts, item)
 
 
@@ -67,9 +86,10 @@ class WebuiSharedState:
     def __getattr__(self, item):
         return WebuiSharedState.shared_state_getattr(item)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def shared_state_getattr(item):
+        from modules import shared
         return getattr(shared.state, item)
 
 

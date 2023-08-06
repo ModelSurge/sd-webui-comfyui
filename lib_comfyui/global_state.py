@@ -1,7 +1,6 @@
-from types import ModuleType
-
-from lib_comfyui import ipc
 import sys
+from types import ModuleType
+from lib_comfyui import ipc
 
 
 class GlobalState(ModuleType):
@@ -18,7 +17,7 @@ class GlobalState(ModuleType):
 
         return GlobalState.getattr(item)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def getattr(item):
         try:
@@ -29,7 +28,7 @@ class GlobalState(ModuleType):
     def __setattr__(self, item, value):
         GlobalState.setattr(item, value)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def setattr(item, value):
         GlobalState.__state[item] = value
@@ -37,7 +36,7 @@ class GlobalState(ModuleType):
     def __delattr__(self, item):
         GlobalState.delattr(item)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def delattr(item):
         del GlobalState.__state[item]
@@ -45,7 +44,7 @@ class GlobalState(ModuleType):
     def __contains__(self, item):
         return GlobalState.contains(item)
 
-    @ipc.confine_to('webui')
+    @ipc.run_in_process('webui')
     @staticmethod
     def contains(item):
         return item in GlobalState.__state

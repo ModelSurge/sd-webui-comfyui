@@ -1,10 +1,10 @@
 {
-  "last_node_id": 317,
-  "last_link_id": 575,
+  "last_node_id": 417,
+  "last_link_id": 675,
   "nodes": [
     {
-      "id": 316,
-      "type": "PostprocessFromWebui",
+      "id": 416,
+      "type": "LatentFromWebui",
       "pos": [
         16,
         229
@@ -18,25 +18,25 @@
       "mode": 0,
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
+          "name": "LATENT",
+          "type": "LATENT",
           "links": [
-            575
+            675
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "PostprocessFromWebui"
+        "Node name for S&R": "LatentFromWebui"
       },
       "widgets_values": [
         "5358"
       ]
     },
     {
-      "id": 317,
-      "type": "PostprocessToWebui",
+      "id": 417,
+      "type": "LatentToWebui",
       "pos": [
         537,
         190
@@ -50,13 +50,13 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 575
+          "name": "latents",
+          "type": "LATENT",
+          "link": 675
         }
       ],
       "properties": {
-        "Node name for S&R": "PostprocessToWebui"
+        "Node name for S&R": "LatentToWebui"
       },
       "widgets_values": [
         "5358"
@@ -65,12 +65,12 @@
   ],
   "links": [
     [
-      575,
-      316,
+      675,
+      416,
       0,
-      317,
+      417,
       0,
-      "IMAGE"
+      "LATENT"
     ]
   ],
   "groups": [],

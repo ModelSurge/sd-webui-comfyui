@@ -1,71 +1,122 @@
 import gradio as gr
-
-import modules.scripts as scripts
-from lib_comfyui import webui_callbacks, webui_settings, global_state, platform_utils
-from comfyui_custom_nodes import webui_postprocess_input, webui_postprocess_output
-from lib_comfyui.polling_client import ComfyuiNodeWidgetRequests
-from modules import shared, ui
+from modules import shared, scripts, ui
+from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, comfyui_process
+from lib_comfyui.webui import callbacks, settings, workflow_patcher
 
 
 class ComfyUIScript(scripts.Script):
-    def get_xxx2img_str(self):
-        return "img2img" if self.is_img2img else "txt2img"
+    def get_xxx2img_str(self, is_img2img: bool = None):
+        if is_img2img is None:
+            is_img2img = self.is_img2img
+        return "img2img" if is_img2img else "txt2img"
 
     def title(self):
         return "ComfyUI"
 
-    def ui(self, is_img2img):
-        xxx2img = ("img2img" if is_img2img else "txt2img")
-        elem_id_tabname = xxx2img + "_comfyui"
-        with gr.Group(elem_id=elem_id_tabname):
-            with gr.Accordion(f"ComfyUI", open=False, elem_id="sd-comfyui-webui"):
-                controls = ComfyUIScript.get_alwayson_ui(xxx2img)
-        return controls
+    def show(self, is_img2img):
+        return scripts.AlwaysVisible
 
-    @staticmethod
-    def get_alwayson_ui(xxx2img):
+    def ui(self, is_img2img):
+        global_state.is_ui_instantiated = True
+        with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
+            return self.get_alwayson_ui(is_img2img)
+
+    def get_alwayson_ui(self, is_img2img: bool):
+        xxx2img = self.get_xxx2img_str(is_img2img)
+
         with gr.Row():
-            queue_front = gr.Checkbox(label='Queue front', elem_id='sd-comfyui-webui-queue_front', value=True)
-            output_node_label = gr.Dropdown(label='Workflow type', choices=['postprocess'], value='postprocess')
+            queue_front = gr.Checkbox(
+                label='Queue front',
+                elem_id=self.elem_id('queue_front'),
+                value=True,
+            )
+            workflow_types = external_code.get_workflow_types(xxx2img)
+            first_workflow_type = workflow_types[0]
+            workflow_type_ids = {
+                workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
+                for workflow_type in workflow_types
+            }
+            workflow_display_name = gr.Dropdown(
+                label='Edit workflow type',
+                choices=[workflow_type.display_name for workflow_type in workflow_types],
+                value=first_workflow_type.display_name,
+                elem_id=self.elem_id('displayed_workflow_type'),
+            )
+            current_workflow_type_id = gr.Text(
+                value=workflow_type_ids[first_workflow_type.display_name],
+                visible=False,
+                interactive=False,
+            )
+            workflow_display_name.change(
+                fn=workflow_type_ids.get,
+                inputs=[workflow_display_name],
+                outputs=[current_workflow_type_id],
+            )
+            current_workflow_type_id.change(
+                fn=None,
+                _js='changeDisplayedWorkflowType',
+                inputs=[current_workflow_type_id],
+            )
+
         with gr.Row():
-            gr.HTML(value=f"""
-                <iframe src="{webui_settings.get_comfyui_client_url()}" id="comfyui_postprocess_{xxx2img}" class="comfyui-embedded-widget" style="width:100%; height:500px;"></iframe>
-            """)
+            gr.HTML(value=self.get_iframes_html(is_img2img, workflow_type_ids[first_workflow_type.display_name]))
+
         with gr.Row():
-            refresh_button = gr.Button(value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)', elem_id='sd-comfyui-webui-refresh_button')
+            refresh_button = gr.Button(
+                value=f'{ui.refresh_symbol} Reload ComfyUI interface (client side)',
+                elem_id=self.elem_id('refresh_button'),
+            )
             refresh_button.click(
                 fn=None,
                 _js='reloadComfyuiIFrames'
             )
-        return queue_front, output_node_label
 
-    def show(self, is_img2img):
-        return scripts.AlwaysVisible
+        return queue_front,
 
-    def process(self, p, *args):
-        if not getattr(shared.opts, 'comfyui_enabled', True):
+    def get_iframes_html(self, is_img2img: bool, first_workflow_type_id: str) -> str:
+        comfyui_client_url = settings.get_comfyui_client_url()
+
+        iframes = []
+        for workflow_type_id in external_code.get_workflow_type_ids(self.get_xxx2img_str(is_img2img)):
+            html_classes = ['comfyui-embedded-widget']
+            if workflow_type_id == first_workflow_type_id:
+                html_classes.append('comfyui-embedded-widget-display')
+
+            iframes.append(f"""
+                <iframe
+                    src="{comfyui_client_url}"
+                    workflow_type_id="{workflow_type_id}"
+                    class="{' '.join(html_classes)}"
+                    style="width:100%; height:500px;">
+                </iframe>
+            """)
+
+        return f"""
+            <div class="comfyui_iframes">
+                {''.join(iframes)}
+            </div>
+        """
+
+    def process(self, p, queue_front, **kwargs):
+        if not getattr(global_state, 'enabled', True):
             return
 
-    def postprocess_batch_list(self, p, pp, queue_front, output_node_label, **kwargs):
-        if not getattr(shared.opts, 'comfyui_enabled', True):
-            return
-        if getattr(shared.state, 'interrupted', False):
+        global_state.queue_front = queue_front
+        workflow_patcher.patch_processing(p)
+
+    def postprocess_batch_list(self, p, pp, *args, **kwargs):
+        if not getattr(global_state, 'enabled', True):
             return
         if len(pp.images) == 0:
             return
 
-        batch_results = ComfyuiNodeWidgetRequests.start_workflow_sync(
-            batch=pp.images,
-            workflow_type='postprocess',
-            is_img2img=self.is_img2img,
-            required_node_types=webui_postprocess_output.expected_node_types,
-            queue_front=queue_front,
+        batch_results = external_code.run_workflow(
+            workflow_type=default_workflow_types.postprocess_workflow_type,
+            tab=self.get_xxx2img_str(),
+            batch_input=pp.images,
         )
 
-        if batch_results is None or 'error' in batch_results:
-            return
-
-        batch_size_factor = len(batch_results) // len(pp.images)
+        batch_size_factor = max(1, len(batch_results) // len(pp.images))
 
         for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
             list_to_scale[:] = list_to_scale * batch_size_factor
@@ -74,4 +125,8 @@ class ComfyUIScript(scripts.Script):
         pp.images.extend(batch_results)
 
 
-webui_callbacks.register_callbacks()
+callbacks.register_callbacks()
+default_workflow_types.add_default_workflow_types()
+comfyui_context.init_webui_base_dir()
+workflow_patcher.apply_patches()
+comfyui_process.restore_webui_sigint_handler()

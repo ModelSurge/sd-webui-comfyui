@@ -1,6 +1,5 @@
 import threading
 from queue import Empty
-
 from torch import multiprocessing
 import multiprocessing.queues
 from lib_comfyui import platform_utils
@@ -60,7 +59,9 @@ class CallbackQueue:
 
     def wait_for_consumer(self, timeout: float = None):
         consumer_ready = self.consumer_ready_event.wait(timeout)
-        self.consumer_ready_event.clear()
+        if consumer_ready:
+            self.consumer_ready_event.clear()
+
         return consumer_ready
 
     def get(self, *self_args, args=None, kwargs=None, **self_kwargs):
@@ -101,10 +102,13 @@ class CallbackWatcher:
     def start(self):
         def thread_loop():
             while self.producer_thread.is_running():
-                self.queue.attend_consumer(timeout=1)
+                self.queue.attend_consumer(timeout=0.5)
 
         self.producer_thread = StoppableThread(target=thread_loop, daemon=True)
         self.producer_thread.start()
+
+    def is_running(self):
+        return self.producer_thread and self.producer_thread.is_running()
 
     def stop(self):
         if self.producer_thread is None:

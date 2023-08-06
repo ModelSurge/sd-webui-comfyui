@@ -1,17 +1,19 @@
-from modules import shared
-from lib_comfyui import webui_settings
+from lib_comfyui import ipc
+from lib_comfyui.webui import settings
 
 
 COMFYUI_ARGV_PREFIX = 'comfyui_'
 
 
 def get_comfyui_args():
-    args = webui_settings.get_additional_argv() + extract_comfyui_argv()
+    args = settings.get_additional_argv() + extract_comfyui_argv()
     deduplicate_comfyui_args(args)
     return args
 
 
+@ipc.restrict_to_process('webui')
 def extract_comfyui_argv():
+    from modules import shared
     result = []
     for k, v in _items(shared.cmd_opts):
         if k.startswith(COMFYUI_ARGV_PREFIX):

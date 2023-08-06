@@ -2,24 +2,26 @@ import os
 import inspect
 import ast
 import textwrap
-from lib_comfyui.find_extensions import get_extension_paths_to_load
+from lib_comfyui import find_extensions, ipc
 
 # This patching code was highly inspired by Sergei's monkey patch article.
 # Source: https://medium.com/@chipiga86/python-monkey-patching-like-a-boss-87d7ddb8098e
 
 
 def register_webui_extensions():
-    node_paths, script_paths = get_extension_paths_to_load()
+    node_paths, script_paths = find_extensions.get_extension_paths_to_load()
     register_custom_nodes(node_paths)
     register_custom_scripts(script_paths)
 
 
+@ipc.restrict_to_process('comfyui')
 def register_custom_nodes(custom_nodes_path_list):
     from folder_paths import add_model_folder_path
     for custom_nodes_path in custom_nodes_path_list:
         add_model_folder_path('custom_nodes', custom_nodes_path)
 
 
+@ipc.restrict_to_process('comfyui')
 def register_custom_scripts(custom_scripts_path_list):
     if not custom_scripts_path_list:
         return

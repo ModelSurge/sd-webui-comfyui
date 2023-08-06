@@ -1,9 +1,10 @@
+import gc
 import importlib
 import sys
 from lib_comfyui import parallel_utils, platform_utils
 
 
-def confine_to(process_id):
+def run_in_process(process_id):
     def annotation(function):
         def wrapper(*args, **kwargs):
             global current_process_id
@@ -11,6 +12,20 @@ def confine_to(process_id):
                 return function(*args, **kwargs)
             else:
                 return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+
+        return wrapper
+
+    return annotation
+
+
+def restrict_to_process(process_id):
+    def annotation(function):
+        def wrapper(*args, **kwargs):
+            global current_process_id
+            if process_id != current_process_id:
+                raise RuntimeError(f'Can only call function {function.__module__}.{function.__qualname__} from process {process_id}. Current process is {current_process_id}')
+
+            return function(*args, **kwargs)
 
         return wrapper
 
@@ -34,25 +49,35 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
 
 
 current_process_id = 'webui'
-current_process_callback_listeners = {
-    'webui': parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified)),
-}
+current_process_callback_listeners = {}
+current_process_queues = {}
+
+
+def reset_state():
+    assert not callback_listeners_started(), 'can only reset the ipc state when callback listeners are stopped'
+
+    current_process_callback_listeners['webui'] = parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified))
+    current_process_queues['comfyui'] = parallel_utils.CallbackQueue(call_fully_qualified)
+    gc.collect()
 
 
 def get_current_process_queues():
     return {k: v.queue for k, v in current_process_callback_listeners.items()}
 
 
-current_process_queues = {
-    'comfyui': parallel_utils.CallbackQueue(call_fully_qualified)
-}
-
-
 def start_callback_listeners():
+    assert not callback_listeners_started()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.start()
+    print('[sd-webui-comfyui]', 'started callback listeners for process', current_process_id)
 
 
 def stop_callback_listeners():
+    assert callback_listeners_started()
     for callback_listener in current_process_callback_listeners.values():
         callback_listener.stop()
+    print('[sd-webui-comfyui]', 'stopped callback listeners for process', current_process_id)
+
+
+def callback_listeners_started():
+    return any(callback_listener.is_running() for callback_listener in current_process_callback_listeners.values())

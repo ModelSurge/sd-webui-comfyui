@@ -45,16 +45,8 @@ jobs:
           PYTHONUNBUFFERED: "1"
 
       - name: Run tests
-        run: >
-          python -m coverage run
-          --data-file=.coverage.server
-          python -m pytest -vv --junitxml=tests/results.xml --cov . --cov-report=xml --verify-base-url tests
-
-      - name: Show coverage
         run: |
-          python -m coverage combine .coverage*
-          python -m coverage report -i
-          python -m coverage html -i
+          python -m pytest -vv --junitxml=tests/results.xml --cov . --cov-report=xml --verify-base-url tests
 
       - name: Upload main app output
         uses: actions/upload-artifact@v3
@@ -62,10 +54,3 @@ jobs:
         with:
           name: output
           path: output.txt
-
-      - name: Upload coverage HTML
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: htmlcov
-          path: htmlcov

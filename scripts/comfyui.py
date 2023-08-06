@@ -2,6 +2,7 @@ import gradio as gr
 from modules import shared, scripts, ui
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher
+from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
 
 
 class ComfyUIScript(scripts.Script):
@@ -123,6 +124,17 @@ class ComfyUIScript(scripts.Script):
 
         pp.images.clear()
         pp.images.extend(batch_results)
+
+        extend_infotext_with_comfyui_workflows(p)
+
+
+def extend_infotext_with_comfyui_workflows(p):
+    workflow_types = external_code.get_workflow_types()
+    for workflow_type in workflow_types:
+        p.extra_generation_params[workflow_type.base_id] = ComfyuiIFrameRequests.send({
+            'workflowType': workflow_type,
+            'request': '/sd-webui-comfyui/webui_request_serialize_graph',
+        })
 
 
 callbacks.register_callbacks()

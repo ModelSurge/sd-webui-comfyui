@@ -187,7 +187,6 @@ class IpcEvent:
         self.clear()
 
     def stop(self):
-        """Stop the watchdog observer."""
         if self._observer is None:
             return
 
@@ -197,22 +196,18 @@ class IpcEvent:
         self._lock.stop()
 
     def set(self):
-        """Signal the event by creating a unique file."""
         with self._lock, open(self._filepath, 'a'):
             pass
 
     def clear(self):
-        """Clear the event by removing the unique file."""
         with self._lock:
             self._filepath.unlink(missing_ok=True)
 
     def is_set(self):
-        """Check if the event is set."""
         with self._lock:
             return self._filepath.exists()
 
     def wait(self, timeout=None):
-        """Block until the event is set or the optional timeout is reached."""
         return self._event_handler.wait_for_creation(timeout)
 
 
@@ -262,7 +257,6 @@ class IpcLock:
         self._observer = None
 
     def acquire(self, timeout=None):
-        """Attempt to acquire the lock."""
         while True:
             if self._event.wait(timeout):
                 try:
@@ -275,7 +269,6 @@ class IpcLock:
                 return False
 
     def release(self):
-        """Release the lock."""
         self._filepath.unlink(missing_ok=True)
 
     def __enter__(self):

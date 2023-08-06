@@ -17,32 +17,39 @@ def comfyui_print(*args, **kwargs):
     return original_print('[ComfyUI]', *args, **kwargs)
 
 
+@ipc.restrict_to_process('comfyui')
 def main():
     builtins.print = comfyui_print
-    ipc.current_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
-    ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
-    ipc.current_process_id = 'comfyui'
-    atexit.register(ipc.stop_callback_listeners)
-    ipc.start_callback_listeners()
+    setup_ipc()
+    patch_comfyui()
     start_comfyui()
 
 
 @ipc.restrict_to_process('comfyui')
-def start_comfyui():
-    print('[sd-webui-comfyui]', 'Injecting custom extensions...')
-    paths.share_webui_folder_paths()
-    patch_comfyui()
-    print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
-    comfyui_main_path = os.getenv('SD_WEBUI_COMFYUI_MAIN')
-    runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
+def setup_ipc():
+    print('[sd-webui-comfyui]', 'Setting up IPC...')
+    ipc.current_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
+    ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
+    atexit.register(ipc.stop_callback_listeners)
+    ipc.start_callback_listeners()
 
 
 @ipc.restrict_to_process('comfyui')
 def patch_comfyui():
+    print('[sd-webui-comfyui]', 'Patching ComfyUI...')
+    paths.share_webui_folder_paths()
     custom_extension_injector.register_webui_extensions()
     routes_extension.patch_server_routes()
     queue_tracker.patch_prompt_queue()
 
 
+@ipc.restrict_to_process('comfyui')
+def start_comfyui():
+    print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
+    comfyui_main_path = os.getenv('SD_WEBUI_COMFYUI_MAIN')
+    runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
+
+
 if __name__ == '__main__':
+    ipc.current_process_id = 'comfyui'
     main()

@@ -1,7 +1,6 @@
 import hashlib
 import multiprocessing.shared_memory
 import pickle
-import sys
 import tempfile
 import threading
 import time

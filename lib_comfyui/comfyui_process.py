@@ -64,9 +64,16 @@ def stop_comfyui_process():
     if comfyui_process is None:
         return
 
-    comfyui_process.kill()
+    if not is_exiting:
+        send_sigint_to_comfyui()
     comfyui_process.wait()
     comfyui_process = None
+
+
+@ipc.run_in_process('comfyui')
+def send_sigint_to_comfyui():
+    import _thread
+    _thread.interrupt_main()
 
 
 # remove this when comfyui starts using subprocess with an isolated venv

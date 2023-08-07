@@ -1,3 +1,4 @@
+import atexit
 import builtins
 import sys
 import os
@@ -30,6 +31,7 @@ def setup_ipc():
     ipc.current_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
     ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
     ipc.start_callback_listeners()
+    atexit.register(ipc.stop_callback_listeners)
 
 
 @ipc.restrict_to_process('comfyui')

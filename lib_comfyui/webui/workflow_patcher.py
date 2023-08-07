@@ -68,7 +68,7 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
             tab='img2img' if is_img2img else 'txt2img',
             batch_input=x.to(device='cpu'),
         )
-        x = torch.stack(postprocessed_x).to(device=x.device)
+        x = torch.stack(postprocessed_x).to(device=x.device) if isinstance(postprocessed_x, list) else postprocessed_x.to(device=x.device)
 
     return x
 

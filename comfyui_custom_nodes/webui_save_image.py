@@ -31,7 +31,7 @@ class WebuiSaveImage:
         for image in images:
             pil_image = to_pil_image(image.permute(2, 0, 1))
             save_path = os.path.join(data_path, output_dir)
-            WebuiSaveImage.webui_save_image(image=pil_image, path=save_path, basename='')
+            filename, _ = WebuiSaveImage.webui_save_image(image=pil_image, path=save_path, basename='')
 
         return []
 

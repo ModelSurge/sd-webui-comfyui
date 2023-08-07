@@ -133,9 +133,11 @@ class IpcPayload:
         if not is_ready:
             raise TimeoutError
 
+        data = pickle.dumps(value)
+
         self.close_shm()
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}", create=True, size=len(data))
-        self._shm.buf[:] = pickle.dumps(value)
+        self._shm.buf[:] = data
 
         self._send_event.clear()
         self._recv_event.set()

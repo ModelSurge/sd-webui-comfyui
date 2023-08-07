@@ -1,3 +1,4 @@
+import gc
 import importlib
 import sys
 
@@ -69,6 +70,10 @@ def stop_callback_listeners():
 
     for callback_listener in current_callback_listeners.values():
         callback_listener.stop()
+
+    current_callback_proxies.clear()
+    current_callback_listeners.clear()
+    gc.collect()
 
     print('[sd-webui-comfyui]', 'stopped callback listeners for process', current_process_id)
 

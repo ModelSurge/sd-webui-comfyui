@@ -18,10 +18,11 @@ class TestIpcEventConcurrency(unittest.TestCase):
 
     def test_multiple_processes_event_set(self):
         processes = []
+        start_lock = multiprocessing.Lock()
 
         # Start 5 processes that all try to set the event
         for _ in range(5):
-            p = multiprocessing.Process(target=worker_set_event, args=(self.event_name,))
+            p = multiprocessing.Process(target=worker_set_event, args=(self.event_name, start_lock))
             processes.append(p)
             p.start()
 
@@ -36,12 +37,13 @@ class TestIpcEventConcurrency(unittest.TestCase):
         # First, let's set the event
         self.ipc_event.set()
         self.assertTrue(self.ipc_event.is_set())
+        start_lock = multiprocessing.Lock()
 
         processes = []
 
         # Start 5 processes that all try to clear the event
         for _ in range(5):
-            p = multiprocessing.Process(target=worker_clear_event, args=(self.event_name,))
+            p = multiprocessing.Process(target=worker_clear_event, args=(self.event_name, start_lock))
             processes.append(p)
             p.start()
 
@@ -55,10 +57,11 @@ class TestIpcEventConcurrency(unittest.TestCase):
     def test_multiple_processes_wait_for_event(self):
         processes = []
         result_queue = multiprocessing.Queue()
+        start_lock = multiprocessing.Lock()
 
         # Start 5 processes that all wait for the event
         for _ in range(5):
-            p = multiprocessing.Process(target=worker_wait_for_event, args=(self.event_name, result_queue))
+            p = multiprocessing.Process(target=worker_wait_for_event, args=(self.event_name, result_queue, start_lock))
             processes.append(p)
             p.start()
 
@@ -81,20 +84,23 @@ class TestIpcEventConcurrency(unittest.TestCase):
             self.assertTrue(result_queue.get(timeout=1))
 
 
-def worker_set_event(event_name):
+def worker_set_event(event_name, start_lock):
     event = IpcEvent(event_name)
-    event.start()
+    with start_lock:
+        event.start()
     event.set()
 
 
-def worker_clear_event(event_name):
+def worker_clear_event(event_name, start_lock):
     event = IpcEvent(event_name)
-    event.start()
+    with start_lock:
+        event.start()
     event.clear()
 
 
-def worker_wait_for_event(event_name, result_queue):
+def worker_wait_for_event(event_name, result_queue, start_lock):
     event = IpcEvent(event_name)
-    event.start()
+    with start_lock:
+        event.start()
     event.wait()
     result_queue.put(True)  # Put a value into the queue to signify this process observed the event set

@@ -37,7 +37,7 @@ class TestIpcEventLifecycle(unittest.TestCase):
 
     def test_inherit_state(self):
         self.ipc_event.set()
-        shared_event = IpcEvent(self.name).set()
+        shared_event = IpcEvent(self.name)
         self.assertTrue(shared_event.is_set())
 
     def test_new_instance_alter_state(self):

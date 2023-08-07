@@ -24,8 +24,8 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
-    ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui')}
+    ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui', owner=True)}
+    ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui', owner=True)}
     ipc.start_callback_listeners()
     atexit.register(stop)
     start_comfyui_process(install_location)

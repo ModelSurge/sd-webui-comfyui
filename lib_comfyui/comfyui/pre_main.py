@@ -47,7 +47,10 @@ def patch_comfyui():
 def start_comfyui():
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
     comfyui_main_path = os.getenv('SD_WEBUI_COMFYUI_MAIN')
-    runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
+    try:
+        runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
+    except KeyboardInterrupt:
+        exit()
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ from lib_comfyui.comfyui import pre_main
 
 
 comfyui_process = None
+is_exiting = False
 
 
 @ipc.restrict_to_process('webui')
@@ -58,11 +59,12 @@ def stop():
 
 @ipc.restrict_to_process('webui')
 def stop_comfyui_process():
-    global comfyui_process
+    global comfyui_process, is_exiting
     if comfyui_process is None:
         return
 
-    send_sigint_to_comfyui()
+    if not is_exiting:
+        send_sigint_to_comfyui()
     comfyui_process.wait()
     comfyui_process = None
 
@@ -76,6 +78,8 @@ def send_sigint_to_comfyui():
 # remove this when comfyui starts using subprocess with an isolated venv
 def restore_webui_sigint_handler():
     def sigint_handler(sig, frame):
+        global is_exiting
+        is_exiting = True
         exit()
 
     print('[sd-webui-comfyui]', 'restoring graceful SIGINT handler for the webui process')

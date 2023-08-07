@@ -13,7 +13,7 @@ from watchdog.events import FileSystemEventHandler
 class CallbackWatcher:
     def __init__(self, callback, name: str):
         self._callback = callback
-        self._queue = CallbackProxy(name)
+        self._queue = CallbackProxy(name, watcher=True)
         self._producer_thread = None
 
     def start(self):
@@ -38,9 +38,9 @@ class CallbackWatcher:
 
 
 class CallbackProxy:
-    def __init__(self, name):
-        self._res_payload = IpcPayload(f'{CallbackProxy.__name__}_res_payload_{name}')
-        self._args_payload = IpcPayload(f'{CallbackProxy.__name__}_args_payload_{name}')
+    def __init__(self, name, watcher: bool = False):
+        self._res_payload = IpcPayload(f'{CallbackProxy.__name__}_res_payload_{name}', sender=watcher)
+        self._args_payload = IpcPayload(f'{CallbackProxy.__name__}_args_payload_{name}', sender=not watcher)
 
     def start(self):
         self._res_payload.start()
@@ -92,8 +92,9 @@ class StoppableThread(threading.Thread):
 
 
 class IpcPayload:
-    def __init__(self, name):
+    def __init__(self, name, sender: bool = True):
         self._name = name
+        self._sender = sender
         self._shm = None
         self._send_event = IpcEvent(f"{IpcPayload.__name__}_send_event_{name}")
         self._recv_event = IpcEvent(f"{IpcPayload.__name__}_recv_event_{name}")
@@ -104,16 +105,23 @@ class IpcPayload:
     def start(self):
         self._send_event.start()
         self._recv_event.start()
-        self._recv_event.set()
+        if self._sender:
+            self._send_event.set()
 
     def stop(self):
         self._recv_event.stop()
         self._send_event.stop()
-        if self._shm: self._shm.close()
+        if self._sender and self._shm:
+            self._shm.close()
+            self._shm.unlink()
+
         self._shm = None
 
     def send(self, value: Any, timeout: Optional[float] = None):
-        is_ready = self._recv_event.wait(timeout=timeout)
+        if not self._sender:
+            raise RuntimeError
+
+        is_ready = self._send_event.wait(timeout=timeout)
         if not is_ready:
             raise TimeoutError
 
@@ -121,31 +129,31 @@ class IpcPayload:
 
         if self._shm:
             self._shm.close()
+            self._shm.unlink()
+
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
 
-        self._recv_event.clear()
-        self._send_event.set()
+        self._send_event.clear()
+        self._recv_event.set()
 
     def recv(self, timeout: Optional[float] = None) -> Any:
-        is_ready = self._send_event.wait(timeout=timeout)
+        if self._sender:
+            raise RuntimeError
+
+        is_ready = self._recv_event.wait(timeout=timeout)
         if not is_ready:
             raise TimeoutError
 
         shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}")
-        if self._shm:
-            self._shm.close()
-        self._shm = shm
 
         with RestoreTorchLoad():
-            value = pickle.loads(self._shm.buf)
+            value = pickle.loads(shm.buf)
 
-        self._shm.close()
-        self._shm.unlink()
-        self._shm = None
+        shm.close()
 
-        self._send_event.clear()
-        self._recv_event.set()
+        self._recv_event.clear()
+        self._send_event.set()
 
         return value
 

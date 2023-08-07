@@ -1,6 +1,7 @@
 import hashlib
 import multiprocessing.shared_memory
 import pickle
+import sys
 import tempfile
 import threading
 import time
@@ -204,16 +205,19 @@ class IpcEvent:
 
         try:
             self._alive_path.unlink()
+            print('removed stale event file', self._alive_path, file=sys.stderr)
             self._event_path.unlink(missing_ok=True)
-            with open(self._alive_path, 'a'): pass
+            with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')
         except PermissionError:
+            print('event file is not stale, opening file', self._alive_path, file=sys.stderr)
             self._alive_file = open(self._alive_path, 'a')
             if self._event_path.exists():
                 self._event.set()
         except FileNotFoundError:
+            print('event file not found, creating it', self._alive_path, file=sys.stderr)
             self._event_path.unlink(missing_ok=True)
-            with open(self._alive_path, 'a'): pass
+            with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')
 
     def stop(self):

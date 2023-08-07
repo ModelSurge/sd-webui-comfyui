@@ -1,6 +1,6 @@
 import unittest
-from tests.utils import setup_test_env
-setup_test_env()
+from tests import utils
+utils.setup_test_env()
 
 from unittest.mock import patch
 from lib_comfyui.parallel_utils import IpcEvent
@@ -36,9 +36,8 @@ class TestIpcEventLifecycle(unittest.TestCase):
         mock_stop.assert_called_once()
 
     def test_inherit_state(self):
-        self.ipc_event.set()
-        shared_event = IpcEvent(self.name)
-        self.assertTrue(shared_event.is_set())
+        IpcEvent(self.name).set()
+        self.assertTrue(self.ipc_event.is_set())
 
 
 class TestIpcEventSignaling(unittest.TestCase):

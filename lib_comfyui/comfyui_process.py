@@ -44,12 +44,14 @@ def start_comfyui_process(install_location):
 
     args = [sys.executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()
 
+    comfyui_ipc_ready_event = parallel_utils.IpcEvent('comfyui_ipc_ready')
     comfyui_process = subprocess.Popen(
         args=args,
         executable=sys.executable,
         env=comfyui_env,
     )
-    ipc.hand_shake_with('comfyui')
+    comfyui_ipc_ready_event.wait()
+    comfyui_ipc_ready_event.stop()
 
 
 @ipc.restrict_to_process('webui')

@@ -14,8 +14,8 @@ from watchdog.events import FileSystemEventHandler
 class CallbackWatcher:
     def __init__(self, callback, name: str):
         self._callback = callback
-        self._res_sender = IpcSender(f'{name}_res')
-        self._args_receiver = IpcReceiver(f'{name}_args')
+        self._res_sender = IpcSender(f'res_{name}')
+        self._args_receiver = IpcReceiver(f'args_{name}')
         self._producer_thread = None
 
     def start(self):
@@ -54,8 +54,8 @@ class CallbackWatcher:
 
 class CallbackProxy:
     def __init__(self, name):
-        self._res_receiver = IpcReceiver(f'{name}_res')
-        self._args_sender = IpcSender(f'{name}_args')
+        self._res_receiver = IpcReceiver(f'res_{name}')
+        self._args_sender = IpcSender(f'args_{name}')
         self.start()
 
     def start(self):
@@ -128,7 +128,7 @@ class IpcSender:
 
         close_shm(self._shm)
         self._shm = None
-        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcSender.__name__}_shm_{self._name}", create=True, size=len(data))
+        self._shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_shm_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
 
         self._send_event.clear()
@@ -160,7 +160,7 @@ class IpcReceiver:
         if not is_ready:
             raise TimeoutError
 
-        shm = multiprocessing.shared_memory.SharedMemory(f"{IpcSender.__name__}_shm_{self._name}")
+        shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_shm_{self._name}")
 
         with RestoreTorchLoad():
             value = pickle.loads(shm.buf)

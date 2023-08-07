@@ -33,13 +33,15 @@ def setup_ipc():
     ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
-    ipc.hand_shake_with('webui')
 
     def exit_signal_handler(sig, frame):
         exit()
 
     signal.signal(signal.SIGTERM, exit_signal_handler)
     signal.signal(signal.SIGINT, exit_signal_handler)
+    ipc_ready_event = parallel_utils.IpcEvent('comfyui_ipc_ready')
+    ipc_ready_event.set()
+    ipc_ready_event.stop()
 
 
 @ipc.restrict_to_process('comfyui')

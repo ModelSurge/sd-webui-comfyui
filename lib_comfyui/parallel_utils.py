@@ -12,17 +12,19 @@ from watchdog.events import FileSystemEventHandler
 
 
 class CallbackWatcher:
-    def __init__(self, callback, name: str, owner: bool = False):
+    def __init__(self, callback, name: str):
         self._callback = callback
-        self._queue = CallbackProxy(name, owner=owner)
+        self._res_sender = IpcSender(f'{name}_res')
+        self._args_receiver = IpcReceiver(f'{name}_args')
         self._producer_thread = None
 
     def start(self):
         def thread_loop():
             while self._producer_thread.is_running():
-                self._queue.attend_consumer(self._callback, timeout=0.5)
+                self.attend_consumer(self._callback, timeout=0.5)
 
-        self._queue.start()
+        self._res_sender.start()
+        self._args_receiver.start()
         self._producer_thread = StoppableThread(target=thread_loop, daemon=True)
         self._producer_thread.start()
 
@@ -32,40 +34,41 @@ class CallbackWatcher:
 
         self._producer_thread.join()
         self._producer_thread = None
-        self._queue.stop()
+        self._args_receiver.stop()
+        self._res_sender.stop()
 
     def is_running(self):
         return self._producer_thread and self._producer_thread.is_running()
 
-
-class CallbackProxy:
-    def __init__(self, name, owner: bool = False):
-        self._res_payload = IpcPayload(f'{CallbackProxy.__name__}_res_payload_{name}', owner=owner)
-        self._args_payload = IpcPayload(f'{CallbackProxy.__name__}_args_payload_{name}', owner=owner)
-        self.start()
-
-    def start(self):
-        self._res_payload.start()
-        self._args_payload.start()
-
-    def stop(self):
-        self._args_payload.stop()
-        self._res_payload.stop()
-
     def attend_consumer(self, callback, timeout: float = None):
         try:
-            args, kwargs = self._args_payload.recv(timeout=timeout)
+            args, kwargs = self._args_receiver.recv(timeout=timeout)
         except TimeoutError:
             return
 
         try:
-            self._res_payload.send(callback(*args, **kwargs))
+            self._res_sender.send(callback(*args, **kwargs))
         except Exception as e:
-            self._res_payload.send(RemoteError(e))
+            self._res_sender.send(RemoteError(e))
+
+
+class CallbackProxy:
+    def __init__(self, name):
+        self._res_receiver = IpcReceiver(f'{name}_res')
+        self._args_sender = IpcSender(f'{name}_args')
+        self.start()
+
+    def start(self):
+        self._res_receiver.start()
+        self._args_sender.start()
+
+    def stop(self):
+        self._args_sender.stop()
+        self._res_receiver.stop()
 
     def get(self, args=None, kwargs=None):
-        self._args_payload.send((args if args is not None else (), kwargs if kwargs is not None else {}))
-        res = self._res_payload.recv()
+        self._args_sender.send((args if args is not None else (), kwargs if kwargs is not None else {}))
+        res = self._res_receiver.recv()
         if isinstance(res, RemoteError):
             raise res.error from res
         else:
@@ -93,13 +96,12 @@ class StoppableThread(threading.Thread):
         return not self._stop_event.is_set()
 
 
-class IpcPayload:
-    def __init__(self, name, owner: bool = True):
+class IpcSender:
+    def __init__(self, name):
         self._name = name
-        self._owner = owner
         self._shm = None
-        self._send_event = IpcEvent(f"{IpcPayload.__name__}_send_event_{name}")
-        self._recv_event = IpcEvent(f"{IpcPayload.__name__}_recv_event_{name}")
+        self._send_event = IpcEvent(f"send_{name}")
+        self._recv_event = IpcEvent(f"recv_{name}")
         self.start()
 
     def __del__(self):
@@ -108,24 +110,14 @@ class IpcPayload:
     def start(self):
         self._send_event.start()
         self._recv_event.start()
-        if self._owner:
-            self._send_event.set()
-            self._recv_event.clear()
+        self._send_event.set()
+        self._recv_event.clear()
 
     def stop(self):
         self._recv_event.stop()
         self._send_event.stop()
-        self.close_shm()
-
-    def close_shm(self):
-        if self._shm:
-            self._shm.close()
-            try:
-                self._shm.unlink()
-            except FileNotFoundError:
-                pass
-
-            self._shm = None
+        close_shm(self._shm)
+        self._shm = None
 
     def send(self, value: Any, timeout: Optional[float] = None):
         is_ready = self._send_event.wait(timeout=timeout)
@@ -134,30 +126,60 @@ class IpcPayload:
 
         data = pickle.dumps(value)
 
-        self.close_shm()
-        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}", create=True, size=len(data))
+        close_shm(self._shm)
+        self._shm = None
+        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcSender.__name__}_shm_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
 
         self._send_event.clear()
         self._recv_event.set()
+
+
+class IpcReceiver:
+    def __init__(self, name):
+        self._name = name
+        self._send_event = IpcEvent(f"send_{name}")
+        self._recv_event = IpcEvent(f"recv_{name}")
+        self.start()
+
+    def __del__(self):
+        self.stop()
+
+    def start(self):
+        self._send_event.start()
+        self._recv_event.start()
+        self._send_event.set()
+        self._recv_event.clear()
+
+    def stop(self):
+        self._recv_event.stop()
+        self._send_event.stop()
 
     def recv(self, timeout: Optional[float] = None) -> Any:
         is_ready = self._recv_event.wait(timeout=timeout)
         if not is_ready:
             raise TimeoutError
 
-        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}")
+        shm = multiprocessing.shared_memory.SharedMemory(f"{IpcSender.__name__}_shm_{self._name}")
 
         with RestoreTorchLoad():
-            value = pickle.loads(self._shm.buf)
+            value = pickle.loads(shm.buf)
 
-        self.close_shm()
+        close_shm(shm)
 
         self._recv_event.clear()
         self._send_event.set()
 
         return value
 
+
+def close_shm(shm):
+    if shm:
+        shm.close()
+        try:
+            shm.unlink()
+        except FileNotFoundError:
+            pass
 
 class RestoreTorchLoad:
     def __enter__(self):

@@ -24,8 +24,8 @@ def start():
     if not os.path.exists(install_location):
         return
 
-    ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui', owner=True)}
-    ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui', owner=True)}
+    ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
+    ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui')}
     ipc.start_callback_listeners()
     atexit.register(stop)
     start_comfyui_process(install_location)
@@ -75,12 +75,6 @@ def stop_comfyui_process():
         comfyui_process.kill()
         print('[sd-webui-comfyui]', 'Comfyui server was killed')
     comfyui_process = None
-
-
-@ipc.run_in_process('comfyui')
-def send_sigint_to_comfyui():
-    import _thread
-    _thread.interrupt_main()
 
 
 # remove this when comfyui starts using subprocess with an isolated venv

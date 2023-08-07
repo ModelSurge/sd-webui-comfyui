@@ -121,7 +121,10 @@ class IpcPayload:
         if self._shm:
             self._shm.close()
             if self._owner:
-                self._shm.unlink()
+                try:
+                    self._shm.unlink()
+                except FileNotFoundError:
+                    pass
 
             self._shm = None
 

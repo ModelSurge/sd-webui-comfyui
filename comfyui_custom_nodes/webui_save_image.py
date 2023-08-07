@@ -31,14 +31,14 @@ class WebuiSaveImage:
         for image in images:
             pil_image = to_pil_image(image.permute(2, 0, 1))
             save_path = os.path.join(data_path, output_dir)
-            filename, _ = WebuiSaveImage.webui_save_image(image=pil_image, path=save_path, basename='')
+            WebuiSaveImage.webui_save_image(image=pil_image, path=save_path, basename='')
 
         return []
 
     @staticmethod
-    def webui_save_image(*args, **kwargs):
-        from lib_comfyui.webui_paths import save_image
-        return save_image(*args, **kwargs)
+    def webui_save_image(image, path, basename, *args, **kwargs):
+        from lib_comfyui.webui.paths import webui_save_image
+        return webui_save_image(image=image, path=path, basename=basename, *args, **kwargs)
 
 
 NODE_CLASS_MAPPINGS = {

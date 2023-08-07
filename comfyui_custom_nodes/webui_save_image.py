@@ -37,8 +37,8 @@ class WebuiSaveImage:
 
     @staticmethod
     def webui_save_image(*args, **kwargs):
-        from lib_comfyui.webui.paths import save_image
-        return save_image(*args, **kwargs)
+        from lib_comfyui.webui.paths import webui_save_image
+        return webui_save_image(*args, **kwargs)
 
 
 NODE_CLASS_MAPPINGS = {

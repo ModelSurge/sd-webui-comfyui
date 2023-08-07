@@ -37,7 +37,7 @@ class WebuiSaveImage:
 
     @staticmethod
     def webui_save_image(*args, **kwargs):
-        from lib_comfyui.webui_paths import save_image
+        from lib_comfyui.webui.paths import save_image
         return save_image(*args, **kwargs)
 
 

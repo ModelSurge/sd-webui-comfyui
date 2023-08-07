@@ -1,4 +1,3 @@
-import multiprocessing
 import unittest
 from tests.utils import setup_test_env
 setup_test_env()
@@ -91,7 +90,5 @@ class TestIpcEventObserverBehavior(unittest.TestCase):
     def test_observer_on_created(self):
         self.ipc_event._event_path.write_text("")
         self.assertTrue(self.ipc_event.is_set())
-
-    def test_observer_on_deleted(self):
         self.ipc_event._event_path.unlink(missing_ok=True)
         self.assertFalse(self.ipc_event.is_set())

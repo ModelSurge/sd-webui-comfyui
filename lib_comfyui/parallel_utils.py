@@ -105,6 +105,10 @@ class IpcPayload:
 
     def stop(self):
         self._memory_event.stop()
+        if self._shm is not None:
+            self._shm.close()
+            self._shm.unlink()
+            self._shm = None
 
     def send(self, value: Any):
         data = pickle.dumps(value)

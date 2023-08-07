@@ -13,6 +13,10 @@ comfyui_process = None
 is_exiting = False
 
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+
 @ipc.restrict_to_process('webui')
 def start():
     from modules import shared

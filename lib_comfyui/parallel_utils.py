@@ -120,11 +120,10 @@ class IpcPayload:
     def close_shm(self):
         if self._shm:
             self._shm.close()
-            if self._owner:
-                try:
-                    self._shm.unlink()
-                except FileNotFoundError:
-                    pass
+            try:
+                self._shm.unlink()
+            except FileNotFoundError:
+                pass
 
             self._shm = None
 
@@ -147,7 +146,6 @@ class IpcPayload:
         if not is_ready:
             raise TimeoutError
 
-        self.close_shm()
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}")
 
         with RestoreTorchLoad():

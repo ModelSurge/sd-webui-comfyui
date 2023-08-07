@@ -92,4 +92,4 @@ def get_controlnet_paths():
 @ipc.run_in_process('webui')
 def webui_save_image(*args, **kwargs):
     from modules.images import save_image
-    save_image(*args, **kwargs)
+    return save_image(*args, **kwargs)

@@ -128,7 +128,7 @@ class IpcSender:
             self._shm.close()
             self._shm.unlink()
             self._shm = None
-            logging.info('IPC payload %s\tfree memory', self._name)
+            logging.warning('IPC payload %s\tfree memory', self._name)
             self._memory_free_event.set()
 
     def send(self, value: Any, timeout: Optional[float] = None):
@@ -136,7 +136,7 @@ class IpcSender:
         if not is_ready:
             raise TimeoutError
 
-        logging.info('IPC payload %s\tsend value: %s', self._name, str(value))
+        logging.warning('IPC payload %s\tsend value: %s', self._name, str(value))
         data = pickle.dumps(value)
 
         self._memory_free_event.wait()
@@ -184,7 +184,7 @@ class IpcReceiver:
         with RestoreTorchLoad():
             value = pickle.loads(shm.buf)
 
-        logging.info('IPC payload %s\treceive value: %s', self._name, str(value))
+        logging.warning('IPC payload %s\treceive value: %s', self._name, str(value))
         shm.close()
 
         self._recv_event.clear()
@@ -250,16 +250,16 @@ class IpcEvent:
 
         try:
             with open(self._alive_path, 'x'): pass
-            logging.info('detected stale event file %s %s', str(self._alive_path), self._name)
+            logging.warning('detected stale event file %s %s', str(self._alive_path), self._name)
             self._event_path.unlink(missing_ok=True)
             self._alive_file = open(self._alive_path, 'a')
         except FileExistsError:
-            logging.info('event file is not stale, opening file %s %s', str(self._alive_path), self._name)
+            logging.warning('event file is not stale, opening file %s %s', str(self._alive_path), self._name)
             self._alive_file = open(self._alive_path, 'a')
             if self._event_path.exists():
                 self._event.set()
         except FileNotFoundError:
-            logging.info('event file not found, creating it %s %s', str(self._alive_path), self._name)
+            logging.warning('event file not found, creating it %s %s', str(self._alive_path), self._name)
             self._event_path.unlink(missing_ok=True)
             with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')

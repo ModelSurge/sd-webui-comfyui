@@ -140,6 +140,13 @@ class IpcSender:
         data = pickle.dumps(value)
 
         self._memory_free_event.wait()
+        try:
+            self._shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_ipc_shm_{self._name}")
+            self._shm.close()
+            self._shm.unlink()
+        except FileNotFoundError:
+            pass
+
         self._shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_ipc_shm_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
 

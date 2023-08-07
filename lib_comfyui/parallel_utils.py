@@ -104,17 +104,11 @@ class IpcPayload:
         self._memory_event.start()
 
     def stop(self):
+        self.recv(0)
         self._memory_event.stop()
-        if self._shm is not None:
-            self._shm.close()
-            self._shm.unlink()
-            self._shm = None
 
     def send(self, value: Any):
         data = pickle.dumps(value)
-        if self._shm is not None:
-            self._shm.close()
-            self._shm.unlink()
 
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
@@ -131,6 +125,7 @@ class IpcPayload:
             value = pickle.loads(shm.buf)
 
         shm.close()
+        shm.unlink()
         self._memory_event.clear()
         return value
 

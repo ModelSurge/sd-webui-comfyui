@@ -1,5 +1,6 @@
 import atexit
 import builtins
+import signal
 import sys
 import os
 import runpy
@@ -32,6 +33,11 @@ def setup_ipc():
     ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
+
+    def on_sigint(sig, frame):
+        exit()
+
+    signal.signal(signal.SIGINT, on_sigint)
 
 
 @ipc.restrict_to_process('comfyui')

@@ -1,4 +1,3 @@
-import atexit
 import builtins
 import sys
 import os
@@ -30,7 +29,6 @@ def setup_ipc():
     print('[sd-webui-comfyui]', 'Setting up IPC...')
     ipc.current_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
     ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
-    atexit.register(ipc.stop_callback_listeners)
     ipc.start_callback_listeners()
 
 
@@ -47,10 +45,7 @@ def patch_comfyui():
 def start_comfyui():
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
     comfyui_main_path = os.getenv('SD_WEBUI_COMFYUI_MAIN')
-    try:
-        runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
-    except KeyboardInterrupt:
-        exit()
+    runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
 
 
 if __name__ == '__main__':

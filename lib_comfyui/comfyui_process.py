@@ -51,6 +51,7 @@ def start_comfyui_process(install_location):
     )
 
 
+@ipc.restrict_to_process('webui')
 def stop():
     atexit.unregister(stop)
     stop_comfyui_process()
@@ -63,19 +64,13 @@ def stop_comfyui_process():
     if comfyui_process is None:
         return
 
-    if not is_exiting:
-        send_sigint_to_comfyui()
+    comfyui_process.kill()
     comfyui_process.wait()
     comfyui_process = None
 
 
-@ipc.run_in_process('comfyui')
-def send_sigint_to_comfyui():
-    import _thread
-    _thread.interrupt_main()
-
-
 # remove this when comfyui starts using subprocess with an isolated venv
+@ipc.restrict_to_process('webui')
 def restore_webui_sigint_handler():
     def sigint_handler(sig, frame):
         global is_exiting

@@ -104,12 +104,13 @@ class IpcPayload:
         self._memory_event.start()
 
     def stop(self):
-        self.recv(0)
         self._memory_event.stop()
+        self._close_and_unlink_shm(self._shm)
 
     def send(self, value: Any):
         data = pickle.dumps(value)
 
+        self._close_and_unlink_shm(self._shm)
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
         self._memory_event.set()
@@ -124,10 +125,18 @@ class IpcPayload:
         with RestoreTorchLoad():
             value = pickle.loads(shm.buf)
 
-        shm.close()
-        shm.unlink()
+        self._close_and_unlink_shm(shm)
+        self._close_and_unlink_shm(self._shm)
         self._memory_event.clear()
         return value
+
+    def _close_and_unlink_shm(self, shm):
+        if shm:
+            shm.close()
+            try:
+                shm.unlink()
+            except FileNotFoundError:
+                pass
 
 
 class RestoreTorchLoad:
@@ -174,7 +183,7 @@ class IpcEvent:
         try:
             self._alive_path.unlink()
             self._event_path.unlink(missing_ok=True)
-            with open(self._alive_path, 'x'): pass
+            with open(self._alive_path, 'a'): pass
             self._alive_file = open(self._alive_path, 'a')
         except PermissionError:
             self._alive_file = open(self._alive_path, 'a')
@@ -182,7 +191,7 @@ class IpcEvent:
                 self._event.set()
         except FileNotFoundError:
             self._event_path.unlink(missing_ok=True)
-            with open(self._alive_path, 'x'): pass
+            with open(self._alive_path, 'a'): pass
             self._alive_file = open(self._alive_path, 'a')
 
     def stop(self):

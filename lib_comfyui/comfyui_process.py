@@ -14,7 +14,7 @@ is_exiting = False
 
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 @ipc.restrict_to_process('webui')

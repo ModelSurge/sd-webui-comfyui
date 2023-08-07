@@ -14,7 +14,7 @@ from lib_comfyui.webui import paths
 
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 
 original_print = builtins.print

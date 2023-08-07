@@ -187,11 +187,11 @@ class IpcEvent:
         self._observer = None
         self._on_created_callbacks = [self._event.set]
         if on_set_callbacks:
-            self._on_created_callbacks.extend(on_set_callbacks)
+            self._on_created_callbacks[:0] = on_set_callbacks
 
         self._on_deleted_callbacks = [self._event.clear]
         if on_clear_callbacks:
-            self._on_deleted_callbacks.extend(on_clear_callbacks)
+            self._on_deleted_callbacks[:0] = on_clear_callbacks
 
         self.start()
 

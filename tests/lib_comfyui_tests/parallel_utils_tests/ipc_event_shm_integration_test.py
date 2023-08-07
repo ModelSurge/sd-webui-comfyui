@@ -41,13 +41,11 @@ class TestIpcEventSharedMemoryIntegration(unittest.TestCase):
 def sender(name, value, receiver_ready):
     receiver_ready.wait()
     payload = IpcPayload(name)
-    payload.start()
     payload.send(value)
 
 
 def receiver(name, result_queue, receiver_ready):
     payload = IpcPayload(name)
-    payload.start()
     receiver_ready.set()
     try:
         data = payload.recv(timeout=5)

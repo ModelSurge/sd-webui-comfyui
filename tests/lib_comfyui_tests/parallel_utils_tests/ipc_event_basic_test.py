@@ -1,3 +1,4 @@
+import multiprocessing
 import unittest
 from tests.utils import setup_test_env
 setup_test_env()
@@ -8,35 +9,43 @@ from lib_comfyui.parallel_utils import IpcEvent
 
 class TestIpcEventLifecycle(unittest.TestCase):
     def setUp(self):
-        self.ipc_event = IpcEvent(name="test_event")
+        self.name = "test_event"
+        self.ipc_event = IpcEvent(self.name)
 
     def tearDown(self):
-        # Cleanup resources
         self.ipc_event.stop()
 
     def test_initialization(self):
         self.assertFalse(self.ipc_event.is_set())
 
-    def test_start_stop(self):
-        self.ipc_event.start()
-        self.assertTrue(self.ipc_event._alive_file is not None)
-        self.assertTrue(self.ipc_event._observer is not None)
+    def test_auto_start(self):
+        self.assertIsNotNone(self.ipc_event._alive_file)
+        self.assertIsNotNone(self.ipc_event._observer)
 
+    def test_start_stop(self):
         self.ipc_event.stop()
         self.assertIsNone(self.ipc_event._alive_file)
         self.assertIsNone(self.ipc_event._observer)
 
+        self.ipc_event.start()
+        self.assertIsNotNone(self.ipc_event._alive_file)
+        self.assertIsNotNone(self.ipc_event._observer)
+
     @patch.object(IpcEvent, "stop")
     def test_destruction_cleanup(self, mock_stop):
-        ipc = IpcEvent(name="test_cleanup")
-        del ipc
+        IpcEvent(name="test_cleanup")
         mock_stop.assert_called_once()
+
+    def test_inherit_state(self):
+        self.ipc_event.set()
+        shared_event = IpcEvent(self.name)
+        self.assertTrue(shared_event.is_set())
 
 
 class TestIpcEventSignaling(unittest.TestCase):
     def setUp(self):
-        self.ipc_event = IpcEvent(name="test_signal_event")
-        self.ipc_event.start()
+        self.name = "test_signal_event"
+        self.ipc_event = IpcEvent(self.name)
 
     def tearDown(self):
         self.ipc_event.stop()
@@ -71,6 +80,7 @@ class TestIpcEventSignaling(unittest.TestCase):
 class TestIpcEventObserverBehavior(unittest.TestCase):
     def setUp(self):
         self.ipc_event = IpcEvent(name="test_observer_event")
+        self.ipc_event.stop()
         self.ipc_event._event_path.unlink(missing_ok=True)
         self.ipc_event.start()
 

@@ -41,6 +41,7 @@ class CallbackProxy:
     def __init__(self, name, owner: bool = False):
         self._res_payload = IpcPayload(f'{CallbackProxy.__name__}_res_payload_{name}', owner=owner)
         self._args_payload = IpcPayload(f'{CallbackProxy.__name__}_args_payload_{name}', owner=owner)
+        self.start()
 
     def start(self):
         self._res_payload.start()
@@ -98,6 +99,7 @@ class IpcPayload:
         self._shm = None
         self._send_event = IpcEvent(f"{IpcPayload.__name__}_send_event_{name}")
         self._recv_event = IpcEvent(f"{IpcPayload.__name__}_recv_event_{name}")
+        self.start()
 
     def __del__(self):
         self.stop()
@@ -130,7 +132,7 @@ class IpcPayload:
         data = pickle.dumps(value)
 
         self.close_shm()
-        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}", create=True, size=len(data))
+        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
 
         self._send_event.clear()
@@ -142,7 +144,7 @@ class IpcPayload:
             raise TimeoutError
 
         self.close_shm()
-        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}")
+        self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}")
 
         with RestoreTorchLoad():
             value = pickle.loads(self._shm.buf)
@@ -185,11 +187,15 @@ class IpcEvent:
 
         self._event = threading.Event()
         self._observer = None
+        self.start()
 
     def __del__(self):
         self.stop()
 
     def start(self):
+        if self._alive_file is not None:
+            return
+
         self._event.clear()
         event_handler = _IpcEventFileHandler(str(self._event_path), self._event)
         self._observer = Observer()

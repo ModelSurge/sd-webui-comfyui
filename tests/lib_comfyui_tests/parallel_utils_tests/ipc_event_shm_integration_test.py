@@ -2,7 +2,7 @@ import unittest
 from tests import utils
 utils.setup_test_env()
 
-from lib_comfyui.parallel_utils import IpcPayload, IpcEvent
+from lib_comfyui.parallel_utils import IpcSender, IpcReceiver, IpcEvent
 import multiprocessing
 
 
@@ -32,12 +32,12 @@ class TestIpcEventSharedMemoryIntegration(unittest.TestCase):
 def sender(name, value):
     ready_event = IpcEvent(READY_EVENT_NAME)
     ready_event.wait()
-    payload = IpcPayload(name, owner=True)
+    payload = IpcSender(name)
     payload.send(value)
 
 
 def receiver(name):
     ready_event = IpcEvent(READY_EVENT_NAME)
-    payload = IpcPayload(name)
+    payload = IpcReceiver(name)
     ready_event.set()
     return payload.recv(timeout=5)

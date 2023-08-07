@@ -208,16 +208,16 @@ class IpcEvent:
 
         try:
             with open(self._alive_path, 'x'): pass
-            print('detected stale event file', self._alive_path, file=sys.stderr)
+            print('detected stale event file', self._alive_path, self._name, file=sys.stderr)
             self._event_path.unlink(missing_ok=True)
             self._alive_file = open(self._alive_path, 'a')
         except FileExistsError:
-            print('event file is not stale, opening file', self._alive_path, file=sys.stderr)
+            print('event file is not stale, opening file', self._alive_path, self._name, file=sys.stderr)
             self._alive_file = open(self._alive_path, 'a')
             if self._event_path.exists():
                 self._event.set()
         except FileNotFoundError:
-            print('event file not found, creating it', self._alive_path, file=sys.stderr)
+            print('event file not found, creating it', self._alive_path, self._name, file=sys.stderr)
             self._event_path.unlink(missing_ok=True)
             with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')

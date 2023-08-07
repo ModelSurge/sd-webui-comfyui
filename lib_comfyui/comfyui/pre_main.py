@@ -35,10 +35,11 @@ def setup_ipc():
     atexit.register(ipc.stop_callback_listeners)
     ipc.hand_shake_with('webui')
 
-    def on_sigint(sig, frame):
+    def exit_signal_handler(sig, frame):
         exit()
 
-    signal.signal(signal.SIGINT, on_sigint)
+    signal.signal(signal.SIGTERM, exit_signal_handler)
+    signal.signal(signal.SIGINT, exit_signal_handler)
 
 
 @ipc.restrict_to_process('comfyui')

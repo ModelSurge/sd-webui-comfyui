@@ -1,5 +1,6 @@
 import asyncio
 import json
+import traceback
 from typing import List
 import torch
 from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
@@ -22,9 +23,13 @@ class ComfyuiIFrameRequests:
         if cls.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
-        webui_client_id = cls.focused_webui_client_id
+        events = cls.param_events[cls.focused_webui_client_id]
+        if request_params['workflowType'] not in events:
+            raise RuntimeError(f"The workflow type {cls.last_request['workflowType']} has not been registered by the active webui client {cls.focused_webui_client_id}")
+
         cls.last_request = request_params
-        cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_request['workflowType']].set)
+        event = events[request_params['workflowType']]
+        cls.loop.call_soon_threadsafe(event.set)
 
     @ipc.run_in_process('comfyui')
     @staticmethod
@@ -42,12 +47,16 @@ class ComfyuiIFrameRequests:
         queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
-        ComfyuiIFrameRequests.send({
-            'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-            'workflowType': workflow_type_id,
-            'requiredNodeTypes': [],
-            'queueFront': queue_front,
-        })
+        try:
+            ComfyuiIFrameRequests.send({
+                'request': '/sd-webui-comfyui/webui_request_queue_prompt',
+                'workflowType': workflow_type_id,
+                'requiredNodeTypes': [],
+                'queueFront': queue_front,
+            })
+        except RuntimeError as e:
+            print('\n'.join(traceback.format_exception_only(e)))
+            return batch_input
 
         queue_tracker.wait_until_done()
 

@@ -49,6 +49,7 @@ def start_comfyui_process(install_location):
         executable=sys.executable,
         env=comfyui_env,
     )
+    ipc.hand_shake_with('comfyui')
 
 
 @ipc.restrict_to_process('webui')

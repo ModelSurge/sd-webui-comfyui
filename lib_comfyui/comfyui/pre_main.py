@@ -33,6 +33,7 @@ def setup_ipc():
     ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
+    ipc.hand_shake_with('webui')
 
     def on_sigint(sig, frame):
         exit()

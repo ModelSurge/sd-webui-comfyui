@@ -31,6 +31,18 @@ def restrict_to_process(process_id):
     return annotation
 
 
+def hand_shake_with(process_id):
+    @run_in_process(process_id)
+    def touch():
+        pass
+
+    for _ in range(2):
+        try:
+            touch()
+        except (FileNotFoundError, FileExistsError):
+            pass
+
+
 def call_fully_qualified(module_name, qualified_name, args, kwargs):
     module_parts = module_name.split('.')
     try:

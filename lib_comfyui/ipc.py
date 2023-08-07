@@ -31,14 +31,15 @@ def restrict_to_process(process_id):
     return annotation
 
 
-def hand_shake_with(process_id):
-    @run_in_process(process_id)
-    def touch():
-        pass
+def nop():
+    pass
 
+
+def hand_shake_with(process_id):
+    poke_process = run_in_process(process_id)(nop)
     for _ in range(2):
         try:
-            touch()
+            poke_process()
         except (FileNotFoundError, FileExistsError):
             pass
 

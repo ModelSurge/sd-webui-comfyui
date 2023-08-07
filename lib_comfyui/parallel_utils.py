@@ -95,48 +95,59 @@ class IpcPayload:
     def __init__(self, name):
         self._name = name
         self._shm = None
-        self._memory_event = IpcEvent(f"{IpcPayload.__name__}_memory_event_{name}")
+        self._send_event = IpcEvent(f"{IpcPayload.__name__}_send_event_{name}")
+        self._recv_event = IpcEvent(f"{IpcPayload.__name__}_recv_event_{name}")
 
     def __del__(self):
         self.stop()
 
     def start(self):
-        self._memory_event.start()
+        self._send_event.start()
+        self._recv_event.start()
+        self._recv_event.set()
 
     def stop(self):
-        self._memory_event.stop()
-        self._close_and_unlink_shm(self._shm)
+        self._recv_event.stop()
+        self._send_event.stop()
+        if self._shm: self._shm.close()
+        self._shm = None
 
-    def send(self, value: Any):
+    def send(self, value: Any, timeout: Optional[float] = None):
+        is_ready = self._recv_event.wait(timeout=timeout)
+        if not is_ready:
+            raise TimeoutError
+
         data = pickle.dumps(value)
 
-        self._close_and_unlink_shm(self._shm)
+        if self._shm:
+            self._shm.close()
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
-        self._memory_event.set()
+
+        self._recv_event.clear()
+        self._send_event.set()
 
     def recv(self, timeout: Optional[float] = None) -> Any:
-        is_ready = self._memory_event.wait(timeout=timeout)
+        is_ready = self._send_event.wait(timeout=timeout)
         if not is_ready:
             raise TimeoutError
 
         shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_lock_{self._name}")
+        if self._shm:
+            self._shm.close()
+        self._shm = shm
 
         with RestoreTorchLoad():
-            value = pickle.loads(shm.buf)
+            value = pickle.loads(self._shm.buf)
 
-        self._close_and_unlink_shm(shm)
-        self._close_and_unlink_shm(self._shm)
-        self._memory_event.clear()
+        self._shm.close()
+        self._shm.unlink()
+        self._shm = None
+
+        self._send_event.clear()
+        self._recv_event.set()
+
         return value
-
-    def _close_and_unlink_shm(self, shm):
-        if shm:
-            shm.close()
-            try:
-                shm.unlink()
-            except FileNotFoundError:
-                pass
 
 
 class RestoreTorchLoad:

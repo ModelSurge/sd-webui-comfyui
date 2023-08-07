@@ -44,7 +44,7 @@ def patch_comfyui():
 @ipc.restrict_to_process('comfyui')
 def start_comfyui():
     print('[sd-webui-comfyui]', f'Launching ComfyUI with arguments: {" ".join(sys.argv[1:])}')
-    comfyui_main_path = os.getenv('SD_WEBUI_COMFYUI_MAIN')
+    comfyui_main_path = os.getenv('SD_WEBUI_COMFYUI_MAIN_PATH')
     runpy.run_path(os.path.join(comfyui_main_path, 'main.py'), {'comfyui_print': comfyui_print}, '__main__')
 
 

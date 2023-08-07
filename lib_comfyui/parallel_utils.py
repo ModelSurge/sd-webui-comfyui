@@ -5,6 +5,7 @@ import sys
 import tempfile
 import threading
 import time
+import logging
 from pathlib import Path
 from typing import Optional, Any
 from watchdog.observers import Observer
@@ -98,7 +99,7 @@ class IpcPayload:
         self._name = name
         self._owner = owner
         self._shm = None
-        self._send_event = IpcEvent(f"{IpcPayload.__name__}_send_event_{name}")
+        self._send_event = IpcEvent(f"{IpcPayload.__name__}_send_event_{name}", on_set_callbacks=[self.close_shm])
         self._recv_event = IpcEvent(f"{IpcPayload.__name__}_recv_event_{name}")
         self.start()
 
@@ -120,10 +121,8 @@ class IpcPayload:
     def close_shm(self):
         if self._shm:
             self._shm.close()
-            try:
+            if self._owner:
                 self._shm.unlink()
-            except FileNotFoundError:
-                pass
 
             self._shm = None
 
@@ -134,7 +133,6 @@ class IpcPayload:
 
         data = pickle.dumps(value)
 
-        self.close_shm()
         self._shm = multiprocessing.shared_memory.SharedMemory(f"{IpcPayload.__name__}_shm_{self._name}", create=True, size=len(data))
         self._shm.buf[:] = data
 
@@ -150,8 +148,6 @@ class IpcPayload:
 
         with RestoreTorchLoad():
             value = pickle.loads(self._shm.buf)
-
-        self.close_shm()
 
         self._recv_event.clear()
         self._send_event.set()
@@ -179,7 +175,7 @@ class RestoreTorchLoad:
 
 
 class IpcEvent:
-    def __init__(self, name, event_directory=None):
+    def __init__(self, name, on_set_callbacks=None, on_clear_callbacks=None, event_directory=None):
         self._name = name
         self._event_directory = tempfile.gettempdir() if event_directory is None else event_directory
         unique_token = hashlib.sha256(name.encode()).hexdigest()
@@ -189,6 +185,14 @@ class IpcEvent:
 
         self._event = threading.Event()
         self._observer = None
+        self._on_created_callbacks = [self._event.set]
+        if on_set_callbacks:
+            self._on_created_callbacks.extend(on_set_callbacks)
+
+        self._on_deleted_callbacks = [self._event.clear]
+        if on_clear_callbacks:
+            self._on_deleted_callbacks.extend(on_clear_callbacks)
+
         self.start()
 
     def __del__(self):
@@ -199,23 +203,23 @@ class IpcEvent:
             return
 
         self._event.clear()
-        event_handler = _IpcEventFileHandler(str(self._event_path), self._event)
+        event_handler = _IpcEventFileHandler(str(self._event_path), self._on_created_callbacks, self._on_deleted_callbacks)
         self._observer = Observer()
         self._observer.schedule(event_handler, path=self._event_directory, recursive=False)
         self._observer.start()
 
         try:
             with open(self._alive_path, 'x'): pass
-            print('detected stale event file', self._alive_path, self._name, file=sys.stderr)
+            logging.debug('detected stale event file %s %s', str(self._alive_path), self._name)
             self._event_path.unlink(missing_ok=True)
             self._alive_file = open(self._alive_path, 'a')
         except FileExistsError:
-            print('event file is not stale, opening file', self._alive_path, self._name, file=sys.stderr)
+            logging.debug('event file is not stale, opening file %s %s', str(self._alive_path), self._name)
             self._alive_file = open(self._alive_path, 'a')
             if self._event_path.exists():
                 self._event.set()
         except FileNotFoundError:
-            print('event file not found, creating it', self._alive_path, self._name, file=sys.stderr)
+            logging.debug('event file not found, creating it %s %s', str(self._alive_path), self._name)
             self._event_path.unlink(missing_ok=True)
             with open(self._alive_path, 'x'): pass
             self._alive_file = open(self._alive_path, 'a')
@@ -257,14 +261,17 @@ class IpcEvent:
 
 
 class _IpcEventFileHandler(FileSystemEventHandler):
-    def __init__(self, filepath, event):
+    def __init__(self, filepath, on_created_callbacks, on_deleted_callbacks):
         self._filepath = filepath
-        self._event = event
+        self._on_created_callbacks = on_created_callbacks
+        self._on_deleted_callbacks = on_deleted_callbacks
 
     def on_created(self, event):
         if event.src_path == str(self._filepath):
-            self._event.set()
+            for callback in self._on_created_callbacks:
+                callback()
 
     def on_deleted(self, event):
         if event.src_path == str(self._filepath):
-            self._event.clear()
+            for callback in self._on_deleted_callbacks:
+                callback()

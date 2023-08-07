@@ -36,8 +36,8 @@ def start_comfyui_process(install_location):
     global comfyui_process
 
     comfyui_env = os.environ.copy()
-    comfyui_env['SD_WEBUI_COMFYUI_MAIN'] = install_location
-    python_path = comfyui_env.get('PYTHONPATH', '').split(os.pathsep)
+    comfyui_env['SD_WEBUI_COMFYUI_MAIN_PATH'] = install_location
+    python_path = [p for p in comfyui_env.get('PYTHONPATH', '').split(os.pathsep) if p]
     python_path.insert(1, os.path.dirname(os.path.dirname(__file__)))
     python_path.insert(1, install_location)
     comfyui_env['PYTHONPATH'] = os.pathsep.join(python_path)

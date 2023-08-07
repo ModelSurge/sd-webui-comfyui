@@ -204,12 +204,11 @@ class IpcEvent:
         self._observer.start()
 
         try:
-            self._alive_path.unlink()
-            print('removed stale event file', self._alive_path, file=sys.stderr)
-            self._event_path.unlink(missing_ok=True)
             with open(self._alive_path, 'x'): pass
+            print('detected stale event file', self._alive_path, file=sys.stderr)
+            self._event_path.unlink(missing_ok=True)
             self._alive_file = open(self._alive_path, 'a')
-        except PermissionError:
+        except FileExistsError:
             print('event file is not stale, opening file', self._alive_path, file=sys.stderr)
             self._alive_file = open(self._alive_path, 'a')
             if self._event_path.exists():

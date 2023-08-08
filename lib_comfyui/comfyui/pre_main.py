@@ -7,7 +7,7 @@ import runpy
 from lib_comfyui import (
     custom_extension_injector,
     ipc,
-    parallel_utils,
+    ipc_callback,
 )
 from lib_comfyui.comfyui import routes_extension, queue_tracker
 from lib_comfyui.webui import paths
@@ -29,8 +29,8 @@ def main():
 @ipc.restrict_to_process('comfyui')
 def setup_ipc():
     print('[sd-webui-comfyui]', 'Setting up IPC...')
-    ipc.current_callback_listeners = {'comfyui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
-    ipc.current_callback_proxies = {'webui': parallel_utils.CallbackProxy('webui')}
+    ipc.current_callback_listeners = {'comfyui': ipc_callback.CallbackWatcher(ipc.call_fully_qualified, 'comfyui')}
+    ipc.current_callback_proxies = {'webui': ipc_callback.CallbackProxy('webui')}
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
 

@@ -3,7 +3,7 @@ import json
 import traceback
 from typing import List
 import torch
-from lib_comfyui import parallel_utils, ipc, global_state, torch_utils, external_code
+from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 
 

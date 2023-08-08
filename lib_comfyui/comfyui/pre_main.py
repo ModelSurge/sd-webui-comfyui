@@ -13,10 +13,6 @@ from lib_comfyui.comfyui import routes_extension, queue_tracker
 from lib_comfyui.webui import paths
 
 
-import logging
-logging.basicConfig(level=logging.WARNING)
-
-
 original_print = builtins.print
 def comfyui_print(*args, **kwargs):
     return original_print('[ComfyUI]', *args, **kwargs)

@@ -1,5 +1,6 @@
 import hashlib
 import multiprocessing.shared_memory
+import os
 import pickle
 import tempfile
 import threading
@@ -9,6 +10,11 @@ from pathlib import Path
 from typing import Optional, Any
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
+if os.name == 'posix':
+    import multiprocessing.resource_tracker as mp_resource_tracker
+else:
+    mp_resource_tracker = None
 
 
 class CallbackWatcher:
@@ -129,7 +135,7 @@ class IpcSender:
             self._shm.unlink()
             self._shm = None
             logging.warning('IPC payload %s\tfree memory', self._name)
-            self._memory_free_event.set()
+        self._memory_free_event.set()
 
     def send(self, value: Any, timeout: Optional[float] = None):
         is_ready = self._send_event.wait(timeout=timeout)

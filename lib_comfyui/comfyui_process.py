@@ -21,7 +21,8 @@ def start():
 
     install_location = settings.get_install_location()
     if not os.path.exists(install_location):
-        raise RuntimeError('Cannot find ComfyUI install directory')
+        print('[sd-webui-comfyui]', f'could not find ComfyUI under directory "{install_location}". The server will NOT be started.', file=sys.stderr)
+        return
 
     ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
     ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui')}

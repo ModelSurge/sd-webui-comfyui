@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import multiprocessing.shared_memory
 import pickle
@@ -192,7 +193,7 @@ class IpcReceiver:
 
         shm = multiprocessing.shared_memory.SharedMemory(self._shm_name)
 
-        with RestoreTorchLoad():
+        with restore_torch_load():
             value = pickle.loads(shm.buf)
 
         logging.debug('IPC payload %s\treceive value: %s', self._name, str(value))
@@ -212,23 +213,21 @@ def close_shm(shm):
         except FileNotFoundError:
             pass
 
-class RestoreTorchLoad:
-    def __enter__(self):
-        import torch
-        self.original_torch_load = torch.load
 
-        try:
-            from modules import safe
-            torch.load = safe.unsafe_torch_load
-        except ImportError:
-            pass
+@contextlib.contextmanager
+def restore_torch_load():
+    from lib_comfyui import ipc
+    import torch
+    original_torch_load = torch.load
 
-        return self
+    if ipc.current_process_id == 'webui':
+        from modules import safe
+        torch.load = safe.unsafe_torch_load
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        import torch
-        if torch.load != self.original_torch_load:
-            torch.load = self.original_torch_load
+    yield
+
+    if torch.load != original_torch_load:
+        torch.load = original_torch_load
 
 
 class IpcEvent:

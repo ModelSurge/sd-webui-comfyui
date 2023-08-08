@@ -90,11 +90,11 @@ class IpcSender:
         self._strategy = strategy if strategy is not None else OsIpcStrategy(f'ipc_payload_{name}')
         lock_directory = tempfile.gettempdir() if lock_directory is None else lock_directory
         self._lock_path = Path(lock_directory, f'ipc_payload_{name}')
-        with self.get_lock() as lock_file:
+        with self.get_lock(mode='ab+') as lock_file:
             self._strategy.clear(lock_file)
 
-    def get_lock(self, timeout: Optional[float] = None):
-        return portalocker.Lock(self._lock_path, mode='wb+', timeout=timeout if timeout is not None else 2 ** 8)
+    def get_lock(self, timeout: Optional[float] = None, mode: str = 'wb+'):
+        return portalocker.Lock(self._lock_path, mode=mode, timeout=timeout if timeout is not None else 2 ** 8)
 
     def send(self, value: Any):
         with self.get_lock() as lock_file:
@@ -108,11 +108,11 @@ class IpcReceiver:
         self._strategy = strategy if strategy is not None else OsIpcStrategy(f'ipc_payload_{name}')
         lock_directory = tempfile.gettempdir() if lock_directory is None else lock_directory
         self._lock_path = Path(lock_directory, f'ipc_payload_{name}')
-        with self.get_lock() as lock_file:
+        with self.get_lock(mode='ab+') as lock_file:
             self._strategy.clear(lock_file)
 
-    def get_lock(self, timeout: Optional[float] = None):
-        return portalocker.Lock(self._lock_path, mode='rb+', timeout=timeout if timeout is not None else 2 ** 8)
+    def get_lock(self, timeout: Optional[float] = None, mode: str = 'rb+'):
+        return portalocker.Lock(self._lock_path, mode=mode, timeout=timeout if timeout is not None else 2 ** 8)
 
     def recv(self, timeout: Optional[float] = None) -> Any:
         current_time = time.time()

@@ -99,10 +99,11 @@ class StoppableThread(threading.Thread):
 class IpcSender:
     def __init__(self, name):
         self._name = name
+        self._shm_name = to_pathable_str(name)
         self._shm = None
-        self._memory_free_event = IpcEvent(f"memory_free_{name}")
+        self._shm_free_event = IpcEvent(f"memory_free_{name}")
         self._send_event = IpcEvent(f"send_{name}", on_set_callbacks=[self.close_shm])
-        self._recv_event = IpcEvent(f"recv_{name}", on_set_callbacks=[self._memory_free_event.clear])
+        self._recv_event = IpcEvent(f"recv_{name}", on_set_callbacks=[self._shm_free_event.clear])
         self.start()
 
     def __del__(self):
@@ -111,21 +112,21 @@ class IpcSender:
     def start(self):
         self._send_event.start()
         self._recv_event.start()
-        self._memory_free_event.start()
+        self._shm_free_event.start()
 
         self._send_event.set()
         self._recv_event.clear()
-        self._memory_free_event.set()
+        self._shm_free_event.set()
 
     def stop(self):
         self._recv_event.clear()
         self._send_event.clear()
         self.close_shm()
-        self._memory_free_event.clear()
+        self._shm_free_event.clear()
 
         self._recv_event.stop()
         self._send_event.stop()
-        self._memory_free_event.stop()
+        self._shm_free_event.stop()
 
     def close_shm(self):
         if self._shm:
@@ -133,7 +134,7 @@ class IpcSender:
             self._shm.unlink()
             self._shm = None
             logging.debug('IPC payload %s\tfree memory', self._name)
-        self._memory_free_event.set()
+        self._shm_free_event.set()
 
     def send(self, value: Any, timeout: Optional[float] = None):
         is_ready = self._send_event.wait(timeout=timeout)
@@ -143,15 +144,16 @@ class IpcSender:
         logging.debug('IPC payload %s\tsend value: %s', self._name, str(value))
         data = pickle.dumps(value)
 
-        self._memory_free_event.wait()
+        self._shm_free_event.wait()
         try:
-            self._shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_ipc_shm_{self._name}")
+            # free the shared memory, in case it has not been cleaned up for some reason
+            self._shm = multiprocessing.shared_memory.SharedMemory(self._shm_name)
             self._shm.close()
             self._shm.unlink()
         except FileNotFoundError:
             pass
 
-        self._shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_ipc_shm_{self._name}", create=True, size=len(data))
+        self._shm = multiprocessing.shared_memory.SharedMemory(self._shm_name, create=True, size=len(data))
         self._shm.buf[:] = data
 
         self._send_event.clear()
@@ -161,6 +163,7 @@ class IpcSender:
 class IpcReceiver:
     def __init__(self, name):
         self._name = name
+        self._shm_name = to_pathable_str(name)
         self._send_event = IpcEvent(f"send_{name}")
         self._recv_event = IpcEvent(f"recv_{name}")
         self.start()
@@ -187,7 +190,7 @@ class IpcReceiver:
         if not is_ready:
             raise TimeoutError
 
-        shm = multiprocessing.shared_memory.SharedMemory(f"sd_webui_comfyui_ipc_shm_{self._name}")
+        shm = multiprocessing.shared_memory.SharedMemory(self._shm_name)
 
         with RestoreTorchLoad():
             value = pickle.loads(shm.buf)
@@ -232,9 +235,9 @@ class IpcEvent:
     def __init__(self, name, event_directory=None, on_set_callbacks=None):
         self._name = name
         self._event_directory = tempfile.gettempdir() if event_directory is None else event_directory
-        unique_token = hashlib.sha256(name.encode()).hexdigest()
-        self._event_path = Path(self._event_directory, 'ipcevent-' + unique_token + '.event')
-        self._alive_path = Path(self._event_directory, 'ipclock-alive-' + unique_token + '.lifetime')
+        pathable_str = to_pathable_str(name)
+        self._event_path = Path(self._event_directory, 'ipcevent-' + pathable_str + '.event')
+        self._alive_path = Path(self._event_directory, 'ipclock-alive-' + pathable_str + '.lifetime')
         self._alive_file = None
 
         self._event = threading.Event()
@@ -279,7 +282,7 @@ class IpcEvent:
 
         try:
             self._alive_path.unlink(missing_ok=True)
-        except (PermissionError, FileExistsError):
+        except PermissionError:
             pass
 
         if self._observer is not None:
@@ -323,3 +326,7 @@ class _IpcEventFileHandler(FileSystemEventHandler):
     def on_deleted(self, event):
         if event.src_path == str(self._filepath):
             self._event.clear()
+
+
+def to_pathable_str(txt_name: str) -> str:
+    return hashlib.sha256(txt_name.encode()).hexdigest()

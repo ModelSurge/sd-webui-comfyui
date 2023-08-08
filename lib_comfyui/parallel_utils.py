@@ -94,7 +94,7 @@ class IpcSender:
 
     def send(self, value: Any):
         with self.get_lock() as f:
-            print(f'IPC payload {self._name}\tsend value: {value}')
+            logging.debug(f'IPC payload {self._name}\tsend value: {value}')
             f.write(pickle.dumps(value))
 
 
@@ -116,18 +116,21 @@ class IpcReceiver:
         end = current_time + (timeout if timeout is not None else 2 ** 8)
         while current_time < end:
             time.sleep(0.01)  # yuck
-            with self.get_lock() as f, restore_torch_load():
+            with self.get_lock() as f:
                 f.seek(0, os.SEEK_END)
                 if f.tell() == 0:
                     current_time = time.time()
                     continue
 
                 f.seek(0)
-                value = pickle.loads(f.read())
-                print(f'IPC payload {self._name}\treceive value: {value}')
+                data = f.read()
                 f.seek(0)
                 f.truncate()
 
+            with restore_torch_load():
+                value = pickle.loads(data)
+
+            logging.debug(f'IPC payload {self._name}\treceive value: {value}')
             return value
 
         raise TimeoutError

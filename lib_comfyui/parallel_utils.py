@@ -84,42 +84,33 @@ class StoppableThread(threading.Thread):
         return not self._stop_event.is_set()
 
 
-class IpcSender:
+class IpcPayload:
     def __init__(self, name, strategy=None, lock_directory=None):
         self._name = name
         self._strategy = strategy if strategy is not None else OsIpcStrategy(f'ipc_payload_{name}')
         lock_directory = tempfile.gettempdir() if lock_directory is None else lock_directory
         self._lock_path = Path(lock_directory, f'ipc_payload_{name}')
-        with self.get_lock(mode='ab+') as lock_file:
+        with self.get_lock() as lock_file:
             self._strategy.clear(lock_file)
 
-    def get_lock(self, timeout: Optional[float] = None, mode: str = 'wb+'):
+    def get_lock(self, timeout: Optional[float] = None, mode: str = 'ab+'):
         return portalocker.Lock(self._lock_path, mode=mode, timeout=timeout if timeout is not None else 2 ** 8)
 
+
+class IpcSender(IpcPayload):
     def send(self, value: Any):
-        with self.get_lock() as lock_file:
+        with self.get_lock(mode='wb+') as lock_file:
             print(f'IPC payload {self._name}\tsend value: {value}')
             self._strategy.set_data(lock_file, pickle.dumps(value))
 
 
-class IpcReceiver:
-    def __init__(self, name, strategy=None, lock_directory=None):
-        self._name = name
-        self._strategy = strategy if strategy is not None else OsIpcStrategy(f'ipc_payload_{name}')
-        lock_directory = tempfile.gettempdir() if lock_directory is None else lock_directory
-        self._lock_path = Path(lock_directory, f'ipc_payload_{name}')
-        with self.get_lock(mode='ab+') as lock_file:
-            self._strategy.clear(lock_file)
-
-    def get_lock(self, timeout: Optional[float] = None, mode: str = 'rb+'):
-        return portalocker.Lock(self._lock_path, mode=mode, timeout=timeout if timeout is not None else 2 ** 8)
-
+class IpcReceiver(IpcPayload):
     def recv(self, timeout: Optional[float] = None) -> Any:
         current_time = time.time()
         end_time = current_time + (timeout if timeout is not None else 2 ** 8)
 
         while current_time < end_time:
-            lock = self.get_lock(timeout=end_time - current_time)
+            lock = self.get_lock(timeout=end_time - current_time, mode='rb+')
 
             try:
                 with lock as lock_file:

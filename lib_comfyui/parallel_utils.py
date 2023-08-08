@@ -118,9 +118,13 @@ class IpcSender:
         self._memory_free_event.set()
 
     def stop(self):
+        self._recv_event.clear()
+        self._send_event.clear()
+        self.close_shm()
+        self._memory_free_event.clear()
+
         self._recv_event.stop()
         self._send_event.stop()
-        self.close_shm()
         self._memory_free_event.stop()
 
     def close_shm(self):
@@ -167,10 +171,14 @@ class IpcReceiver:
     def start(self):
         self._send_event.start()
         self._recv_event.start()
+
         self._send_event.set()
         self._recv_event.clear()
 
     def stop(self):
+        self._recv_event.clear()
+        self._send_event.clear()
+
         self._recv_event.stop()
         self._send_event.stop()
 
@@ -258,6 +266,11 @@ class IpcEvent:
             self._alive_file = open(self._alive_path, 'a')
             if self._event_path.exists():
                 self._event.set()
+        except FileNotFoundError:
+            logging.warning('event file not found, creating it %s %s', str(self._alive_path), self._name)
+            self._event_path.unlink(missing_ok=True)
+            with open(self._alive_path, 'x'): pass
+            self._alive_file = open(self._alive_path, 'a')
 
     def stop(self):
         if self._alive_file is not None:
@@ -266,7 +279,7 @@ class IpcEvent:
 
         try:
             self._alive_path.unlink(missing_ok=True)
-        except PermissionError:
+        except (PermissionError, FileExistsError):
             pass
 
         if self._observer is not None:

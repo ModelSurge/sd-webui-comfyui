@@ -223,6 +223,7 @@ def restore_torch_load():
     if ipc.current_process_id == 'webui':
         from modules import safe
         torch.load = safe.unsafe_torch_load
+        del safe
 
     yield
 

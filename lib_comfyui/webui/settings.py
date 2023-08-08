@@ -1,14 +1,19 @@
 import sys
 import textwrap
-from lib_comfyui import ipc, global_state
+from lib_comfyui import ipc, global_state, ipc_strategies
 import install_comfyui
 
 
 @ipc.restrict_to_process('webui')
 def create_section():
     from modules import shared
+    import gradio as gr
+
     section = ('comfyui', "ComfyUI")
-    shared.opts.add_option('comfyui_enabled', shared.OptionInfo(True, 'Enable sd-webui-comfyui extension', section=section))
+    shared.opts.add_option(
+        'comfyui_enabled',
+        shared.OptionInfo(True, 'Enable sd-webui-comfyui extension', section=section)
+    )
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
         install_comfyui.default_install_location, "ComfyUI install location", section=section))
     shared.opts.add_option("comfyui_additional_args", shared.OptionInfo(
@@ -19,11 +24,31 @@ def create_section():
 
     shared.opts.onchange('comfyui_enabled', update_enabled)
 
+    shared.opts.add_option("comfyui_ipc_strategy", shared.OptionInfo(
+        next(iter(ipc_strategy_choices.keys())), "Interprocess communication strategy", gr.Dropdown, lambda: {"choices": list(ipc_strategy_choices.keys())}, section=section))
+    shared.opts.onchange('comfyui_ipc_strategy', update_ipc_strategy)
+    update_ipc_strategy()
+
 
 @ipc.restrict_to_process('webui')
 def update_enabled():
     from modules import shared
     global_state.enabled = shared.opts.data.get('comfyui_enabled', True)
+
+
+@ipc.restrict_to_process('webui')
+def update_ipc_strategy():
+    from modules import shared
+    ipc_strategy_choice = shared.opts.data.get('comfyui_ipc_strategy', next(iter(ipc_strategy_choices.keys())))
+    global_state.ipc_strategy_class = ipc_strategy_choices[ipc_strategy_choice]
+    global_state.ipc_strategy_class_name = global_state.ipc_strategy_class.__name__
+
+
+ipc_strategy_choices = {
+    'Default': ipc_strategies.OsFriendlyIpcStrategy,
+    'Shared memory': ipc_strategies.SharedMemoryIpcStrategy,
+    'File system': ipc_strategies.FileSystemIpcStrategy,
+}
 
 
 @ipc.restrict_to_process('webui')

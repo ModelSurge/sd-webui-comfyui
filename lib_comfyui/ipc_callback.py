@@ -3,10 +3,10 @@ from lib_comfyui import ipc_payload
 
 
 class CallbackWatcher:
-    def __init__(self, callback, name: str, strategy):
+    def __init__(self, callback, name: str, strategy_factory):
         self._callback = callback
-        self._res_sender = ipc_payload.IpcSender(f'res_{name}', strategy)
-        self._args_receiver = ipc_payload.IpcReceiver(f'args_{name}', strategy)
+        self._res_sender = ipc_payload.IpcSender(f'res_{name}', strategy_factory)
+        self._args_receiver = ipc_payload.IpcReceiver(f'args_{name}', strategy_factory)
         self._producer_thread = None
 
     def start(self):

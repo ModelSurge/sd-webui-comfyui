@@ -4,7 +4,7 @@ import os
 import signal
 import subprocess
 import sys
-from lib_comfyui import ipc, torch_utils, argv_conversion, ipc_callback
+from lib_comfyui import ipc, torch_utils, argv_conversion, ipc_callback, global_state
 from lib_comfyui.webui import settings
 from lib_comfyui.comfyui import pre_main
 
@@ -24,8 +24,8 @@ def start():
         print('[sd-webui-comfyui]', f'could not find ComfyUI under directory "{install_location}". The server will NOT be started.', file=sys.stderr)
         return
 
-    ipc.current_callback_listeners = {'webui': ipc_callback.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
-    ipc.current_callback_proxies = {'comfyui': ipc_callback.CallbackProxy('comfyui')}
+    ipc.current_callback_listeners = {'webui': ipc_callback.CallbackWatcher(ipc.call_fully_qualified, 'webui', global_state.ipc_strategy_class)}
+    ipc.current_callback_proxies = {'comfyui': ipc_callback.CallbackProxy('comfyui', global_state.ipc_strategy_class)}
     ipc.start_callback_listeners()
     atexit.register(stop)
     start_comfyui_process(install_location)
@@ -36,9 +36,10 @@ def start_comfyui_process(comfyui_install_location):
     global comfyui_process
 
     comfyui_env = os.environ.copy()
-    python_path = [p for p in comfyui_env.get('PYTHONPATH', '').split(os.pathsep) if p]
-    python_path[1:1] = (comfyui_install_location, settings.get_extension_base_dir())
-    comfyui_env['PYTHONPATH'] = os.pathsep.join(python_path)
+    comfyui_sys_path = get_base_sys_path()
+    comfyui_sys_path.insert(1, settings.get_extension_base_dir())
+    comfyui_env['PYTHONPATH'] = os.pathsep.join(comfyui_sys_path)
+    comfyui_env['SD_WEBUI_COMFYUI_IPC_STRATEGY_CLASS_NAME'] = global_state.ipc_strategy_class.__name__
 
     args = [sys.executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()
 
@@ -48,6 +49,14 @@ def start_comfyui_process(comfyui_install_location):
         cwd=comfyui_install_location,
         env=comfyui_env,
     )
+
+
+def get_base_sys_path():
+    return subprocess.run(
+        [sys.executable, '-c', "import sys, os; print(os.pathsep.join(sys.path))"],
+        text=True,
+        capture_output=True,
+    ).stdout.split(os.pathsep)
 
 
 @ipc.restrict_to_process('webui')

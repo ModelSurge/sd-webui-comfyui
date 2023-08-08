@@ -21,7 +21,7 @@ def start():
 
     install_location = settings.get_install_location()
     if not os.path.exists(install_location):
-        return
+        raise RuntimeError('Cannot find ComfyUI install directory')
 
     ipc.current_callback_listeners = {'webui': parallel_utils.CallbackWatcher(ipc.call_fully_qualified, 'webui')}
     ipc.current_callback_proxies = {'comfyui': parallel_utils.CallbackProxy('comfyui')}
@@ -31,14 +31,14 @@ def start():
 
 
 @ipc.restrict_to_process('webui')
-def start_comfyui_process(install_location):
+def start_comfyui_process(comfyui_install_location):
     global comfyui_process
 
     comfyui_env = os.environ.copy()
-    comfyui_env['SD_WEBUI_COMFYUI_MAIN_PATH'] = install_location
+    comfyui_env['SD_WEBUI_COMFYUI_MAIN_PATH'] = comfyui_install_location
     python_path = [p for p in comfyui_env.get('PYTHONPATH', '').split(os.pathsep) if p]
-    python_path.insert(1, os.path.dirname(os.path.dirname(__file__)))
-    python_path.insert(1, install_location)
+    python_path.insert(1, settings.get_extension_base_dir())
+    python_path.insert(1, comfyui_install_location)
     comfyui_env['PYTHONPATH'] = os.pathsep.join(python_path)
 
     args = [sys.executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()

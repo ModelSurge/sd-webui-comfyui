@@ -95,3 +95,21 @@ class WebuiSharedState:
 
 opts = WebuiOptions()
 shared_state = WebuiSharedState()
+from lib_comfyui import ipc
+
+
+__base_dir = None
+
+
+@ipc.run_in_process('webui')
+def get_extension_base_dir():
+    init_extension_base_dir()
+    return __base_dir
+
+
+@ipc.restrict_to_process('webui')
+def init_extension_base_dir():
+    global __base_dir
+    from modules import scripts
+    if __base_dir is None:
+        __base_dir = scripts.basedir()

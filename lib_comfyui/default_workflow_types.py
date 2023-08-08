@@ -1,8 +1,9 @@
 from pathlib import Path
-from lib_comfyui import comfyui_context, external_code
+from lib_comfyui import external_code
+from lib_comfyui.webui import settings
 
 
-default_workflows_dir = Path(comfyui_context.get_webui_base_dir(), 'workflows', 'default')
+default_workflows_dir = Path(settings.get_extension_base_dir(), 'workflows', 'default')
 sandbox_tab_workflow_type = external_code.WorkflowType(
     base_id='sandbox',
     display_name='ComfyUI',

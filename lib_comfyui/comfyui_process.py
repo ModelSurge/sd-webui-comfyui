@@ -43,14 +43,11 @@ def start_comfyui_process(comfyui_install_location):
 
     args = [sys.executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()
 
-    comfyui_ipc_ready_event = parallel_utils.IpcEvent('comfyui_ipc_ready')
-    comfyui_ipc_ready_event.clear()  # in case the event state is stale from previous usage
     comfyui_process = subprocess.Popen(
         args=args,
         executable=sys.executable,
         env=comfyui_env,
     )
-    comfyui_ipc_ready_event.wait()
 
 
 @ipc.restrict_to_process('webui')
@@ -81,6 +78,7 @@ def stop_comfyui_process():
 # remove this when comfyui starts using subprocess with an isolated venv
 @ipc.restrict_to_process('webui')
 def restore_webui_sigint_handler():
+    return
     def sigint_handler(sig, frame):
         exit()
 

@@ -65,7 +65,7 @@ class PromptQueueTracker:
         prompt_queue.delete_queue_item = functools.partial(patched_delete_queue_item, original_delete_queue_item=prompt_queue.delete_queue_item)
 
 
-@ipc.restrict_to_process('comfyui')
+@ipc.run_in_process('comfyui')
 def setup_tracker_id():
     PromptQueueTracker.original_id = PromptQueueTracker.tracked_id
     PromptQueueTracker.tracked_id = PromptQueueTracker.server_instance.number
@@ -73,7 +73,7 @@ def setup_tracker_id():
     PromptQueueTracker.done_event.clear()
 
 
-@ipc.restrict_to_process('comfyui')
+@ipc.run_in_process('comfyui')
 def wait_until_done():
     was_put = PromptQueueTracker.put_event.wait(timeout=3)
     if not was_put:

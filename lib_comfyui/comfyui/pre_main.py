@@ -45,9 +45,6 @@ def setup_ipc():
     signal.signal(signal.SIGTERM, exit_signal_handler)
     signal.signal(signal.SIGINT, exit_signal_handler)
 
-    ipc_ready_event = parallel_utils.IpcEvent('comfyui_ipc_ready')
-    ipc_ready_event.set()
-
 
 @ipc.restrict_to_process('comfyui')
 def patch_comfyui():

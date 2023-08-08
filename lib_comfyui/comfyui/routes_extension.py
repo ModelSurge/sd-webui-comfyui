@@ -16,7 +16,7 @@ class ComfyuiIFrameRequests:
     loop = None
     focused_webui_client_id = None
 
-    @ipc.restrict_to_process('comfyui')
+    @ipc.run_in_process('comfyui')
     @staticmethod
     def send(request_params):
         cls = ComfyuiIFrameRequests
@@ -31,14 +31,15 @@ class ComfyuiIFrameRequests:
         event = events[request_params['workflowType']]
         cls.loop.call_soon_threadsafe(event.set)
 
-    @ipc.run_in_process('comfyui')
+    @ipc.restrict_to_process('webui')
     @staticmethod
     def start_workflow_sync(
         batch_input: List[torch.Tensor],
         workflow_type_id: str,
         queue_front: bool,
     ):
-        if settings.shared_state.interrupted:
+        from modules import shared
+        if shared.state.interrupted:
             return batch_input
 
         global_state.node_inputs = batch_input

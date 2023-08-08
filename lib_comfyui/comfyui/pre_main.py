@@ -37,11 +37,16 @@ def setup_ipc():
     def exit_signal_handler(sig, frame):
         exit()
 
+    # signal handlers for linux. Windows does not handle these
+    # they should trigger in one of the following situations:
+    # - the user hits ctrl+C
+    # - the webui gradio UI is reloaded
+    # - the comfyui server is closed using the stop function of the lib_comfyui.comfyui_process module
     signal.signal(signal.SIGTERM, exit_signal_handler)
     signal.signal(signal.SIGINT, exit_signal_handler)
+
     ipc_ready_event = parallel_utils.IpcEvent('comfyui_ipc_ready')
     ipc_ready_event.set()
-    ipc_ready_event.stop()
 
 
 @ipc.restrict_to_process('comfyui')

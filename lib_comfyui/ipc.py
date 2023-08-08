@@ -57,16 +57,16 @@ def start_callback_listeners():
     for callback_listener in current_callback_listeners.values():
         callback_listener.start()
 
-    for callback_queue in current_callback_proxies.values():
-        callback_queue.start()
+    for callback_proxy in current_callback_proxies.values():
+        callback_proxy.start()
 
     print('[sd-webui-comfyui]', 'started callback listeners for process', current_process_id)
 
 
 def stop_callback_listeners():
     assert callback_listeners_started()
-    for callback_queue in current_callback_proxies.values():
-        callback_queue.stop()
+    for callback_proxy in current_callback_proxies.values():
+        callback_proxy.stop()
 
     for callback_listener in current_callback_listeners.values():
         callback_listener.stop()

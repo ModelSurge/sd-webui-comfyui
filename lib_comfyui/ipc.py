@@ -31,19 +31,6 @@ def restrict_to_process(process_id):
     return annotation
 
 
-def nop():
-    pass
-
-
-def hand_shake_with(process_id):
-    poke_process = run_in_process(process_id)(nop)
-    for _ in range(2):
-        try:
-            poke_process()
-        except (FileNotFoundError, FileExistsError):
-            pass
-
-
 def call_fully_qualified(module_name, qualified_name, args, kwargs):
     module_parts = module_name.split('.')
     try:

@@ -55,7 +55,7 @@ class TestIpcReceiver(unittest.TestCase):
             strategy = MockStrategy(*args)
             return strategy
 
-        receiver = IpcReceiver("test_receiver", strategy_factory)
+        receiver = IpcReceiver("test_receiver", strategy_factory, clear_on_init=True)
 
         mock_value = "test_value"
         strategy.set_data(None, pickle.dumps(mock_value))  # mock some data in the "shared memory"

@@ -23,10 +23,11 @@ class IpcPayload:
 
     def __del__(self):
         if self._clear_on_del:
-            with self.get_lock() as lock_file:
+            lock = self.get_lock()
+            with lock as lock_file:
                 self._strategy.clear(lock_file)
 
-    def get_lock(self, timeout: Optional[float] = None, mode: str = 'ab+'):
+    def get_lock(self, timeout: Optional[float] = None, mode: str = 'wb+'):
         return portalocker.Lock(
             self._lock_path,
             mode=mode,
@@ -38,7 +39,7 @@ class IpcPayload:
 
 class IpcSender(IpcPayload):
     def send(self, value: Any):
-        with self.get_lock(mode='wb+') as lock_file:
+        with self.get_lock() as lock_file:
             logging.debug(f'IPC payload {self._name}\tsend value: {value}')
             self._strategy.set_data(lock_file, pickle.dumps(value))
 

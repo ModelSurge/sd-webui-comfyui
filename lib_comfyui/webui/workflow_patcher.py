@@ -40,7 +40,7 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
             tab='img2img',
             batch_input=x.to(device='cpu'),
         )
-        x = torch.stack(preprocessed_x).to(device=x.device)
+        x = torch.stack(preprocessed_x).to(device=x.device) if isinstance(preprocessed_x, list) else preprocessed_x.to(device=x.device)
 
     return original_function(p, x, *args, **kwargs)
 

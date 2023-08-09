@@ -1,3 +1,5 @@
+import functools
+
 import gradio as gr
 from modules import shared, scripts, ui
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, comfyui_process
@@ -18,6 +20,7 @@ class ComfyUIScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
+        self.infotext_fields = []
         global_state.is_ui_instantiated = True
         with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
             return self.get_alwayson_ui(is_img2img)
@@ -71,6 +74,25 @@ class ComfyUIScript(scripts.Script):
                 fn=None,
                 _js='reloadComfyuiIFrames'
             )
+
+        for workflow_type in workflow_types:
+            textbox = gr.Textbox(visible=False)
+
+            def change_function(serialized_graph, workflow_type):
+                if not serialized_graph:
+                    return ''
+
+                ids = workflow_type.get_ids(xxx2img)
+                if not ids:
+                    return ''
+
+                workflow_type_id = ids[0]
+                iframe_requests.set_workflow_graph(serialized_graph, workflow_type_id)
+                return gr.Textbox.update(value='')
+
+            change_function = functools.partial(change_function, workflow_type=workflow_type)
+            textbox.change(change_function, [textbox], [textbox])
+            self.infotext_fields.append((textbox, workflow_type.base_id))
 
         return queue_front,
 

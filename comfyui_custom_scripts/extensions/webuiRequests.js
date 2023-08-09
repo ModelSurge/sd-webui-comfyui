@@ -17,6 +17,10 @@ const request_map = new Map([
     ['/sd-webui-comfyui/webui_request_serialize_graph', async (json) => {
         return app.graph.original_serialize();
     }],
+    ['/sd-webui-comfyui/webui_request_set_workflow', async (json) => {
+        app.loadGraphData(json.workflow);
+        return 'success';
+    }],
 ]);
 
 async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {

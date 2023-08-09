@@ -3,6 +3,7 @@ from lib_comfyui import global_state
 from lib_comfyui.webui.proxies import get_comfy_model_config
 from lib_comfyui.comfyui.webui_io import NODE_DISPLAY_NAME_MAPPINGS
 
+
 class WebuiImageInput:
     @classmethod
     def INPUT_TYPES(cls):
@@ -17,7 +18,8 @@ class WebuiImageInput:
     CATEGORY = "webui"
 
     def get_images(self, void):
-        return torch.stack(global_state.node_inputs).permute(0, 2, 3, 1),
+        return ((torch.stack(global_state.node_inputs) if isinstance(global_state.node_inputs, list) else global_state.node_inputs)
+                .permute(0, 2, 3, 1),)
 
 
 class WebuiImageOutput:

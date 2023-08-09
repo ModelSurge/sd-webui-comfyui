@@ -29,6 +29,11 @@ def create_section():
     shared.opts.onchange('comfyui_ipc_strategy', update_ipc_strategy)
     update_ipc_strategy()
 
+    shared.opts.add_option("comfyui_graceful_termination_timeout", shared.OptionInfo(
+        5, 'ComfyUI server kill timeout (in seconds) when reloading the gradio UI (-1 to block until the ComfyUI server exits normally)', gr.Number, section=section))
+    shared.opts.onchange('comfyui_graceful_termination_timeout', update_comfyui_graceful_termination_timeout)
+    update_comfyui_graceful_termination_timeout()
+
 
 @ipc.restrict_to_process('webui')
 def update_enabled():
@@ -42,6 +47,13 @@ def update_ipc_strategy():
     ipc_strategy_choice = shared.opts.data.get('comfyui_ipc_strategy', next(iter(ipc_strategy_choices.keys())))
     global_state.ipc_strategy_class = ipc_strategy_choices[ipc_strategy_choice]
     global_state.ipc_strategy_class_name = global_state.ipc_strategy_class.__name__
+
+
+@ipc.restrict_to_process('webui')
+def update_comfyui_graceful_termination_timeout():
+    from modules import shared
+    timeout = shared.opts.data.get('comfyui_graceful_termination_timeout', 5)
+    global_state.comfyui_graceful_termination_timeout = timeout if timeout >= 0 else None
 
 
 ipc_strategy_choices = {

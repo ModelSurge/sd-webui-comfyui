@@ -15,13 +15,18 @@ with open(req_file) as file:
             package = package.strip()
             match = req_re.search(package)
             if (version := match.group(3)) is not None:
+                package_name, comparison, package_version = match.group(1, 2, 3)
                 try:
                     installed_version = pkg_resources.get_distribution(package_name).version
                 except Exception:
-                    installed_version = None
-                package_name, comparison, package_version = match.group(1, 2, 3)
-                if installed_version is not None and comparison != '~' and not eval(f'"{installed_version}" {comparison}= "{package_version}"'):
+                    # package not installed, we still want to install it
+                    pass
+                else:
+                    if comparison != '~' and eval(f'"{installed_version}" {comparison}= "{package_version}"'):
+                        continue
+
                     launch.run_pip(f"install {package}", f"sd-webui-comfyui requirement: changing {package_name} version from {installed_version} to {package_version}")
+
             launch.run_pip(f"install {package}", f"sd-webui-comfyui requirement: {package}")
         except Exception as e:
             print(traceback.format_exception_only(e))

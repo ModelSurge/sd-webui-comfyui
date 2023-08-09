@@ -72,13 +72,18 @@ def stop_comfyui_process():
     if comfyui_process is None:
         return
 
-    print('[sd-webui-comfyui]', 'Attempting to gracefully terminate the ComfyUI server...')
-    comfyui_process.terminate()
-    try:
-        comfyui_process.wait(5)
-        print('[sd-webui-comfyui]', 'Comfyui server was gracefully terminated')
-    except subprocess.TimeoutExpired:
-        print('[sd-webui-comfyui]', 'Graceful termination timed out. Killing the ComfyUI server...')
+    if os.name == 'nt':
+        print('[sd-webui-comfyui]', 'Killing the ComfyUI server...')
         comfyui_process.kill()
-        print('[sd-webui-comfyui]', 'Comfyui server was killed')
+        print('[sd-webui-comfyui]', 'The ComfyUI server was killed')
+    else:
+        print('[sd-webui-comfyui]', 'Attempting to gracefully terminate the ComfyUI server...')
+        comfyui_process.terminate()
+        try:
+            comfyui_process.wait(5)
+            print('[sd-webui-comfyui]', 'The ComfyUI server was gracefully terminated')
+        except subprocess.TimeoutExpired:
+            print('[sd-webui-comfyui]', 'Graceful termination timed out. Killing the ComfyUI server...')
+            comfyui_process.kill()
+            print('[sd-webui-comfyui]', 'The ComfyUI server was killed')
     comfyui_process = None

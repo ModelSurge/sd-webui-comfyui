@@ -41,9 +41,10 @@ def setup_ipc():
     def exit_signal_handler(sig, frame):
         exit()
 
-    # signal handlers for linux. Windows does not handle these
+    # signal handlers for graceful termination
     # they should trigger in one of the following situations:
     # - the user hits ctrl+C
+    # linux only:
     # - the webui gradio UI is reloaded
     # - the comfyui server is closed using the stop function of the lib_comfyui.comfyui_process module
     signal.signal(signal.SIGTERM, exit_signal_handler)

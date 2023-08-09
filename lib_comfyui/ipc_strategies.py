@@ -56,7 +56,7 @@ class SharedMemoryIpcStrategy:
         lock_file.seek(0)
         try:
             return pickle.loads(lock_file.read())
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, AttributeError):
             return self.Metadata(is_empty=True, size=0)
 
     def _set_metadata(self, lock_file: IO, metadata: Metadata):

@@ -30,7 +30,7 @@ def create_section():
     update_ipc_strategy()
 
     shared.opts.add_option("comfyui_graceful_termination_timeout", shared.OptionInfo(
-        5, 'ComfyUI server kill timeout (in seconds) when reloading the gradio UI (-1 to block until the ComfyUI server exits normally)', gr.Number, section=section))
+        5, 'ComfyUI server graceful termination timeout (in seconds) when reloading the gradio UI (-1 to block until the ComfyUI server exits normally)', gr.Number, section=section))
     shared.opts.onchange('comfyui_graceful_termination_timeout', update_comfyui_graceful_termination_timeout)
     update_comfyui_graceful_termination_timeout()
 

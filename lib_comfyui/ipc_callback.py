@@ -40,9 +40,9 @@ class CallbackWatcher:
 
 
 class CallbackProxy:
-    def __init__(self, name: str, strategy):
-        self._res_receiver = ipc_payload.IpcReceiver(f'res_{name}', strategy)
-        self._args_sender = ipc_payload.IpcSender(f'args_{name}', strategy)
+    def __init__(self, name: str, strategy_factory):
+        self._res_receiver = ipc_payload.IpcReceiver(f'res_{name}', strategy_factory)
+        self._args_sender = ipc_payload.IpcSender(f'args_{name}', strategy_factory)
 
     def get(self, args=None, kwargs=None):
         self._args_sender.send((args if args is not None else (), kwargs if kwargs is not None else {}))

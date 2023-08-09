@@ -1,6 +1,8 @@
 import gc
 import importlib
 import sys
+import time
+import logging
 
 
 def run_in_process(process_id):
@@ -10,7 +12,15 @@ def run_in_process(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                return current_callback_proxies[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+                start = time.time()
+                res = current_callback_proxies[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+                logging.warning(
+                    '[sd-webui-comfyui] IPC call %s -> %s %s:\t%s',
+                    current_process_id, process_id,
+                    time.time() - start,
+                    f'{function.__module__}.{function.__qualname__}(*{args}, **{kwargs})'
+                )
+                return res
 
         return wrapper
 

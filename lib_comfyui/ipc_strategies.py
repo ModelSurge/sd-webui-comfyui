@@ -35,6 +35,9 @@ class FileSystemIpcStrategy:
         lock_file.truncate()
 
 
+BytesLike = Union[bytes, bytearray, memoryview]
+
+
 class SharedMemoryIpcStrategy:
     def __init__(self, shm_name: str):
         self._shm_name = shm_name
@@ -61,7 +64,7 @@ class SharedMemoryIpcStrategy:
     def is_empty(self, lock_file: IO) -> bool:
         return self._get_metadata(lock_file).is_empty
 
-    def set_data(self, lock_file: IO, data: Union[bytes, bytearray, memoryview]):
+    def set_data(self, lock_file: IO, data: BytesLike):
         metadata = self._get_metadata(lock_file)
         assert metadata.is_empty, f'data of shared memory IPC payload {self._shm_name} has not yet been read'
 
@@ -72,7 +75,7 @@ class SharedMemoryIpcStrategy:
         self._set_metadata(lock_file, self.Metadata(is_empty=False, size=data_len))
 
     @contextlib.contextmanager
-    def get_data(self, lock_file: IO) -> Union[bytes, bytearray, memoryview]:
+    def get_data(self, lock_file: IO) -> BytesLike:
         metadata = self._get_metadata(lock_file)
         assert not metadata.is_empty, f'metadata not found for shared memory IPC payload {self._shm_name}'
 
@@ -93,8 +96,8 @@ class SharedMemoryIpcStrategy:
             self._shm.unlink()
         except FileNotFoundError:
             pass
-        finally:
-            self._shm = None
+
+        self._shm = None
 
 
 if os.name == 'nt':

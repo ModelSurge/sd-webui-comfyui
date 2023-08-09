@@ -1,4 +1,5 @@
 import contextlib
+import math
 import pickle
 import portalocker
 import tempfile
@@ -21,8 +22,9 @@ class IpcPayload:
         return portalocker.Lock(
             self._lock_path,
             mode=mode,
-            timeout=timeout if timeout is not None else 2 ** 8,
-            check_interval=0.01,
+            timeout=timeout,
+            check_interval=0.02,
+            flags=portalocker.LOCK_EX | (portalocker.LOCK_NB * int(timeout is not None)),
         )
 
 
@@ -36,7 +38,7 @@ class IpcSender(IpcPayload):
 class IpcReceiver(IpcPayload):
     def recv(self, timeout: Optional[float] = None) -> Any:
         current_time = time.time()
-        end_time = current_time + (timeout if timeout is not None else 2 ** 8)
+        end_time = (current_time + timeout) if timeout is not None else math.inf
 
         while current_time < end_time:
             lock = self.get_lock(timeout=end_time - current_time, mode='rb+')

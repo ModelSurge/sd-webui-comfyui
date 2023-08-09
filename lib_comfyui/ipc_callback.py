@@ -72,4 +72,3 @@ class StoppableThread(threading.Thread):
 
     def is_running(self):
         return not self._stop_event.is_set()
-

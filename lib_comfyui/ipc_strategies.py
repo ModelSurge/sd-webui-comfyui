@@ -14,7 +14,7 @@ __all__ = [
 
 
 class FileSystemIpcStrategy:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, _name: str):
         pass
 
     def is_empty(self, lock_file: IO) -> bool:
@@ -101,8 +101,6 @@ class SharedMemoryIpcStrategy:
 
 
 if os.name == 'nt':
-    class OsFriendlyIpcStrategy(SharedMemoryIpcStrategy):
-        pass
+    OsFriendlyIpcStrategy = SharedMemoryIpcStrategy
 else:
-    class OsFriendlyIpcStrategy(FileSystemIpcStrategy):
-        pass
+    OsFriendlyIpcStrategy = FileSystemIpcStrategy

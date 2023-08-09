@@ -83,7 +83,7 @@ class ComfyuiIFrameRequests:
 
         cls.param_events[webui_client_id][workflow_type_id] = asyncio.Event()
         cls.workflow_type_ids[webui_client_id].add(workflow_type_id)
-        print(f'[sd-webui-comfyui] registered new ComfyUI client - {workflow_type_id}')
+        print(f'[sd-webui-comfyui] Registered new ComfyUI client - {workflow_type_id}')
 
     @classmethod
     async def create_client_request(cls, workflow_type_id, webui_client_id):
@@ -94,7 +94,7 @@ class ComfyuiIFrameRequests:
             return {'request': '/sd-webui-comfyui/webui_request_timeout',}
 
         client_event.clear()
-        print(f'[sd-webui-comfyui] send request - \n{cls.last_request}')
+        print(f'[sd-webui-comfyui] Send request - \n{cls.last_request}')
         return cls.last_request
 
 

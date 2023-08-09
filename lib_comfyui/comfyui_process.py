@@ -21,7 +21,7 @@ def start():
 
     install_location = settings.get_install_location()
     if not os.path.exists(install_location):
-        print('[sd-webui-comfyui]', f'could not find ComfyUI under directory "{install_location}". The server will NOT be started.', file=sys.stderr)
+        print('[sd-webui-comfyui]', f'Could not find ComfyUI under directory "{install_location}". The server will NOT be started.', file=sys.stderr)
         return
 
     ipc.current_callback_listeners = {'webui': ipc_callback.CallbackWatcher(ipc.call_fully_qualified, 'webui', global_state.ipc_strategy_class)}
@@ -91,5 +91,5 @@ def restore_webui_sigint_handler():
     def sigint_handler(sig, frame):
         exit()
 
-    print('[sd-webui-comfyui]', 'restoring graceful SIGINT handler for the webui process')
+    print('[sd-webui-comfyui]', 'Restoring graceful SIGINT handler for the webui process')
     signal.signal(signal.SIGINT, sigint_handler)

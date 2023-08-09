@@ -67,7 +67,7 @@ def start_callback_listeners():
     for callback_listener in current_callback_listeners.values():
         callback_listener.start()
 
-    print('[sd-webui-comfyui]', 'started callback listeners for process', current_process_id)
+    print('[sd-webui-comfyui]', 'Started callback listeners for process', current_process_id)
 
 
 def stop_callback_listeners():
@@ -79,7 +79,7 @@ def stop_callback_listeners():
     current_callback_listeners.clear()
     gc.collect()
 
-    print('[sd-webui-comfyui]', 'stopped callback listeners for process', current_process_id)
+    print('[sd-webui-comfyui]', 'Stopped callback listeners for process', current_process_id)
 
 
 def callback_listeners_started():

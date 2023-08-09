@@ -51,6 +51,13 @@ ipc_strategy_choices = {
 }
 
 
+ipc_display_names = {
+    v.__name__: k
+    for k, v in ipc_strategy_choices.items()
+    if k != 'Default'
+}
+
+
 @ipc.restrict_to_process('webui')
 def get_install_location():
     from modules import shared

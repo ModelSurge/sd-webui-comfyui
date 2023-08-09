@@ -90,6 +90,9 @@ def get_controlnet_paths():
 
 
 @ipc.run_in_process('webui')
-def webui_save_image(*args, **kwargs):
-    from modules.images import save_image
-    return save_image(*args, **kwargs)
+def webui_save_image(*args, relative_path=None, **kwargs):
+    from modules import images, paths
+    if relative_path is not None:
+        kwargs['path'] = os.path.join(paths.data_path, relative_path)
+
+    return images.save_image(*args, **kwargs)

@@ -79,8 +79,8 @@ def p_img2img_init(*args, original_function, p_ref, **kwargs):
         preprocessed_images = external_code.run_workflow(
             workflow_type=default_workflow_types.preprocess_workflow_type,
             tab='img2img',
-            batch_input=[F.pil_to_tensor(image) for image in p_ref.init_images],
+            batch_input=[F.pil_to_tensor(image) / 255 for image in p_ref.init_images],
         )
-        p_ref.init_images = [F.to_pil_image(image) for image in preprocessed_images]
+        p_ref.init_images = [F.to_pil_image(image_tensor * 255) for image_tensor in preprocessed_images]
 
     return original_function(*args, **kwargs)

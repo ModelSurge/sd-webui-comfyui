@@ -107,12 +107,12 @@ def extend_infotext_with_comfyui_workflows(p, tab):
         p.extra_generation_params[workflow_type.base_id] = json.dumps(ComfyuiIFrameRequests.send({
             'request': '/sd-webui-comfyui/webui_request_serialize_graph',
             'workflowType': workflow_type_id,
-        })).replace(',', r'\COMMA')
+        }))
 
 
 def set_workflow_graph(workflow_json, workflow_type_id):
     return ComfyuiIFrameRequests.send({
         'request': '/sd-webui-comfyui/webui_request_set_workflow',
         'workflowType': workflow_type_id,
-        'workflow': json.loads(workflow_json.replace(r'\COMMA', ','))
+        'workflow': json.loads(workflow_json)
     })

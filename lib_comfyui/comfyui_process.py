@@ -82,14 +82,3 @@ def stop_comfyui_process():
         comfyui_process.kill()
         print('[sd-webui-comfyui]', 'Comfyui server was killed')
     comfyui_process = None
-
-
-# remove this when comfyui starts using subprocess with an isolated venv
-@ipc.restrict_to_process('webui')
-def restore_webui_sigint_handler():
-    return
-    def sigint_handler(sig, frame):
-        exit()
-
-    print('[sd-webui-comfyui]', 'Restoring graceful SIGINT handler for the webui process')
-    signal.signal(signal.SIGINT, sigint_handler)

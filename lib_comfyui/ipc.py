@@ -14,7 +14,7 @@ def run_in_process(process_id):
             else:
                 start = time.time()
                 res = current_callback_proxies[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
-                logging.warning(
+                logging.debug(
                     '[sd-webui-comfyui] IPC call %s -> %s %s:\t%s',
                     current_process_id, process_id,
                     time.time() - start,

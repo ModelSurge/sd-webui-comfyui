@@ -1,7 +1,6 @@
 import atexit
 import inspect
 import os
-import signal
 import subprocess
 import sys
 from lib_comfyui import ipc, torch_utils, argv_conversion, ipc_callback, global_state
@@ -24,8 +23,8 @@ def start():
         print('[sd-webui-comfyui]', f'Could not find ComfyUI under directory "{install_location}". The server will NOT be started.', file=sys.stderr)
         return
 
-    ipc.current_callback_listeners = {'webui': ipc_callback.CallbackWatcher(ipc.call_fully_qualified, 'webui', global_state.ipc_strategy_class)}
-    ipc.current_callback_proxies = {'comfyui': ipc_callback.CallbackProxy('comfyui', global_state.ipc_strategy_class)}
+    ipc.current_callback_listeners = {'webui': ipc_callback.CallbackWatcher(ipc.call_fully_qualified, 'webui', global_state.ipc_strategy_class, clear_on_init=True)}
+    ipc.current_callback_proxies = {'comfyui': ipc_callback.CallbackProxy('comfyui', global_state.ipc_strategy_class, clear_on_init=True)}
     ipc.start_callback_listeners()
     atexit.register(stop)
     start_comfyui_process(install_location)

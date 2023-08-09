@@ -10,13 +10,21 @@ from typing import Optional, Any
 
 
 class IpcPayload:
-    def __init__(self, name, strategy_factory, lock_directory=None):
+    def __init__(self, name, strategy_factory, lock_directory: str = None, clear_on_init: bool = False, clear_on_del: bool = True):
         self._name = name
         self._strategy = strategy_factory(f'ipc_payload_{name}')
         lock_directory = tempfile.gettempdir() if lock_directory is None else lock_directory
         self._lock_path = Path(lock_directory, f'ipc_payload_{name}')
-        with self.get_lock() as lock_file:
-            self._strategy.clear(lock_file)
+        self._clear_on_del = clear_on_del
+
+        if clear_on_init:
+            with self.get_lock() as lock_file:
+                self._strategy.clear(lock_file)
+
+    def __del__(self):
+        if self._clear_on_del:
+            with self.get_lock() as lock_file:
+                self._strategy.clear(lock_file)
 
     def get_lock(self, timeout: Optional[float] = None, mode: str = 'ab+'):
         return portalocker.Lock(
@@ -84,5 +92,4 @@ def restore_torch_load():
 
     yield
 
-    if torch.load != original_torch_load:
-        torch.load = original_torch_load
+    torch.load = original_torch_load

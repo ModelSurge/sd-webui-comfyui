@@ -1,5 +1,5 @@
 import gradio as gr
-from modules import scripts, ui
+from modules import scripts, ui, processing
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher
 from lib_comfyui.comfyui import iframe_requests
@@ -7,7 +7,7 @@ import functools
 
 
 class ComfyUIScript(scripts.Script):
-    def get_xxx2img_str(self, is_img2img: bool = None):
+    def get_tab_str(self, is_img2img: bool = None):
         if is_img2img is None:
             is_img2img = self.is_img2img
         return "img2img" if is_img2img else "txt2img"
@@ -24,7 +24,7 @@ class ComfyUIScript(scripts.Script):
             return self.get_alwayson_ui(is_img2img)
 
     def get_alwayson_ui(self, is_img2img: bool):
-        xxx2img = self.get_xxx2img_str(is_img2img)
+        tab = self.get_tab_str(is_img2img)
 
         with gr.Row():
             queue_front = gr.Checkbox(
@@ -32,10 +32,10 @@ class ComfyUIScript(scripts.Script):
                 elem_id=self.elem_id('queue_front'),
                 value=True,
             )
-            workflow_types = external_code.get_workflow_types(xxx2img)
+            workflow_types = external_code.get_workflow_types(tab)
             first_workflow_type = workflow_types[0]
             workflow_type_ids = {
-                workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
+                workflow_type.display_name: workflow_type.get_ids(tab)[0]
                 for workflow_type in workflow_types
             }
             workflow_display_name = gr.Dropdown(
@@ -73,7 +73,7 @@ class ComfyUIScript(scripts.Script):
                 _js='reloadComfyuiIFrames'
             )
 
-        self.setup_infotext_updates(workflow_types, xxx2img)
+        self.setup_infotext_updates(workflow_types, tab)
 
         return queue_front,
 
@@ -103,7 +103,7 @@ class ComfyUIScript(scripts.Script):
         comfyui_client_url = settings.get_comfyui_client_url()
 
         iframes = []
-        for workflow_type_id in external_code.get_workflow_type_ids(self.get_xxx2img_str(is_img2img)):
+        for workflow_type_id in external_code.get_workflow_type_ids(self.get_tab_str(is_img2img)):
             html_classes = ['comfyui-embedded-widget']
             if workflow_type_id == first_workflow_type_id:
                 html_classes.append('comfyui-embedded-widget-display')
@@ -128,6 +128,7 @@ class ComfyUIScript(scripts.Script):
             return
 
         global_state.queue_front = queue_front
+        global_state.current_tab = self.get_tab_str(isinstance(p, processing.StableDiffusionProcessingImg2Img))
         workflow_patcher.patch_processing(p)
 
     def postprocess_batch_list(self, p, pp, *args, **kwargs):
@@ -138,7 +139,7 @@ class ComfyUIScript(scripts.Script):
 
         batch_results = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_workflow_type,
-            tab=self.get_xxx2img_str(),
+            tab=self.get_tab_str(),
             batch_input=pp.images,
         )
 
@@ -150,7 +151,7 @@ class ComfyUIScript(scripts.Script):
         pp.images.clear()
         pp.images.extend(batch_results)
 
-        iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_xxx2img_str())
+        iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab_str())
 
 
 callbacks.register_callbacks()

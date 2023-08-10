@@ -2,7 +2,6 @@ import functools
 import torch
 import torchvision.transforms.functional as F
 from lib_comfyui import ipc, global_state, default_workflow_types, external_code
-from modules import shared
 
 
 __original_create_sampler = None
@@ -84,3 +83,21 @@ def p_img2img_init(*args, original_function, p_ref, **kwargs):
         p_ref.init_images = [F.to_pil_image(image_tensor * 255) for image_tensor in preprocessed_images]
 
     return original_function(*args, **kwargs)
+
+
+def before_unet(params):
+    if getattr(global_state, 'enabled', True):
+        params.x = torch.stack(external_code.run_workflow(
+            workflow_type=default_workflow_types.before_unet_workflow_type,
+            tab=global_state.current_tab,
+            batch_input=params.x.to(device='cpu'),
+        )).to(device=params.x.device)
+
+
+def after_unet(params):
+    if getattr(global_state, 'enabled', True):
+        params.x = torch.stack(external_code.run_workflow(
+            workflow_type=default_workflow_types.after_unet_workflow_type,
+            tab=global_state.current_tab,
+            batch_input=params.x.to(device='cpu'),
+        )).to(device=params.x.device)

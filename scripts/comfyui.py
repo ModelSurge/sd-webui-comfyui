@@ -19,7 +19,6 @@ class ComfyUIScript(scripts.Script):
         return scripts.AlwaysVisible
 
     def ui(self, is_img2img):
-        self.infotext_fields = []
         global_state.is_ui_instantiated = True
         with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
             return self.get_alwayson_ui(is_img2img)
@@ -79,6 +78,8 @@ class ComfyUIScript(scripts.Script):
         return queue_front,
 
     def setup_infotext_updates(self, workflow_types, xxx2img):
+        self.infotext_fields = []
+
         for workflow_type in workflow_types:
             textbox = gr.Textbox(visible=False)
 

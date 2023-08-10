@@ -7,6 +7,8 @@ import install_comfyui
 @ipc.restrict_to_process('webui')
 def create_section():
     from modules import shared
+    import gradio as gr
+
     section = ('comfyui', "ComfyUI")
     shared.opts.add_option('comfyui_enabled', shared.OptionInfo(True, 'Enable sd-webui-comfyui extension', section=section))
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
@@ -19,11 +21,50 @@ def create_section():
 
     shared.opts.onchange('comfyui_enabled', update_enabled)
 
+    shared.opts.add_option("comfyui_ipc_strategy", shared.OptionInfo(
+        next(iter(ipc_strategy_choices.keys())), "Interprocess communication strategy", gr.Dropdown, lambda: {"choices": list(ipc_strategy_choices.keys())}, section=section))
+    shared.opts.onchange('comfyui_ipc_strategy', update_ipc_strategy)
+    update_ipc_strategy()
+
+    shared.opts.add_option("comfyui_graceful_termination_timeout", shared.OptionInfo(
+        5, 'ComfyUI server graceful termination timeout (in seconds) when reloading the gradio UI (-1 to block until the ComfyUI server exits normally)', gr.Number, section=section))
+    shared.opts.onchange('comfyui_graceful_termination_timeout', update_comfyui_graceful_termination_timeout)
+    update_comfyui_graceful_termination_timeout()
+
 
 @ipc.restrict_to_process('webui')
 def update_enabled():
     from modules import shared
     global_state.enabled = shared.opts.data.get('comfyui_enabled', True)
+
+
+@ipc.restrict_to_process('webui')
+def update_ipc_strategy():
+    from modules import shared
+    ipc_strategy_choice = shared.opts.data.get('comfyui_ipc_strategy', next(iter(ipc_strategy_choices.keys())))
+    global_state.ipc_strategy_class = ipc_strategy_choices[ipc_strategy_choice]
+    global_state.ipc_strategy_class_name = global_state.ipc_strategy_class.__name__
+
+
+@ipc.restrict_to_process('webui')
+def update_comfyui_graceful_termination_timeout():
+    from modules import shared
+    timeout = shared.opts.data.get('comfyui_graceful_termination_timeout', 5)
+    global_state.comfyui_graceful_termination_timeout = timeout if timeout >= 0 else None
+
+
+ipc_strategy_choices = {
+    'Default': ipc.strategies.OsFriendlyIpcStrategy,
+    'Shared memory': ipc.strategies.SharedMemoryIpcStrategy,
+    'File system': ipc.strategies.FileSystemIpcStrategy,
+}
+
+
+ipc_display_names = {
+    v.__name__: k
+    for k, v in ipc_strategy_choices.items()
+    if k != 'Default'
+}
 
 
 @ipc.restrict_to_process('webui')
@@ -95,3 +136,20 @@ class WebuiSharedState:
 
 opts = WebuiOptions()
 shared_state = WebuiSharedState()
+
+
+__base_dir = None
+
+
+@ipc.run_in_process('webui')
+def get_extension_base_dir():
+    init_extension_base_dir()
+    return __base_dir
+
+
+@ipc.restrict_to_process('webui')
+def init_extension_base_dir():
+    global __base_dir
+    from modules import scripts
+    if __base_dir is None:
+        __base_dir = scripts.basedir()

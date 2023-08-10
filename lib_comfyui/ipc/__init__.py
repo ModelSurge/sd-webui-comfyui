@@ -1,7 +1,12 @@
+from . import callback
+from . import payload
+from . import strategies
+
 import gc
 import importlib
 import sys
-from lib_comfyui import parallel_utils, platform_utils
+import time
+import logging
 
 
 def run_in_process(process_id):
@@ -11,7 +16,15 @@ def run_in_process(process_id):
             if process_id == current_process_id:
                 return function(*args, **kwargs)
             else:
-                return current_process_queues[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+                start = time.time()
+                res = current_callback_proxies[process_id].get(args=(function.__module__, function.__qualname__, args, kwargs))
+                logging.debug(
+                    '[sd-webui-comfyui] IPC call %s -> %s %s:\t%s',
+                    current_process_id, process_id,
+                    time.time() - start,
+                    f'{function.__module__}.{function.__qualname__}(*{args}, **{kwargs})'
+                )
+                return res
 
         return wrapper
 
@@ -49,35 +62,29 @@ def call_fully_qualified(module_name, qualified_name, args, kwargs):
 
 
 current_process_id = 'webui'
-current_process_callback_listeners = {}
-current_process_queues = {}
-
-
-def reset_state():
-    assert not callback_listeners_started(), 'can only reset the ipc state when callback listeners are stopped'
-
-    current_process_callback_listeners['webui'] = parallel_utils.CallbackWatcher(parallel_utils.CallbackQueue(call_fully_qualified))
-    current_process_queues['comfyui'] = parallel_utils.CallbackQueue(call_fully_qualified)
-    gc.collect()
-
-
-def get_current_process_queues():
-    return {k: v.queue for k, v in current_process_callback_listeners.items()}
+current_callback_listeners = {}
+current_callback_proxies = {}
 
 
 def start_callback_listeners():
     assert not callback_listeners_started()
-    for callback_listener in current_process_callback_listeners.values():
+    for callback_listener in current_callback_listeners.values():
         callback_listener.start()
-    print('[sd-webui-comfyui]', 'started callback listeners for process', current_process_id)
+
+    print('[sd-webui-comfyui]', 'Started callback listeners for process', current_process_id)
 
 
 def stop_callback_listeners():
     assert callback_listeners_started()
-    for callback_listener in current_process_callback_listeners.values():
+    for callback_listener in current_callback_listeners.values():
         callback_listener.stop()
-    print('[sd-webui-comfyui]', 'stopped callback listeners for process', current_process_id)
+
+    current_callback_proxies.clear()
+    current_callback_listeners.clear()
+    gc.collect()
+
+    print('[sd-webui-comfyui]', 'Stopped callback listeners for process', current_process_id)
 
 
 def callback_listeners_started():
-    return any(callback_listener.is_running() for callback_listener in current_process_callback_listeners.values())
+    return any(callback_listener.is_running() for callback_listener in current_callback_listeners.values())

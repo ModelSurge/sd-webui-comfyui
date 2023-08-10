@@ -1,6 +1,6 @@
 import asyncio
 import json
-from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
+from lib_comfyui import external_code
 from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
 
 

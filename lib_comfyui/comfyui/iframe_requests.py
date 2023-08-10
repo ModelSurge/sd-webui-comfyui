@@ -1,11 +1,12 @@
 import asyncio
 import json
 import multiprocessing
-from typing import List
+import traceback
 import torch
-from lib_comfyui import parallel_utils, ipc, global_state, comfyui_context, torch_utils, external_code
+from queue import Empty
+from typing import List
+from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
-from lib_comfyui.webui import settings
 
 
 class ComfyuiIFrameRequests:
@@ -23,20 +24,25 @@ class ComfyuiIFrameRequests:
         if cls.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
-        webui_client_id = cls.focused_webui_client_id
+        events = cls.param_events[cls.focused_webui_client_id]
+        if request_params['workflowType'] not in events:
+            raise RuntimeError(f"The workflow type {cls.last_request['workflowType']} has not been registered by the active webui client {cls.focused_webui_client_id}")
+
         cls.last_request = request_params
-        parallel_utils.clear_queue(cls.finished_comfyui_queue)
-        cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_request['workflowType']].set)
+        clear_queue(cls.finished_comfyui_queue)
+        event = events[request_params['workflowType']]
+        cls.loop.call_soon_threadsafe(event.set)
         return cls.finished_comfyui_queue.get()
 
     @staticmethod
-    @ipc.run_in_process('comfyui')
+    @ipc.restrict_to_process('webui')
     def start_workflow_sync(
         batch_input: List[torch.Tensor],
         workflow_type_id: str,
         queue_front: bool,
     ):
-        if settings.shared_state.interrupted:
+        from modules import shared
+        if shared.state.interrupted:
             return batch_input
 
         global_state.node_inputs = batch_input
@@ -45,12 +51,16 @@ class ComfyuiIFrameRequests:
         queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
-        ComfyuiIFrameRequests.send({
-            'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-            'workflowType': workflow_type_id,
-            'requiredNodeTypes': [],
-            'queueFront': queue_front,
-        })
+        try:
+            ComfyuiIFrameRequests.send({
+                'request': '/sd-webui-comfyui/webui_request_queue_prompt',
+                'workflowType': workflow_type_id,
+                'requiredNodeTypes': [],
+                'queueFront': queue_front,
+            })
+        except RuntimeError as e:
+            print('\n'.join(traceback.format_exception_only(e)))
+            return batch_input
 
         queue_tracker.wait_until_done()
 
@@ -116,3 +126,11 @@ def set_workflow_graph(workflow_json, workflow_type_id):
         'workflowType': workflow_type_id,
         'workflow': json.loads(workflow_json)
     })
+
+
+def clear_queue(queue: multiprocessing.Queue):
+    while not queue.empty():
+        try:
+            queue.get(timeout=1)
+        except Empty:
+            pass

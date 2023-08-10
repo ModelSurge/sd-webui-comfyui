@@ -2,7 +2,6 @@ import functools
 import torch
 import torchvision.transforms.functional as F
 from lib_comfyui import ipc, global_state, default_workflow_types, external_code
-from modules import shared
 
 
 __original_create_sampler = None

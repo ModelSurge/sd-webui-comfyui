@@ -6,8 +6,8 @@ import contextlib
 import pickle
 import time
 from typing import Any, Union
-from lib_comfyui.ipc_payload import IpcReceiver, IpcSender
-from lib_comfyui.ipc_strategies import FileSystemIpcStrategy
+from lib_comfyui.ipc.payload import IpcReceiver, IpcSender
+from lib_comfyui.ipc.strategies import FileSystemIpcStrategy
 
 
 class MockStrategy:

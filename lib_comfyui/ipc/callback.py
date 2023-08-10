@@ -1,18 +1,18 @@
 import threading
 from typing import Callable
-from lib_comfyui import ipc_payload
+from lib_comfyui import ipc
 
 
 class CallbackWatcher:
     def __init__(self,callback: Callable, name: str, strategy_factory, clear_on_init: bool = False, clear_on_del: bool = True):
         self._callback = callback
-        self._res_sender = ipc_payload.IpcSender(
+        self._res_sender = ipc.payload.IpcSender(
             f'res_{name}',
             strategy_factory,
             clear_on_init=clear_on_init,
             clear_on_del=clear_on_del,
         )
-        self._args_receiver = ipc_payload.IpcReceiver(
+        self._args_receiver = ipc.payload.IpcReceiver(
             f'args_{name}',
             strategy_factory,
             clear_on_init=clear_on_init,
@@ -52,13 +52,13 @@ class CallbackWatcher:
 
 class CallbackProxy:
     def __init__(self, name: str, strategy_factory, clear_on_init: bool = False, clear_on_del: bool = True):
-        self._res_receiver = ipc_payload.IpcReceiver(
+        self._res_receiver = ipc.payload.IpcReceiver(
             f'res_{name}',
             strategy_factory,
             clear_on_init=clear_on_init,
             clear_on_del=clear_on_del,
         )
-        self._args_sender = ipc_payload.IpcSender(
+        self._args_sender = ipc.payload.IpcSender(
             f'args_{name}',
             strategy_factory,
             clear_on_init=clear_on_init,

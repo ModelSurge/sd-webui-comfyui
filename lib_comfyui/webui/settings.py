@@ -1,6 +1,6 @@
 import sys
 import textwrap
-from lib_comfyui import ipc, global_state, ipc_strategies
+from lib_comfyui import ipc, global_state
 import install_comfyui
 
 
@@ -54,9 +54,9 @@ def update_comfyui_graceful_termination_timeout():
 
 
 ipc_strategy_choices = {
-    'Default': ipc_strategies.OsFriendlyIpcStrategy,
-    'Shared memory': ipc_strategies.SharedMemoryIpcStrategy,
-    'File system': ipc_strategies.FileSystemIpcStrategy,
+    'Default': ipc.strategies.OsFriendlyIpcStrategy,
+    'Shared memory': ipc.strategies.SharedMemoryIpcStrategy,
+    'File system': ipc.strategies.FileSystemIpcStrategy,
 }
 
 
@@ -136,7 +136,6 @@ class WebuiSharedState:
 
 opts = WebuiOptions()
 shared_state = WebuiSharedState()
-from lib_comfyui import ipc
 
 
 __base_dir = None

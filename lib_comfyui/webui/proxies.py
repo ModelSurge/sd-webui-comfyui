@@ -100,8 +100,8 @@ class Model:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(Model.sd_model_apply(*args, **kwargs), device=self.device)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_model_apply(*args, **kwargs):
         from modules import shared, devices
         args = torch_utils.deep_to(args, shared.sd_model.device)
@@ -125,8 +125,8 @@ class Model:
 
         return res
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_model_getattr(item):
         from modules import shared
         res = getattr(shared.sd_model, item)
@@ -159,8 +159,8 @@ class ClipWrapper:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(ClipWrapper.sd_clip_tokenize_with_weights(*args, **kwargs), device=self.cond_stage_model.device)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_clip_tokenize_with_weights(text, return_word_ids=False):
         from modules import shared
         chunks, tokens_count, *_ = shared.sd_model.cond_stage_model.tokenize_line(text)
@@ -195,8 +195,8 @@ class Clip:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(Clip.sd_clip_encode_token_weights(*args, **kwargs), device=self.device)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_clip_encode_token_weights(token_weight_pairs_list):
         from modules import shared
         tokens = [
@@ -234,8 +234,8 @@ class Clip:
 
         return res
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_clip_getattr(item):
         from modules import shared
         res = getattr(shared.sd_model.cond_stage_model.wrapped.transformer, item)
@@ -278,8 +278,8 @@ class Vae:
         res = torch_utils.deep_to(Vae.sd_vae_encode(*args, **kwargs), device=self.device)
         return DistributionProxy(res)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_vae_encode(*args, **kwargs):
         from modules import shared, devices
         args = torch_utils.deep_to(args, shared.sd_model.device)
@@ -294,8 +294,8 @@ class Vae:
         kwargs = torch_utils.deep_to(kwargs, device='cpu')
         return torch_utils.deep_to(Vae.sd_vae_decode(*args, **kwargs), device=self.device)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_vae_decode(*args, **kwargs):
         from modules import shared, devices
         args = torch_utils.deep_to(args, shared.sd_model.device)
@@ -322,8 +322,8 @@ class Vae:
 
         return res
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def sd_vae_getattr(item):
         from modules import shared
         res = getattr(shared.sd_model.first_stage_model, item)

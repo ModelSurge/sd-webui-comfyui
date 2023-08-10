@@ -2,6 +2,8 @@ import gradio as gr
 from modules import scripts, ui
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher
+from lib_comfyui.comfyui import iframe_requests
+import functools
 
 
 class ComfyUIScript(scripts.Script):
@@ -71,7 +73,31 @@ class ComfyUIScript(scripts.Script):
                 _js='reloadComfyuiIFrames'
             )
 
+        self.setup_infotext_updates(workflow_types, xxx2img)
+
         return queue_front,
+
+    def setup_infotext_updates(self, workflow_types, xxx2img):
+        self.infotext_fields = []
+
+        for workflow_type in workflow_types:
+            textbox = gr.Textbox(visible=False)
+
+            def change_function(serialized_graph, workflow_type):
+                if not serialized_graph:
+                    return ''
+
+                ids = workflow_type.get_ids(xxx2img)
+                if not ids:
+                    return ''
+
+                workflow_type_id = ids[0]
+                iframe_requests.set_workflow_graph(serialized_graph, workflow_type_id)
+                return gr.Textbox.update(value='')
+
+            change_function = functools.partial(change_function, workflow_type=workflow_type)
+            textbox.change(change_function, [textbox], [textbox])
+            self.infotext_fields.append((textbox, workflow_type.base_id))
 
     def get_iframes_html(self, is_img2img: bool, first_workflow_type_id: str) -> str:
         comfyui_client_url = settings.get_comfyui_client_url()
@@ -123,6 +149,8 @@ class ComfyUIScript(scripts.Script):
 
         pp.images.clear()
         pp.images.extend(batch_results)
+
+        iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_xxx2img_str())
 
 
 callbacks.register_callbacks()

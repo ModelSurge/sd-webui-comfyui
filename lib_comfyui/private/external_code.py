@@ -185,7 +185,7 @@ def run_workflow(
         ValueError: If workflow_type is not present on the given tab
         AssertionError: If multiple candidate ids exist for workflow_type
     """
-    from lib_comfyui.comfyui.routes_extension import ComfyuiIFrameRequests
+    from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
 
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)

@@ -3,6 +3,7 @@ from lib_comfyui import global_state
 from lib_comfyui.webui.proxies import get_comfy_model_config
 from lib_comfyui.comfyui.webui_io import NODE_DISPLAY_NAME_MAPPINGS
 
+
 class WebuiImageInput:
     @classmethod
     def INPUT_TYPES(cls):

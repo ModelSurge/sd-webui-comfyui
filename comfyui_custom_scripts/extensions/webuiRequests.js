@@ -6,14 +6,21 @@ const POLLING_TIMEOUT = 500;
 
 
 const request_map = new Map([
+    ['/sd-webui-comfyui/webui_request_timeout', async (json) => {
+        return 'timeout';
+    }],
     ['/sd-webui-comfyui/webui_request_queue_prompt', async (json) => {
         const workflow = app.graph.serialize();
         await app.queuePrompt(json.queueFront ? -1 : 0, 1);
         return 'queued_prompt_comfyui';
     }],
-    ['/sd-webui-comfyui/webui_request_timeout', async (json) => {
-        return 'timeout';
-    }]
+    ['/sd-webui-comfyui/webui_request_serialize_graph', async (json) => {
+        return app.graph.original_serialize();
+    }],
+    ['/sd-webui-comfyui/webui_request_set_workflow', async (json) => {
+        app.loadGraphData(json.workflow);
+        return 'success';
+    }],
 ]);
 
 async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {

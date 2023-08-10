@@ -2,8 +2,9 @@ import asyncio
 import json
 import multiprocessing
 import traceback
-from typing import List
 import torch
+from queue import Empty
+from typing import List
 from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 
@@ -125,3 +126,11 @@ def set_workflow_graph(workflow_json, workflow_type_id):
         'workflowType': workflow_type_id,
         'workflow': json.loads(workflow_json)
     })
+
+
+def clear_queue(queue: multiprocessing.Queue):
+    while not queue.empty():
+        try:
+            queue.get(timeout=1)
+        except Empty:
+            pass

@@ -37,8 +37,8 @@ def start_comfyui_process(comfyui_install_location):
     global comfyui_process
 
     executable = get_comfyui_executable(comfyui_install_location)
-    install_comfyui_requirements(executable)
     comfyui_env = get_comfyui_env(executable, comfyui_install_location)
+    install_comfyui_requirements(executable, comfyui_install_location, comfyui_env)
     args = [executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()
     comfyui_process = subprocess.Popen(
         args=args,
@@ -81,19 +81,25 @@ def get_base_sys_path(executable, comfyui_install_location):
     ).stdout.split(os.pathsep)[1:]  # remove PYTHONHOME because it is automatically added
 
 
-def install_comfyui_requirements(executable):
+def install_comfyui_requirements(executable, comfyui_install_location, comfyui_env):
     if executable == sys.executable:
         return
 
-    subprocess.check_call([
-        executable,
-        *(['-s'] if "python_embeded" in sys.executable or "python_embedded" in sys.executable else []),
-        '-m',
-        'pip',
-        'install',
-        '-r',
-        str(Path(settings.get_extension_base_dir(), 'requirements.txt')),
-    ])
+    print('[sd-webui-comfyui]', f'Detected foreign ComfyUI install. Installing pip requirements...')
+    subprocess.check_call(
+        args=[
+            executable,
+            *(['-s'] if "python_embeded" in executable or "python_embedded" in executable else []),
+            '-m',
+            'pip',
+            'install',
+            '-r',
+            str(Path(settings.get_extension_base_dir(), 'requirements.txt')),
+        ],
+        executable=executable,
+        cwd=str(comfyui_install_location),
+        env=comfyui_env,
+    )
 
 
 @ipc.restrict_to_process('webui')

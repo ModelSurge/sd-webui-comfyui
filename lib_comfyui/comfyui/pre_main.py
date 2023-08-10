@@ -36,6 +36,7 @@ def fix_path():
         for p in path
         if not (p in seen or seen.add(p))
     )
+    # put comfyui install dir first
     sys.path[:0] = [sys.path.pop(sys.path.index(os.getcwd()))]
 
 

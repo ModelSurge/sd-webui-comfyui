@@ -16,8 +16,8 @@ class ComfyuiIFrameRequests:
     loop = None
     focused_webui_client_id = None
 
-    @ipc.run_in_process('comfyui')
     @staticmethod
+    @ipc.run_in_process('comfyui')
     def send(request_params):
         cls = ComfyuiIFrameRequests
         if cls.focused_webui_client_id is None:
@@ -29,8 +29,8 @@ class ComfyuiIFrameRequests:
         cls.loop.call_soon_threadsafe(cls.param_events[webui_client_id][cls.last_request['workflowType']].set)
         return cls.finished_comfyui_queue.get()
 
-    @ipc.run_in_process('comfyui')
     @staticmethod
+    @ipc.run_in_process('comfyui')
     def start_workflow_sync(
         batch_input: List[torch.Tensor],
         workflow_type_id: str,

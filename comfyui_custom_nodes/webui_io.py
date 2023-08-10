@@ -82,29 +82,9 @@ class WebuiLatentOutput:
         return []
 
 
-class InvertLatent:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "latents": ("LATENT", ),
-            },
-        }
-    RETURN_TYPES = ("LATENT", )
-    FUNCTION = "invert"
-
-    CATEGORY = "webui"
-
-    OUTPUT_NODE = False
-
-    def invert(self, latents):
-        return [{'samples': -latents['samples']}]
-
-
 NODE_CLASS_MAPPINGS = {
     "ImageFromWebui": WebuiImageInput,
     "ImageToWebui": WebuiImageOutput,
     "LatentFromWebui": WebuiLatentInput,
     "LatentToWebui": WebuiLatentOutput,
-    "InvertLatent": InvertLatent,
 }

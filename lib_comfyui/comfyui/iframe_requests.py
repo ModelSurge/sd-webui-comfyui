@@ -29,7 +29,7 @@ class ComfyuiIFrameRequests:
             raise RuntimeError(f"The workflow type {cls.last_request['workflowType']} has not been registered by the active webui client {cls.focused_webui_client_id}")
 
         cls.last_request = request_params
-        parallel_utils.clear_queue(cls.finished_comfyui_queue)
+        clear_queue(cls.finished_comfyui_queue)
         event = events[request_params['workflowType']]
         cls.loop.call_soon_threadsafe(event.set)
         return cls.finished_comfyui_queue.get()

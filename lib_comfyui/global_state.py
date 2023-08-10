@@ -17,8 +17,8 @@ class GlobalState(ModuleType):
 
         return GlobalState.getattr(item)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def getattr(item):
         try:
             return GlobalState.__state[item]
@@ -28,24 +28,24 @@ class GlobalState(ModuleType):
     def __setattr__(self, item, value):
         GlobalState.setattr(item, value)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def setattr(item, value):
         GlobalState.__state[item] = value
 
     def __delattr__(self, item):
         GlobalState.delattr(item)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def delattr(item):
         del GlobalState.__state[item]
 
     def __contains__(self, item):
         return GlobalState.contains(item)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def contains(item):
         return item in GlobalState.__state
 

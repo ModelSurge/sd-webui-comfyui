@@ -75,8 +75,8 @@ class WebuiOptions:
     def __getattr__(self, item):
         return WebuiOptions.opts_getattr(item)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def opts_getattr(item):
         from modules import shared
         return getattr(shared.opts, item)
@@ -86,8 +86,8 @@ class WebuiSharedState:
     def __getattr__(self, item):
         return WebuiSharedState.shared_state_getattr(item)
 
-    @ipc.run_in_process('webui')
     @staticmethod
+    @ipc.run_in_process('webui')
     def shared_state_getattr(item):
         from modules import shared
         return getattr(shared.state, item)

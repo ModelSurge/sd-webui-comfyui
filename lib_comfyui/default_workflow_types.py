@@ -20,6 +20,16 @@ preprocess_latent_workflow_type = external_code.WorkflowType(
     tabs='img2img',
     default_workflow=default_workflows_dir / 'process_latent.json',
 )
+before_unet_workflow_type = external_code.WorkflowType(
+    base_id='before_unet',
+    display_name='Before unet',
+    default_workflow=default_workflows_dir / 'process_latent.json',
+)
+after_unet_workflow_type = external_code.WorkflowType(
+    base_id='after_unet',
+    display_name='After unet',
+    default_workflow=default_workflows_dir / 'process_latent.json',
+)
 postprocess_workflow_type = external_code.WorkflowType(
     base_id='postprocess',
     display_name='Postprocess',
@@ -37,6 +47,8 @@ def add_default_workflow_types():
         sandbox_tab_workflow_type,
         postprocess_workflow_type,
         postprocess_latent_workflow_type,
+        before_unet_workflow_type,
+        after_unet_workflow_type,
         preprocess_workflow_type,
         preprocess_latent_workflow_type,
     ]

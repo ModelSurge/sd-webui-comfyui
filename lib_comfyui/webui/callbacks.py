@@ -9,6 +9,8 @@ def register_callbacks():
     script_callbacks.on_ui_settings(on_ui_settings)
     script_callbacks.on_app_started(on_app_started)
     script_callbacks.on_script_unloaded(on_script_unloaded)
+    script_callbacks.on_cfg_denoiser(on_cfg_denoiser)
+    script_callbacks.on_cfg_denoised(on_cfg_denoised)
 
 
 @ipc.restrict_to_process('webui')
@@ -32,3 +34,13 @@ def on_script_unloaded():
     workflow_patcher.clear_patches()
     global_state.is_ui_instantiated = False
     external_code.clear_workflow_types()
+
+
+@ipc.restrict_to_process('webui')
+def on_cfg_denoiser(params):
+    workflow_patcher.before_unet(params)
+
+
+@ipc.restrict_to_process('webui')
+def on_cfg_denoised(params):
+    workflow_patcher.after_unet(params)

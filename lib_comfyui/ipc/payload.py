@@ -6,11 +6,12 @@ import tempfile
 import time
 import logging
 from pathlib import Path
-from typing import Optional, Any
+from typing import Optional, Any, Callable
+from lib_comfyui.ipc.strategies import IpcStrategy
 
 
 class IpcPayload:
-    def __init__(self, name, strategy_factory, lock_directory: str = None, clear_on_init: bool = False, clear_on_del: bool = True):
+    def __init__(self, name, strategy_factory: Callable[[str], IpcStrategy], lock_directory: str = None, clear_on_init: bool = False, clear_on_del: bool = True):
         self._name = name
         self._strategy = strategy_factory(f'ipc_payload_{name}')
         lock_directory = tempfile.gettempdir() if lock_directory is None else lock_directory

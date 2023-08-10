@@ -2,6 +2,7 @@ import contextlib
 import dataclasses
 import os
 import pickle
+from abc import ABC, abstractmethod
 from multiprocessing.shared_memory import SharedMemory
 from typing import IO, Union
 
@@ -13,7 +14,26 @@ __all__ = [
 ]
 
 
-class FileSystemIpcStrategy:
+class IpcStrategy(ABC):
+    @abstractmethod
+    def is_empty(self, lock_file: IO) -> bool:
+        pass
+
+    @abstractmethod
+    def set_data(self, lock_file: IO, data: Union[bytes, bytearray, memoryview]) -> None:
+        pass
+
+    @abstractmethod
+    @contextlib.contextmanager
+    def get_data(self, lock_file: IO) -> Union[bytes, bytearray, memoryview]:
+        pass
+
+    @abstractmethod
+    def clear(self, lock_file: IO) -> None:
+        pass
+
+
+class FileSystemIpcStrategy(IpcStrategy):
     def __init__(self, _name: str):
         pass
 
@@ -38,7 +58,7 @@ class FileSystemIpcStrategy:
 BytesLike = Union[bytes, bytearray, memoryview]
 
 
-class SharedMemoryIpcStrategy:
+class SharedMemoryIpcStrategy(IpcStrategy):
     def __init__(self, shm_name: str):
         self._shm_name = shm_name
         self._shm = None

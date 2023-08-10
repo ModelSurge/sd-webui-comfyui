@@ -75,6 +75,11 @@ class ComfyUIScript(scripts.Script):
                 _js='reloadComfyuiIFrames'
             )
 
+        self.setup_infotext_updates(workflow_types, xxx2img)
+
+        return queue_front,
+
+    def setup_infotext_updates(self, workflow_types, xxx2img):
         for workflow_type in workflow_types:
             textbox = gr.Textbox(visible=False)
 
@@ -93,8 +98,6 @@ class ComfyUIScript(scripts.Script):
             change_function = functools.partial(change_function, workflow_type=workflow_type)
             textbox.change(change_function, [textbox], [textbox])
             self.infotext_fields.append((textbox, workflow_type.base_id))
-
-        return queue_front,
 
     def get_iframes_html(self, is_img2img: bool, first_workflow_type_id: str) -> str:
         comfyui_client_url = settings.get_comfyui_client_url()

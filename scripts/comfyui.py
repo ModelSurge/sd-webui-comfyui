@@ -1,10 +1,9 @@
-import functools
-
 import gradio as gr
-from modules import shared, scripts, ui
+from modules import scripts, ui
 from lib_comfyui import comfyui_context, global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher
 from lib_comfyui.comfyui import iframe_requests
+import functools
 
 
 class ComfyUIScript(scripts.Script):

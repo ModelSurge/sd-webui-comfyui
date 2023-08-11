@@ -3,7 +3,7 @@ import json
 import gradio as gr
 from modules import scripts, ui
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
-from lib_comfyui.webui import callbacks, settings, workflow_patcher
+from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils
 from lib_comfyui.comfyui import iframe_requests
 import functools
 
@@ -41,10 +41,9 @@ class ComfyUIScript(scripts.Script):
             interactive=False,
         )
 
-        enabled_display_names_json = gr.HTML(
-            json.dumps([]),
-            visible=False,
-            interactive=False,
+        enabled_display_names = gradio_utils.ExtensionDynamicProperty(
+            key='enabled_display_names',
+            value=[],
         )
 
         with gr.Row():
@@ -92,38 +91,37 @@ class ComfyUIScript(scripts.Script):
             inputs=[current_workflow_type_id],
         )
         current_workflow_display_name.change(
-            fn=lambda current_workflow_display_name, enabled_display_names_json: current_workflow_display_name in json.loads(enabled_display_names_json),
-            inputs=[current_workflow_display_name, enabled_display_names_json],
+            fn=lambda current_workflow_display_name, enabled_display_names: current_workflow_display_name in enabled_display_names,
+            inputs=[current_workflow_display_name, enabled_display_names],
             outputs=[enable],
         )
         enable.select(
-            fn=lambda current_workflow_display_name, enabled_display_names_json, enable: json.dumps(list(
-                (set(json.loads(enabled_display_names_json)) | {current_workflow_display_name})
+            fn=lambda current_workflow_display_name, enabled_display_names, enable: list(
+                set(enabled_display_names) | {current_workflow_display_name}
                 if enable
-                else (set(json.loads(enabled_display_names_json)) - {current_workflow_display_name})
-            )),
-            inputs=[current_workflow_display_name, enabled_display_names_json, enable],
-            outputs=[enabled_display_names_json]
+                else set(enabled_display_names) - {current_workflow_display_name}
+            ),
+            inputs=[current_workflow_display_name, enabled_display_names, enable],
+            outputs=[enabled_display_names]
         )
         enable_style = gr.HTML()
-        for comp in [current_workflow_display_name, enabled_display_names_json]:
+        for comp in [current_workflow_display_name, enabled_display_names]:
             comp.change(
-                fn=lambda enabled_display_names_json, current_workflow_display_name: f'''<style>
-                    {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in json.loads(enabled_display_names_json) else ''
+                fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
+                    {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in enabled_display_names else ''
                     }{','.join(
                         f'div#{self.elem_id("displayed_workflow_type")} ul.options > li.item[data-value="{display_name}"]'
-                        for display_name in json.loads(enabled_display_names_json)
+                        for display_name in enabled_display_names
                     )} {{
                         color: greenyellow !important;
                         font-weight: bold;
                     }}
                 </style>''',
-                inputs=[enabled_display_names_json, current_workflow_display_name],
+                inputs=[enabled_display_names, current_workflow_display_name],
                 outputs=[enable_style],
             )
 
-        def update_enabled_workflow_type_ids(enabled_display_names_json):
-            enabled_display_names = json.loads(enabled_display_names_json)
+        def update_enabled_workflow_type_ids(enabled_display_names):
             if not hasattr(global_state, 'enabled_workflow_type_ids'):
                 global_state.enabled_workflow_type_ids = {}
 
@@ -133,9 +131,9 @@ class ComfyUIScript(scripts.Script):
             }
             global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
 
-        enabled_display_names_json.change(
+        enabled_display_names.change(
             fn=update_enabled_workflow_type_ids,
-            inputs=[enabled_display_names_json],
+            inputs=[enabled_display_names],
         )
 
         self.setup_infotext_updates(workflow_types, xxx2img)

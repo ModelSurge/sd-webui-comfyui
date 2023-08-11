@@ -24,7 +24,7 @@ iframe.comfyui-embedded-widget-display {
 }
 
 #script_txt2txt_comfyui_refresh_button {
-    max-width: 25em;
-    min-width: 25em;
+    max-width: 50%;
+    min-width: 50%;
     height: 2.4em;
 }

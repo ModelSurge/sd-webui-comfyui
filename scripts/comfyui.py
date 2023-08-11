@@ -22,7 +22,7 @@ class ComfyUIScript(scripts.Script):
 
     def ui(self, is_img2img):
         global_state.is_ui_instantiated = True
-        with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')) as accordion:
+        with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
             return self.get_alwayson_ui(is_img2img)
 
     def get_alwayson_ui(self, is_img2img: bool):
@@ -51,25 +51,26 @@ class ComfyUIScript(scripts.Script):
             gr.HTML(value=self.get_iframes_html(is_img2img, workflow_type_ids[first_workflow_type.display_name]))
 
         with gr.Row():
-            enable = gr.Checkbox(
-                label='Enable',
-                elem_id=self.elem_id('enabled'),
-                value=False,
-            )
+            with gr.Column():
+                enable = gr.Checkbox(
+                    label='Enable',
+                    elem_id=self.elem_id('enabled'),
+                    value=False,
+                )
 
-            current_workflow_display_name = gr.Dropdown(
-                label='Edit workflow type',
-                choices=[workflow_type.display_name for workflow_type in workflow_types],
-                value=first_workflow_type.display_name,
-                elem_id=self.elem_id('displayed_workflow_type'),
-            )
+                queue_front = gr.Checkbox(
+                    label='Queue front',
+                    elem_id=self.elem_id('queue_front'),
+                    value=True,
+                )
 
-        with gr.Row():
-            queue_front = gr.Checkbox(
-                label='Queue front',
-                elem_id=self.elem_id('queue_front'),
-                value=True,
-            )
+            with gr.Column():
+                current_workflow_display_name = gr.Dropdown(
+                    label='Edit workflow type',
+                    choices=[workflow_type.display_name for workflow_type in workflow_types],
+                    value=first_workflow_type.display_name,
+                    elem_id=self.elem_id('displayed_workflow_type'),
+                )
 
         with gr.Row():
             refresh_button = gr.Button(

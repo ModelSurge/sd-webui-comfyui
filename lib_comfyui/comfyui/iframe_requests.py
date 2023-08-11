@@ -122,6 +122,9 @@ def is_default_workflow(workflow_type_id, current_graph=None):
     if len(current_graph['links']) != len(default_graph['links']):
         return False
 
+    current_graph['nodes'].sort(key=lambda e: e['type'])
+    default_graph['nodes'].sort(key=lambda e: e['type'])
+
     def create_adjacency_matrix(graph):
         adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)
         for i, i_node in enumerate(graph['nodes']):
@@ -139,20 +142,23 @@ def is_default_workflow(workflow_type_id, current_graph=None):
 
 
 def extend_infotext_with_comfyui_workflows(p, tab):
+    workflows = {}
     for workflow_type in external_code.get_workflow_types(tab):
         workflow_type_id = workflow_type.get_ids(tab)[0]
-        current_graph = get_workflow_graph(workflow_type_id)
-        if is_default_workflow(workflow_type_id, current_graph):
+        graph = get_workflow_graph(workflow_type_id)
+        if is_default_workflow(workflow_type_id, graph):
             continue
 
-        p.extra_generation_params[workflow_type.base_id] = json.dumps(current_graph)
+        workflows[workflow_type.base_id] = graph
+
+    p.extra_generation_params['ComfyUI Workflows'] = json.dumps(workflows)
 
 
 def set_workflow_graph(workflow_json, workflow_type_id):
     return ComfyuiIFrameRequests.send({
         'request': '/sd-webui-comfyui/webui_request_set_workflow',
         'workflowType': workflow_type_id,
-        'workflow': json.loads(workflow_json),
+        'workflow': workflow_json,
     })
 
 

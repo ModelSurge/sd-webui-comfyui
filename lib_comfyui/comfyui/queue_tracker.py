@@ -12,11 +12,6 @@ class PromptQueueTracker:
     server_instance = None
 
     @staticmethod
-    @ipc.run_in_process('comfyui')
-    def check_done_event(*args, **kwargs):
-        return PromptQueueTracker.done_event.wait(*args, **kwargs)
-
-    @staticmethod
     def patched__init__(self, server_instance):
         prompt_queue = self
         PromptQueueTracker.server_instance = server_instance
@@ -85,12 +80,17 @@ def wait_until_done():
 
     from modules import shared
     while True:
-        has_been_set = PromptQueueTracker.check_done_event(timeout=1)
+        has_been_set = check_done_event(timeout=1)
         if has_been_set:
             return True
         elif shared.state.interrupted:
             cancel_queued_workflow()
             return False
+
+
+@ipc.run_in_process('comfyui')
+def check_done_event(*args, **kwargs):
+    return PromptQueueTracker.done_event.wait(*args, **kwargs)
 
 
 @ipc.run_in_process('comfyui')

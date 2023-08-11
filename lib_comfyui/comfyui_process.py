@@ -7,7 +7,7 @@ from pathlib import Path
 
 from lib_comfyui import ipc, torch_utils, argv_conversion, global_state
 from lib_comfyui.webui import settings
-from lib_comfyui.comfyui import pre_main, get_sys_path
+from lib_comfyui.comfyui import pre_main, print_sys_path
 
 
 comfyui_process = None
@@ -72,7 +72,7 @@ def get_base_sys_path(executable, comfyui_install_location):
     env = os.environ.copy()
     del env['PYTHONPATH']
     return subprocess.run(
-        args=[executable, inspect.getfile(get_sys_path)],
+        args=[executable, inspect.getfile(print_sys_path)],
         executable=executable,
         cwd=str(comfyui_install_location),
         env=env,

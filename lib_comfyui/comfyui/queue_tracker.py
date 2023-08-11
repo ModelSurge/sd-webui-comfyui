@@ -41,7 +41,7 @@ class PromptQueueTracker:
         def patched_wipe_queue(*args, original_wipe_queue, **kwargs):
             with prompt_queue.mutex:
                 should_release_webui = True
-                for _, v in prompt_queue.currently_running.items():
+                for v in prompt_queue.currently_running.values():
                     if abs(v[0]) == PromptQueueTracker.tracked_id:
                         should_release_webui = False
 
@@ -73,20 +73,53 @@ def setup_tracker_id():
     PromptQueueTracker.done_event.clear()
 
 
-@ipc.run_in_process('comfyui')
+@ipc.restrict_to_process('webui')
 def wait_until_done():
+    if not wait_until_put():
+        return False
+
+    from modules import shared
+    while True:
+        has_been_set = check_done_event(timeout=1)
+        if has_been_set:
+            return True
+        elif shared.state.interrupted:
+            cancel_queued_workflow()
+            return False
+
+
+@ipc.run_in_process('comfyui')
+def check_done_event(*args, **kwargs):
+    return PromptQueueTracker.done_event.wait(*args, **kwargs)
+
+
+@ipc.run_in_process('comfyui')
+def wait_until_put():
     was_put = PromptQueueTracker.put_event.wait(timeout=3)
     if not was_put:
         PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
-        return
+        return False
 
     if not tracked_id_present():
-        return
+        return False
 
-    while True:
-        has_been_set = PromptQueueTracker.done_event.wait(timeout=1)
-        if has_been_set:
+    return True
+
+
+@ipc.run_in_process('comfyui')
+def cancel_queued_workflow():
+    with PromptQueueTracker.queue_instance.mutex:
+        is_running = False
+        for v in PromptQueueTracker.queue_instance.currently_running.values():
+            if abs(v[0]) == PromptQueueTracker.tracked_id:
+                is_running = True
+
+        if is_running:
+            import nodes
+            nodes.interrupt_processing()
             return
+
+        PromptQueueTracker.queue_instance.delete_queue_item(lambda a: a[1] == PromptQueueTracker.tracked_id)
 
 
 @ipc.restrict_to_process('comfyui')

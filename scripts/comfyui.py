@@ -85,8 +85,9 @@ class ComfyUIScript(scripts.Script):
             if not serialized_graphs:
                 return gr.Textbox.update(value='')
 
+            serialized_graphs = json.loads(serialized_graphs)
             workflow_graphs = {
-                workflow_type.get_ids(xxx2img)[0]: json.loads(serialized_graphs).get(workflow_type.base_id, workflow_type.default_workflow)
+                workflow_type.get_ids(xxx2img)[0]: serialized_graphs.get(workflow_type.base_id, json.loads(workflow_type.default_workflow))
                 for workflow_type in workflow_types
             }
 

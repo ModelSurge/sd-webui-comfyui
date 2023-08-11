@@ -58,13 +58,6 @@ class ComfyUIScript(scripts.Script):
                     value=False,
                 )
 
-                queue_front = gr.Checkbox(
-                    label='Queue front',
-                    elem_id=self.elem_id('queue_front'),
-                    value=True,
-                )
-
-            with gr.Column():
                 current_workflow_display_name = gr.Dropdown(
                     label='Edit workflow type',
                     choices=[workflow_type.display_name for workflow_type in workflow_types],
@@ -72,15 +65,21 @@ class ComfyUIScript(scripts.Script):
                     elem_id=self.elem_id('displayed_workflow_type'),
                 )
 
-        with gr.Row():
-            refresh_button = gr.Button(
-                value=f'{ui.refresh_symbol} Reload ComfyUI interfaces (client side)',
-                elem_id=self.elem_id('refresh_button'),
-            )
-            refresh_button.click(
-                fn=None,
-                _js='reloadComfyuiIFrames'
-            )
+            with gr.Column():
+                queue_front = gr.Checkbox(
+                    label='Queue front',
+                    elem_id=self.elem_id('queue_front'),
+                    value=True,
+                )
+
+                refresh_button = gr.Button(
+                    value=f'{ui.refresh_symbol} Reload ComfyUI interfaces (client side)',
+                    elem_id=self.elem_id('refresh_button'),
+                )
+                refresh_button.click(
+                    fn=None,
+                    _js='reloadComfyuiIFrames'
+                )
 
         current_workflow_display_name.change(
             fn=workflow_type_ids.get,

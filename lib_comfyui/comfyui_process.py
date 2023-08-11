@@ -57,7 +57,7 @@ def get_comfyui_executable(comfyui_install_location):
         else:
             executable = venv / 'bin' / 'python'
 
-        print('[sd-webui-comfyui]', f'Detected custom ComfyUI venv:', venv)
+        print('[sd-webui-comfyui]', 'Detected custom ComfyUI venv:', venv)
 
     return str(executable)
 
@@ -88,7 +88,7 @@ def install_comfyui_requirements(executable, comfyui_install_location, comfyui_e
     if executable == sys.executable:
         return
 
-    print('[sd-webui-comfyui]', f'Installing mandatory pip requirements in ComfyUI venv...')
+    print('[sd-webui-comfyui]', 'Installing mandatory pip requirements in ComfyUI venv...')
     subprocess.check_call(
         args=[
             executable,

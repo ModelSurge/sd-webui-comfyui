@@ -126,6 +126,9 @@ def is_default_workflow(workflow_type_id, current_graph=None):
         adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)
         for i, i_node in enumerate(graph['nodes']):
             for j, j_node in enumerate(graph['nodes']):
+                if i == j:
+                    continue
+
                 adjacency_matrix[i, j] = any(link[1] == i_node['id'] and link[3] == j_node['id'] for link in graph['links'])
 
         return adjacency_matrix

@@ -66,7 +66,8 @@ class ComfyuiIFrameRequests:
             print('\n'.join(traceback.format_exception_only(e)))
             return batch_input
 
-        queue_tracker.wait_until_done()
+        if not queue_tracker.wait_until_done():
+            return batch_input
 
         return global_state.node_outputs
 

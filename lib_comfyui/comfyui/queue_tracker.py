@@ -12,6 +12,11 @@ class PromptQueueTracker:
     server_instance = None
 
     @staticmethod
+    @ipc.run_in_process('comfyui')
+    def check_done_event(*args, **kwargs):
+        return PromptQueueTracker.done_event.wait(*args, **kwargs)
+
+    @staticmethod
     def patched__init__(self, server_instance):
         prompt_queue = self
         PromptQueueTracker.server_instance = server_instance
@@ -74,19 +79,47 @@ def setup_tracker_id():
 
 
 @ipc.run_in_process('comfyui')
-def wait_until_done():
+def wait_until_put():
     was_put = PromptQueueTracker.put_event.wait(timeout=3)
     if not was_put:
         PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
-        return
+        return False
 
     if not tracked_id_present():
-        return
+        return False
 
+    return True
+
+
+@ipc.restrict_to_process('webui')
+def wait_until_done():
+    if not wait_until_put():
+        return False
+
+    from modules import shared
     while True:
-        has_been_set = PromptQueueTracker.done_event.wait(timeout=1)
+        has_been_set = PromptQueueTracker.check_done_event(timeout=1)
         if has_been_set:
+            return True
+        elif shared.state.interrupted:
+            cancel_queued_workflow()
+            return False
+
+
+@ipc.run_in_process('comfyui')
+def cancel_queued_workflow():
+    with PromptQueueTracker.queue_instance.mutex:
+        is_running = False
+        for _, v in PromptQueueTracker.queue_instance.currently_running.items():
+            if abs(v[0]) == PromptQueueTracker.tracked_id:
+                is_running = True
+
+        if is_running:
+            import nodes
+            nodes.interrupt_processing()
             return
+
+        PromptQueueTracker.queue_instance.delete_queue_item(lambda a: a[1] == PromptQueueTracker.tracked_id)
 
 
 @ipc.restrict_to_process('comfyui')

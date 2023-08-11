@@ -132,7 +132,10 @@ def is_default_workflow(workflow_type_id, current_graph=None):
                 if i == j:
                     continue
 
-                adjacency_matrix[i, j] = any(link[1] == i_node['id'] and link[3] == j_node['id'] for link in graph['links'])
+                adjacency_matrix[i, j] = any(
+                    link[1] == i_node['id'] and link[3] == j_node['id']
+                    for link in graph['links']
+                )
 
         return adjacency_matrix
 

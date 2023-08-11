@@ -46,7 +46,7 @@ class PromptQueueTracker:
         def patched_wipe_queue(*args, original_wipe_queue, **kwargs):
             with prompt_queue.mutex:
                 should_release_webui = True
-                for _, v in prompt_queue.currently_running.items():
+                for v in prompt_queue.currently_running.values():
                     if abs(v[0]) == PromptQueueTracker.tracked_id:
                         should_release_webui = False
 
@@ -110,7 +110,7 @@ def wait_until_done():
 def cancel_queued_workflow():
     with PromptQueueTracker.queue_instance.mutex:
         is_running = False
-        for _, v in PromptQueueTracker.queue_instance.currently_running.items():
+        for v in PromptQueueTracker.queue_instance.currently_running.values():
             if abs(v[0]) == PromptQueueTracker.tracked_id:
                 is_running = True
 

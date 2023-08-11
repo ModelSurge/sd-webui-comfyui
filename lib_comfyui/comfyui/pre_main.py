@@ -28,24 +28,25 @@ def main():
 
 @ipc.restrict_to_process('comfyui')
 def fix_path():
-    path = sys.path.copy()
+    def make_path_unique():
+        path = sys.path.copy()
+        sys.path.clear()
+        seen = set()
+        sys.path.extend(
+            p for p in path
+            if not (p in seen or seen.add(p))
+        )
 
-    # make path entries unique
-    sys.path.clear()
-    seen = set()
-    sys.path.extend(
-        p
-        for p in path
-        if not (p in seen or seen.add(p))
-    )
+    def move_comfyui_to_front():
+        comfyui_dir = os.getcwd()
+        try:
+            sys.path.remove(comfyui_dir)
+        except ValueError:
+            pass
+        sys.path.insert(0, comfyui_dir)
 
-    # put comfyui install dir first
-    cwd = os.getcwd()
-    try:
-        sys.path.remove(cwd)
-    except ValueError:
-        pass
-    sys.path.insert(0, cwd)
+    make_path_unique()
+    move_comfyui_to_front()
 
 
 @ipc.restrict_to_process('comfyui')

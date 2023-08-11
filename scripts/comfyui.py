@@ -28,38 +28,95 @@ class ComfyUIScript(scripts.Script):
     def get_alwayson_ui(self, is_img2img: bool):
         xxx2img = self.get_xxx2img_str(is_img2img)
 
+        workflow_types = external_code.get_workflow_types(xxx2img)
+        first_workflow_type = workflow_types[0]
+        workflow_type_ids = {
+            workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
+            for workflow_type in workflow_types
+        }
+
+        current_workflow_type_id = gr.Text(
+            value=workflow_type_ids[first_workflow_type.display_name],
+            visible=False,
+            interactive=False,
+        )
+        enabled_display_names_json = gr.Textbox(
+            json.dumps([]),
+            visible=False,
+            interactive=False,
+        )
+
         with gr.Row():
             queue_front = gr.Checkbox(
                 label='Queue front',
                 elem_id=self.elem_id('queue_front'),
                 value=True,
             )
-            workflow_types = external_code.get_workflow_types(xxx2img)
-            first_workflow_type = workflow_types[0]
-            workflow_type_ids = {
-                workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
-                for workflow_type in workflow_types
-            }
-            workflow_display_name = gr.Dropdown(
+            enable = gr.Checkbox(
+                label='Enable',
+                elem_id=self.elem_id('enabled'),
+                value=False,
+            )
+
+            current_workflow_display_name = gr.Dropdown(
                 label='Edit workflow type',
                 choices=[workflow_type.display_name for workflow_type in workflow_types],
                 value=first_workflow_type.display_name,
                 elem_id=self.elem_id('displayed_workflow_type'),
             )
-            current_workflow_type_id = gr.Text(
-                value=workflow_type_ids[first_workflow_type.display_name],
-                visible=False,
-                interactive=False,
-            )
-            workflow_display_name.change(
+            current_workflow_display_name.change(
                 fn=workflow_type_ids.get,
-                inputs=[workflow_display_name],
+                inputs=[current_workflow_display_name],
                 outputs=[current_workflow_type_id],
             )
             current_workflow_type_id.change(
                 fn=None,
                 _js='changeDisplayedWorkflowType',
                 inputs=[current_workflow_type_id],
+            )
+            current_workflow_display_name.change(
+                fn=lambda current_workflow_display_name, enabled_display_names_json: current_workflow_display_name in json.loads(enabled_display_names_json),
+                inputs=[current_workflow_display_name, enabled_display_names_json],
+                outputs=[enable],
+            )
+            enable.select(
+                fn=lambda current_workflow_display_name, enabled_display_names_json, enable: json.dumps(list(
+                    (set(json.loads(enabled_display_names_json)) | {current_workflow_display_name})
+                    if enable
+                    else (set(json.loads(enabled_display_names_json)) - {current_workflow_display_name})
+                )),
+                inputs=[current_workflow_display_name, enabled_display_names_json, enable],
+                outputs=[enabled_display_names_json]
+            )
+            enable_style = gr.HTML()
+            enabled_display_names_json.change(
+                fn=lambda enabled_display_names_json, current_workflow_display_name: f'''<style>
+                    {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in json.loads(enabled_display_names_json) else ''
+                    }{','.join(
+                        f'div#{self.elem_id("displayed_workflow_type")} ul.options > li.item[data-value="{display_name}"]'
+                        for display_name in json.loads(enabled_display_names_json)
+                    )} {{
+                        color: lime;
+                    }}
+                </style>''',
+                inputs=[enabled_display_names_json, current_workflow_display_name],
+                outputs=[enable_style],
+            )
+
+            def update_global_state_enable(enabled_display_names_json):
+                enabled_display_names = json.loads(enabled_display_names_json)
+                if not hasattr(global_state, 'enabled_workflow_type_ids'):
+                    global_state.enabled_workflow_type_ids = {}
+
+                enabled_workflow_type_ids = {
+                    workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
+                    for workflow_type in workflow_types
+                }
+                global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
+
+            enabled_display_names_json.change(
+                fn=update_global_state_enable,
+                inputs=[enabled_display_names_json],
             )
 
         with gr.Row():
@@ -162,3 +219,6 @@ callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 settings.init_extension_base_dir()
 workflow_patcher.apply_patches()
+
+
+#   div#script_txt2txt_comfyui_displayed_workflow_type > label > div > ul.options > li.item[data-value="Postprocess"]

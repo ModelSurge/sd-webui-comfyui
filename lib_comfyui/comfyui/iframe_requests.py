@@ -122,16 +122,16 @@ def is_default_workflow(workflow_type_id, current_graph=None):
     if len(current_graph['links']) != len(default_graph['links']):
         return False
 
-    default_adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)
-    for i, i_node in enumerate(current_graph['nodes']):
-        for j, j_node in enumerate(current_graph['nodes']):
-            default_adjacency_matrix[i, j] = any(link[1] == i_node['id'] and link[3] == j_node['id'] for link in current_graph['links'])
+    def create_adjacency_matrix(graph):
+        adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)
+        for i, i_node in enumerate(graph['nodes']):
+            for j, j_node in enumerate(graph['nodes']):
+                adjacency_matrix[i, j] = any(link[1] == i_node['id'] and link[3] == j_node['id'] for link in graph['links'])
 
-    current_adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)
-    for i, i_node in enumerate(default_graph['nodes']):
-        for j, j_node in enumerate(default_graph['nodes']):
-            current_adjacency_matrix[i, j] = any(link[1] == i_node['id'] and link[3] == j_node['id'] for link in default_graph['links'])
+        return adjacency_matrix
 
+    default_adjacency_matrix = create_adjacency_matrix(default_graph)
+    current_adjacency_matrix = create_adjacency_matrix(current_graph)
     return (current_adjacency_matrix == default_adjacency_matrix).all()
 
 

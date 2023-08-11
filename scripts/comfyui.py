@@ -89,21 +89,22 @@ class ComfyUIScript(scripts.Script):
                 outputs=[enabled_display_names_json]
             )
             enable_style = gr.HTML()
-            enabled_display_names_json.change(
-                fn=lambda enabled_display_names_json, current_workflow_display_name: f'''<style>
-                    {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in json.loads(enabled_display_names_json) else ''
-                    }{','.join(
-                        f'div#{self.elem_id("displayed_workflow_type")} ul.options > li.item[data-value="{display_name}"]'
-                        for display_name in json.loads(enabled_display_names_json)
-                    )} {{
-                        color: lime;
-                    }}
-                </style>''',
-                inputs=[enabled_display_names_json, current_workflow_display_name],
-                outputs=[enable_style],
-            )
+            for comp in [current_workflow_display_name, enabled_display_names_json]:
+                comp.change(
+                    fn=lambda enabled_display_names_json, current_workflow_display_name: f'''<style>
+                        {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in json.loads(enabled_display_names_json) else ''
+                        }{','.join(
+                            f'div#{self.elem_id("displayed_workflow_type")} ul.options > li.item[data-value="{display_name}"]'
+                            for display_name in json.loads(enabled_display_names_json)
+                        )} {{
+                            color: lime;
+                        }}
+                    </style>''',
+                    inputs=[enabled_display_names_json, current_workflow_display_name],
+                    outputs=[enable_style],
+                )
 
-            def update_global_state_enable(enabled_display_names_json):
+            def update_enabled_workflow_type_ids(enabled_display_names_json):
                 enabled_display_names = json.loads(enabled_display_names_json)
                 if not hasattr(global_state, 'enabled_workflow_type_ids'):
                     global_state.enabled_workflow_type_ids = {}
@@ -115,7 +116,7 @@ class ComfyUIScript(scripts.Script):
                 global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
 
             enabled_display_names_json.change(
-                fn=update_global_state_enable,
+                fn=update_enabled_workflow_type_ids,
                 inputs=[enabled_display_names_json],
             )
 

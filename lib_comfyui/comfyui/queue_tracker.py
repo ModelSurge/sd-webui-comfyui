@@ -78,19 +78,6 @@ def setup_tracker_id():
     PromptQueueTracker.done_event.clear()
 
 
-@ipc.run_in_process('comfyui')
-def wait_until_put():
-    was_put = PromptQueueTracker.put_event.wait(timeout=3)
-    if not was_put:
-        PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
-        return False
-
-    if not tracked_id_present():
-        return False
-
-    return True
-
-
 @ipc.restrict_to_process('webui')
 def wait_until_done():
     if not wait_until_put():
@@ -104,6 +91,19 @@ def wait_until_done():
         elif shared.state.interrupted:
             cancel_queued_workflow()
             return False
+
+
+@ipc.run_in_process('comfyui')
+def wait_until_put():
+    was_put = PromptQueueTracker.put_event.wait(timeout=3)
+    if not was_put:
+        PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
+        return False
+
+    if not tracked_id_present():
+        return False
+
+    return True
 
 
 @ipc.run_in_process('comfyui')

@@ -113,6 +113,7 @@ class ComfyuiIFrameRequests:
 def is_default_workflow(workflow_type_id, current_graph=None):
     if current_graph is None:
         current_graph = get_workflow_graph(workflow_type_id)
+
     default_graph = json.loads(external_code.get_default_workflow_json(workflow_type_id))
     nodes_len = len(current_graph['nodes'])
     if nodes_len != len(default_graph['nodes']):

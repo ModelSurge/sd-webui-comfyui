@@ -139,7 +139,7 @@ class ComfyUIScript(scripts.Script):
         batch_results = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_workflow_type,
             tab=self.get_xxx2img_str(),
-            batch_input=pp.images,
+            batch_input=list(pp.images),
         )
 
         batch_size_factor = max(1, len(batch_results) // len(pp.images))

@@ -86,6 +86,7 @@ def get_base_sys_path(executable, comfyui_install_location):
 
 def install_comfyui_requirements(executable, comfyui_install_location, comfyui_env):
     if executable == sys.executable:
+        # requirements already installed in the webui by install.py
         return
 
     print('[sd-webui-comfyui]', 'Installing mandatory pip requirements in ComfyUI venv...')

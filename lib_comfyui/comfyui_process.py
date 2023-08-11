@@ -73,7 +73,8 @@ def get_comfyui_env(executable, comfyui_install_location):
 
 def get_base_sys_path(executable, comfyui_install_location):
     env = os.environ.copy()
-    del env['PYTHONPATH']
+    if 'PYTHONPATH' in env:
+        del env['PYTHONPATH']
     return subprocess.run(
         args=[executable, inspect.getfile(print_sys_path)],
         executable=executable,

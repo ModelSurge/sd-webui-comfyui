@@ -1,5 +1,6 @@
 import sys
 import textwrap
+from pathlib import Path
 from lib_comfyui import ipc, global_state
 import install_comfyui
 
@@ -68,11 +69,11 @@ ipc_display_names = {
 
 
 @ipc.restrict_to_process('webui')
-def get_install_location():
+def get_install_location() -> Path:
     from modules import shared
     install_location = install_comfyui.default_install_location
     install_location = shared.opts.data.get('comfyui_install_location', install_location).strip()
-    return install_location
+    return Path(install_location)
 
 
 @ipc.restrict_to_process('webui')

@@ -1,12 +1,12 @@
 import os
 import sys
-import git
 
 
 default_install_location = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ComfyUI')
 
 
 def main(install_location):
+    import git
     git_repo_url = 'https://github.com/comfyanonymous/ComfyUI.git'
     os.mkdir(install_location)
     git.Repo.clone_from(git_repo_url, install_location)

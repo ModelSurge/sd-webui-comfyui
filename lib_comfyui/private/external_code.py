@@ -1,3 +1,14 @@
+# /!\ IMPORTANT /!\
+# If you are a webui extension developer, please read this:
+# Do NOT import this module directly.
+# -> Instead, use the module `lib_comfyui.external_code`.
+# This file is under `lib_comfyui.private` for a good reason.
+# This is because if you import this module directly, you will redefine a copy of the classes defined here.
+# This will create unexpected issues with type checking and state inconsistency, among other unpredictable behavior.
+# -> Again, instead, please use the module at `lib_comfyui/external_code.py`.
+# This will make sure to reuse the global python module cache.
+
+
 import dataclasses
 from pathlib import Path
 from typing import List, Tuple, Union, Any, Optional

@@ -30,7 +30,7 @@ const ext = {
         let iframeInfo = null;
         try {
             iframeInfo = await iframeRegisteredEvent;
-        } catch (error) {
+        } catch {
             return;
         }
 

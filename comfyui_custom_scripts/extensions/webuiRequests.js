@@ -59,13 +59,7 @@ async function longPolling(workflowTypeId, webuiClientKey, startupResponse) {
 }
 
 async function onElementDomIdRegistered(callback) {
-    let iframeInfo = null;
-    try {
-        iframeInfo = await iframeRegisteredEvent;
-    } catch (error) {
-        console.log('The webui host did not make a request on time.');
-        return;
-    }
+    const iframeInfo = await iframeRegisteredEvent;
     console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${iframeInfo.workflowTypeDisplayName}" (${iframeInfo.workflowTypeId}) / ${iframeInfo.webuiClientId}`);
 
     event.source.postMessage(iframeInfo.workflowTypeId, event.origin);
@@ -143,7 +137,9 @@ async function patchDefaultGraph(workflowTypeId) {
 
 const iframeRegisteredEvent = new Promise((resolve, reject) => {
     let resolved = false;
-    const cancellable = setTimeout(reject, 2000);
+    const cancellable = setTimeout(() => {
+        reject('Cannot identify comfyui client: the webui host did not make a request on time.');
+    }, 2000);
     window.addEventListener("message", event => {
         const data = event.data;
         if (resolved || !data || !data.workflowTypeId) {

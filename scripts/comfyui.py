@@ -1,15 +1,23 @@
-import json
-import operator
-
-import gradio as gr
-from modules import scripts, ui
+from modules import scripts
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
-from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils
+from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils, accordion
 from lib_comfyui.comfyui import iframe_requests
-import functools
 
 
 class ComfyUIScript(scripts.Script):
+    def __init__(self):
+        self.accordion = None
+        self._is_img2img = None
+
+    @property
+    def is_img2img(self):
+        return self._is_img2img
+
+    @is_img2img.setter
+    def is_img2img(self, is_img2img):
+        self._is_img2img = is_img2img
+        self.accordion = accordion.AccordionInterface(self.elem_id, is_img2img)
+
     def get_xxx2img_str(self, is_img2img: bool = None):
         if is_img2img is None:
             is_img2img = self.is_img2img
@@ -23,187 +31,9 @@ class ComfyUIScript(scripts.Script):
 
     def ui(self, is_img2img):
         global_state.is_ui_instantiated = True
-        with gr.Accordion(f"ComfyUI", open=False, elem_id=self.elem_id('accordion')):
-            return self.get_alwayson_ui(is_img2img)
-
-    def get_alwayson_ui(self, is_img2img: bool):
-        xxx2img = self.get_xxx2img_str(is_img2img)
-
-        workflow_types = external_code.get_workflow_types(xxx2img)
-        first_workflow_type = workflow_types[0]
-        workflow_type_ids = {
-            workflow_type.display_name: workflow_type.get_ids(xxx2img)[0]
-            for workflow_type in workflow_types
-        }
-
-        current_workflow_type_id = gr.HTML(
-            value=workflow_type_ids[first_workflow_type.display_name],
-            visible=False,
-            interactive=False,
-        )
-
-        enabled_display_names = gradio_utils.ExtensionDynamicProperty(
-            key=f'enabled_display_names_{xxx2img}',
-            value=[],
-        )
-
-        with gr.Row():
-            gr.HTML(value=self.get_iframes_html(is_img2img, workflow_type_ids[first_workflow_type.display_name]))
-
-        with gr.Row():
-            with gr.Column():
-                enable = gr.Checkbox(
-                    label='Enable',
-                    elem_id=self.elem_id('enabled'),
-                    value=False,
-                )
-
-                current_workflow_display_name = gr.Dropdown(
-                    label='Edit workflow type',
-                    choices=[workflow_type.display_name for workflow_type in workflow_types],
-                    value=first_workflow_type.display_name,
-                    elem_id=self.elem_id('displayed_workflow_type'),
-                )
-
-            with gr.Column():
-                queue_front = gr.Checkbox(
-                    label='Queue front',
-                    elem_id=self.elem_id('queue_front'),
-                    value=True,
-                )
-
-                refresh_button = gr.Button(
-                    value=f'{ui.refresh_symbol} Reload ComfyUI interfaces (client side)',
-                    elem_id=self.elem_id('refresh_button'),
-                )
-                refresh_button.click(
-                    fn=None,
-                    _js='reloadComfyuiIFrames'
-                )
-
-        current_workflow_display_name.change(
-            fn=workflow_type_ids.get,
-            inputs=[current_workflow_display_name],
-            outputs=[current_workflow_type_id],
-        )
-        current_workflow_type_id.change(
-            fn=None,
-            _js='changeDisplayedWorkflowType',
-            inputs=[current_workflow_type_id],
-        )
-        current_workflow_display_name.change(
-            fn=operator.contains,
-            inputs=[enabled_display_names, current_workflow_display_name],
-            outputs=[enable],
-        )
-        enable.select(
-            fn=lambda enabled_display_names, current_workflow_display_name, enable: list(
-                set(enabled_display_names) | {current_workflow_display_name}
-                if enable else
-                set(enabled_display_names) - {current_workflow_display_name}
-            ),
-            inputs=[enabled_display_names, current_workflow_display_name, enable],
-            outputs=[enabled_display_names]
-        )
-
-        enable_style = gr.HTML()
-        for comp in [enabled_display_names, current_workflow_display_name]:
-            comp.change(
-                fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
-                    {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in enabled_display_names else ''
-                    }{','.join(
-                        f'div#{self.elem_id("displayed_workflow_type")} ul.options > li.item[data-value="{display_name}"]'
-                        for display_name in enabled_display_names
-                    )} {{
-                        color: greenyellow !important;
-                        font-weight: bold;
-                    }}
-                </style>''',
-                inputs=[enabled_display_names, current_workflow_display_name],
-                outputs=[enable_style],
-            )
-
-        def update_enabled_workflow_type_ids(enabled_display_names):
-            if not hasattr(global_state, 'enabled_workflow_type_ids'):
-                global_state.enabled_workflow_type_ids = {}
-
-            enabled_workflow_type_ids = {
-                workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
-                for workflow_type in workflow_types
-            }
-            global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
-
-        enabled_display_names.change(
-            fn=update_enabled_workflow_type_ids,
-            inputs=[enabled_display_names],
-        )
-
-        self.setup_infotext_updates(workflow_types, xxx2img, enabled_display_names, current_workflow_display_name, enable)
-
-        return queue_front,
-
-    def setup_infotext_updates(self, workflow_types, xxx2img, enabled_display_names, current_workflow_display_name, enable):
-        workflows_infotext_field = gr.Textbox(visible=False, interactive=False)
-        def change_function(serialized_graphs, current_workflow_display_name):
-            if not serialized_graphs:
-                return (gr.skip(),) * 3
-
-            if not hasattr(global_state, 'enabled_workflow_type_ids'):
-                global_state.enabled_workflow_type_ids = {}
-
-            serialized_graphs = json.loads(serialized_graphs)
-            workflow_graphs = {
-                workflow_type.get_ids(xxx2img)[0]: (
-                    serialized_graphs.get(workflow_type.base_id, json.loads(workflow_type.default_workflow)),
-                    workflow_type,
-                )
-                for workflow_type in workflow_types
-            }
-
-            new_enabled_display_names = []
-            for workflow_type_id, (graph, workflow_type) in workflow_graphs.items():
-                is_custom_workflow = workflow_type.base_id in serialized_graphs
-                global_state.enabled_workflow_type_ids[workflow_type_id] = is_custom_workflow
-                if is_custom_workflow:
-                    new_enabled_display_names.append(workflow_type.display_name)
-                iframe_requests.set_workflow_graph(graph, workflow_type_id)
-
-            return (
-                gr.Textbox.update(value=''),
-                gr.update(value=new_enabled_display_names),
-                gr.update(value=current_workflow_display_name in new_enabled_display_names),
-            )
-
-        workflows_infotext_field.change(
-            fn=change_function,
-            inputs=[workflows_infotext_field, current_workflow_display_name],
-            outputs=[workflows_infotext_field, enabled_display_names, enable],
-        )
-        self.infotext_fields = [(workflows_infotext_field, 'ComfyUI Workflows')]
-
-    def get_iframes_html(self, is_img2img: bool, first_workflow_type_id: str) -> str:
-        comfyui_client_url = settings.get_comfyui_client_url()
-
-        iframes = []
-        for workflow_type_id in external_code.get_workflow_type_ids(self.get_xxx2img_str(is_img2img)):
-            html_classes = ['comfyui-embedded-widget']
-            if workflow_type_id == first_workflow_type_id:
-                html_classes.append('comfyui-embedded-widget-display')
-
-            iframes.append(f"""
-                <iframe
-                    src="{comfyui_client_url}"
-                    workflow_type_id="{workflow_type_id}"
-                    class="{' '.join(html_classes)}"
-                    style="width:100%; height:500px;">
-                </iframe>
-            """)
-
-        return f"""
-            <div class="comfyui_iframes">
-                {''.join(iframes)}
-            </div>
-        """
+        self.accordion.arrange_components()
+        self.accordion.connect_events(self)
+        return self.accordion.get_script_ui_components()
 
     def process(self, p, queue_front, **kwargs):
         if not getattr(global_state, 'enabled', True):
@@ -239,6 +69,3 @@ callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 settings.init_extension_base_dir()
 workflow_patcher.apply_patches()
-
-
-#   div#script_txt2txt_comfyui_displayed_workflow_type > label > div > ul.options > li.item[data-value="Postprocess"]

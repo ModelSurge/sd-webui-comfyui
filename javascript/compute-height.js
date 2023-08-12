@@ -14,13 +14,16 @@ function changeDisplayedWorkflowType(targetWorkflowType) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    onComfyuiTabLoaded(resetServerState);
+    onComfyuiTabLoaded(clearEnabledWorkflowTypes);
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
 
 function onComfyuiTabLoaded(callback) {
-    console.log(getResetButtons());
-    if (getResetButtons()[0] === null || getWorkflowTypeIds() === null || getComfyuiContainer() === null || getTabNav() === null) {
+    if (getClearEnabledWorkflowTypesButtons().some(e => e === null) ||
+        getWorkflowTypeIds() === null ||
+        getComfyuiContainer() === null ||
+        getTabNav() === null
+    ) {
         // webui not yet ready, try again in a bit
         setTimeout(() => { onComfyuiTabLoaded(callback); }, POLLING_TIMEOUT);
         return;
@@ -29,9 +32,9 @@ function onComfyuiTabLoaded(callback) {
     callback();
 }
 
-function resetServerState() {
-    for (let resetButton of getResetButtons()) {
-        resetButton.click();
+function clearEnabledWorkflowTypes() {
+    for (let clearButton of getClearEnabledWorkflowTypesButtons()) {
+        clearButton.click();
     }
 }
 
@@ -86,7 +89,7 @@ function updateFooterStyle() {
     }
 }
 
-function getResetButtons() {
+function getClearEnabledWorkflowTypesButtons() {
     return [
         document.getElementById("script_txt2txt_comfyui_clear_enabled_workflow_types") ?? null,
         document.getElementById("script_img2img_comfyui_clear_enabled_workflow_types") ?? null,

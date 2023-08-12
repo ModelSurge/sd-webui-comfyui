@@ -20,9 +20,33 @@ def comfyui_print(*args, **kwargs):
 @ipc.restrict_to_process('comfyui')
 def main():
     builtins.print = comfyui_print
+    fix_path()
     setup_ipc()
     patch_comfyui()
     start_comfyui()
+
+
+@ipc.restrict_to_process('comfyui')
+def fix_path():
+    def make_path_unique():
+        path = sys.path.copy()
+        sys.path.clear()
+        seen = set()
+        sys.path.extend(
+            p for p in path
+            if not (p in seen or seen.add(p))
+        )
+
+    def move_comfyui_to_front():
+        comfyui_dir = os.getcwd()
+        try:
+            sys.path.remove(comfyui_dir)
+        except ValueError:
+            pass
+        sys.path.insert(0, comfyui_dir)
+
+    make_path_unique()
+    move_comfyui_to_front()
 
 
 @ipc.restrict_to_process('comfyui')

@@ -6,6 +6,7 @@ from lib_comfyui.comfyui import iframe_requests
 
 class ComfyUIScript(scripts.Script):
     def __init__(self):
+        # is_img2img is not available here. `accordion` is initialized below, in the is_img2img setter
         self.accordion = None
         self._is_img2img = None
 
@@ -22,7 +23,9 @@ class ComfyUIScript(scripts.Script):
     @is_img2img.setter
     def is_img2img(self, is_img2img):
         self._is_img2img = is_img2img
-        self.accordion = accordion.AccordionInterface(self.elem_id, is_img2img)
+        if self.accordion is None:
+            # now, we can instantiate the accordion
+            self.accordion = accordion.AccordionInterface(self.elem_id, is_img2img)
 
     def get_xxx2img_str(self, is_img2img: bool = None):
         if is_img2img is None:

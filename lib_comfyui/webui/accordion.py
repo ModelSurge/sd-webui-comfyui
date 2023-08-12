@@ -84,9 +84,6 @@ class AccordionInterface:
             </div>
         """
 
-    def get_script_ui_components(self) -> Tuple[gr.components.Component, ...]:
-        return self.queue_front,
-
     def arrange_components(self):
         if self._rendered:
             return
@@ -116,10 +113,13 @@ class AccordionInterface:
             _js='reloadComfyuiIFrames'
         )
 
-        self.activate_reset_button()
+        self.activate_clear_enabled_workflow_types_button()
         self.activate_displayed_workflow_type()
         self.activate_enabled_workflow_types()
         self._rendered = True
+
+    def get_script_ui_components(self) -> Tuple[gr.components.Component, ...]:
+        return self.queue_front,
 
     def setup_infotext_fields(self, script):
         workflows_infotext_field = gr.Textbox(visible=False)
@@ -130,7 +130,7 @@ class AccordionInterface:
         )
         script.infotext_fields = [(workflows_infotext_field, 'ComfyUI Workflows')]
 
-    def activate_reset_button(self):
+    def activate_clear_enabled_workflow_types_button(self):
         self.clear_enabled_workflow_types_button.click(
             fn=lambda: [],
             outputs=[self.enabled_display_names],

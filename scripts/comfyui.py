@@ -1,4 +1,5 @@
 import json
+import operator
 
 import gradio as gr
 from modules import scripts, ui
@@ -42,7 +43,7 @@ class ComfyUIScript(scripts.Script):
         )
 
         enabled_display_names = gradio_utils.ExtensionDynamicProperty(
-            key='enabled_display_names',
+            key=f'enabled_display_names_{xxx2img}',
             value=[],
         )
 
@@ -91,19 +92,20 @@ class ComfyUIScript(scripts.Script):
             inputs=[current_workflow_type_id],
         )
         current_workflow_display_name.change(
-            fn=lambda current_workflow_display_name, enabled_display_names: current_workflow_display_name in enabled_display_names,
-            inputs=[current_workflow_display_name, enabled_display_names],
+            fn=operator.contains,
+            inputs=[enabled_display_names, current_workflow_display_name],
             outputs=[enable],
         )
         enable.select(
             fn=lambda current_workflow_display_name, enabled_display_names, enable: list(
                 set(enabled_display_names) | {current_workflow_display_name}
-                if enable
-                else set(enabled_display_names) - {current_workflow_display_name}
+                if enable else
+                set(enabled_display_names) - {current_workflow_display_name}
             ),
             inputs=[current_workflow_display_name, enabled_display_names, enable],
             outputs=[enabled_display_names]
         )
+
         enable_style = gr.HTML()
         for comp in [current_workflow_display_name, enabled_display_names]:
             comp.change(
@@ -146,13 +148,20 @@ class ComfyUIScript(scripts.Script):
             if not serialized_graphs:
                 return gr.Textbox.update(value='')
 
+            if not hasattr(global_state, 'enabled_workflow_type_ids'):
+                global_state.enabled_workflow_type_ids = {}
+
             serialized_graphs = json.loads(serialized_graphs)
             workflow_graphs = {
-                workflow_type.get_ids(xxx2img)[0]: serialized_graphs.get(workflow_type.base_id, json.loads(workflow_type.default_workflow))
+                workflow_type.get_ids(xxx2img)[0]: (
+                    serialized_graphs.get(workflow_type.base_id, json.loads(workflow_type.default_workflow)),
+                    workflow_type.base_id in serialized_graphs,
+                )
                 for workflow_type in workflow_types
             }
 
-            for workflow_type_id, graph in workflow_graphs.items():
+            for workflow_type_id, (graph, is_custom_workflow) in workflow_graphs.items():
+                global_state.enabled_workflow_type_ids[workflow_type_id] = is_custom_workflow
                 iframe_requests.set_workflow_graph(graph, workflow_type_id)
 
             return gr.Textbox.update(value='')

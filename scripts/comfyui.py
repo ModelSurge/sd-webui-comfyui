@@ -9,6 +9,12 @@ class ComfyUIScript(scripts.Script):
         self.accordion = None
         self._is_img2img = None
 
+    def title(self):
+        return "ComfyUI"
+
+    def show(self, is_img2img):
+        return scripts.AlwaysVisible
+
     @property
     def is_img2img(self):
         return self._is_img2img
@@ -23,16 +29,11 @@ class ComfyUIScript(scripts.Script):
             is_img2img = self.is_img2img
         return "img2img" if is_img2img else "txt2img"
 
-    def title(self):
-        return "ComfyUI"
-
-    def show(self, is_img2img):
-        return scripts.AlwaysVisible
-
     def ui(self, is_img2img):
         global_state.is_ui_instantiated = True
         self.accordion.arrange_components()
-        self.accordion.connect_events(self)
+        self.accordion.connect_events()
+        self.accordion.setup_infotext_fields(self)
         return self.accordion.get_script_ui_components()
 
     def process(self, p, queue_front, **kwargs):

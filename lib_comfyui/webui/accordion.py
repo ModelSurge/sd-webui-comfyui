@@ -14,11 +14,11 @@ class AccordionInterface:
 
         self.tab = "img2img" if is_img2img else "txt2img"
 
-        workflow_types = external_code.get_workflow_types(self.tab)
-        first_workflow_type = workflow_types[0]
-        workflow_type_ids = {
+        self.workflow_types = external_code.get_workflow_types(self.tab)
+        self.first_workflow_type = self.workflow_types[0]
+        self.workflow_type_ids = {
             workflow_type.display_name: workflow_type.get_ids(self.tab)[0]
-            for workflow_type in workflow_types
+            for workflow_type in self.workflow_types
         }
 
         self.accordion = gr.Accordion(
@@ -27,7 +27,7 @@ class AccordionInterface:
             elem_id=get_elem_id('accordion'),
         )
 
-        self.iframes = gr.HTML(value=self.get_iframes_html(workflow_type_ids[first_workflow_type.display_name]))
+        self.iframes = gr.HTML(value=self.get_iframes_html(self.workflow_type_ids[self.first_workflow_type.display_name]))
         self.enable = gr.Checkbox(
             label='Enable',
             elem_id=get_elem_id('enabled'),
@@ -35,8 +35,8 @@ class AccordionInterface:
         )
         self.current_workflow_display_name = gr.Dropdown(
             label='Edit workflow type',
-            choices=[workflow_type.display_name for workflow_type in workflow_types],
-            value=first_workflow_type.display_name,
+            choices=[workflow_type.display_name for workflow_type in self.workflow_types],
+            value=self.first_workflow_type.display_name,
             elem_id=get_elem_id('displayed_workflow_type'),
         )
         self.queue_front = gr.Checkbox(
@@ -47,6 +47,15 @@ class AccordionInterface:
         self.refresh_button = gr.Button(
             value=f'{ui.refresh_symbol} Reload ComfyUI interfaces (client side)',
             elem_id=get_elem_id('refresh_button'),
+        )
+
+        self.enabled_display_names = gradio_utils.ExtensionDynamicProperty(
+            key=f'enabled_display_names_{self.tab}',
+            value=[],
+        )
+        self.clear_enabled_workflow_types_button = gr.Button(
+            elem_id=get_elem_id('clear_enabled_workflow_types'),
+            visible=False,
         )
 
         self._rendered = False
@@ -95,7 +104,10 @@ class AccordionInterface:
                     self.queue_front.render()
                     self.refresh_button.render()
 
-    def connect_events(self, script):
+        self.enabled_display_names.render()
+        self.clear_enabled_workflow_types_button.render()
+
+    def connect_events(self):
         if self._rendered:
             return
 
@@ -104,24 +116,33 @@ class AccordionInterface:
             _js='reloadComfyuiIFrames'
         )
 
-        workflow_types = external_code.get_workflow_types(self.tab)
-        first_workflow_type = workflow_types[0]
-        workflow_type_ids = {
-            workflow_type.display_name: workflow_type.get_ids(self.tab)[0]
-            for workflow_type in workflow_types
-        }
+        self.activate_reset_button()
+        self.activate_displayed_workflow_type()
+        self.activate_enabled_workflow_types()
+        self._rendered = True
 
-        current_workflow_type_id = gradio_utils.ExtensionDynamicProperty(
-            key=f'current_workflow_type_id_{self.tab}',
-            value=workflow_type_ids[first_workflow_type.display_name],
+    def setup_infotext_fields(self, script):
+        workflows_infotext_field = gr.Textbox(visible=False)
+        workflows_infotext_field.change(
+            fn=self.on_infotext_change,
+            inputs=[workflows_infotext_field, self.current_workflow_display_name],
+            outputs=[workflows_infotext_field, self.enabled_display_names, self.enable],
         )
-        enabled_display_names = gradio_utils.ExtensionDynamicProperty(
-            key=f'enabled_display_names_{self.tab}',
-            value=[],
+        script.infotext_fields = [(workflows_infotext_field, 'ComfyUI Workflows')]
+
+    def activate_reset_button(self):
+        self.clear_enabled_workflow_types_button.click(
+            fn=lambda: [],
+            outputs=[self.enabled_display_names],
         )
 
+    def activate_displayed_workflow_type(self):
+        current_workflow_type_id = gr.HTML(
+            value=self.workflow_type_ids[self.first_workflow_type.display_name],
+            visible=False,
+        )
         self.current_workflow_display_name.change(
-            fn=workflow_type_ids.get,
+            fn=self.workflow_type_ids.get,
             inputs=[self.current_workflow_display_name],
             outputs=[current_workflow_type_id],
         )
@@ -131,66 +152,68 @@ class AccordionInterface:
             inputs=[current_workflow_type_id],
         )
 
-        self.enable.select(
-            fn=lambda enabled_display_names, current_workflow_display_name, enable: list(
-                set(enabled_display_names) | {current_workflow_display_name}
-                if enable else
-                set(enabled_display_names) - {current_workflow_display_name}
-            ),
-            inputs=[enabled_display_names, self.current_workflow_display_name, self.enable],
-            outputs=[enabled_display_names]
+    def activate_enabled_workflow_types(self):
+        self.enabled_display_names.change(
+            fn=self.on_enabled_display_names_change,
+            inputs=[self.enabled_display_names],
         )
+
+        self.activate_enabled_checkbox()
+        self.activate_dropdown_colors()
+
+    def activate_dropdown_colors(self):
+        style_body = '''{
+            color: greenyellow !important;
+            font-weight: bold;
+        }'''
+
+        dropdown_input_style = gr.HTML()
+        for comp in (self.enabled_display_names, self.current_workflow_display_name):
+            comp.change(
+                fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
+                    div#{self.current_workflow_display_name.elem_id} input {style_body}
+                </style>''' if current_workflow_display_name in enabled_display_names else '',
+                inputs=[self.enabled_display_names, self.current_workflow_display_name],
+                outputs=[dropdown_input_style],
+            )
+
+        dropdown_list_style = gr.HTML()
+        self.enabled_display_names.change(
+            fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
+                {','.join(
+                    f'div#{self.current_workflow_display_name.elem_id} ul.options > li.item[data-value="{display_name}"]'
+                    for display_name in enabled_display_names
+                )} {style_body}
+            </style>''',
+            inputs=[self.enabled_display_names, self.current_workflow_display_name],
+            outputs=[dropdown_list_style],
+        )
+
+    def activate_enabled_checkbox(self):
         self.current_workflow_display_name.change(
             fn=operator.contains,
-            inputs=[enabled_display_names, self.current_workflow_display_name],
+            inputs=[self.enabled_display_names, self.current_workflow_display_name],
             outputs=[self.enable],
         )
 
-        enable_style = gr.HTML()
-        for comp in [enabled_display_names, self.current_workflow_display_name]:
-            comp.change(
-                fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
-                    {f'div#{self.current_workflow_display_name.elem_id} input,' if current_workflow_display_name in enabled_display_names else ''
-                    }{','.join(
-                        f'div#{self.current_workflow_display_name.elem_id} ul.options > li.item[data-value="{display_name}"]'
-                        for display_name in enabled_display_names
-                    )} {{
-                        color: greenyellow !important;
-                        font-weight: bold;
-                    }}
-                </style>''',
-                inputs=[enabled_display_names, self.current_workflow_display_name],
-                outputs=[enable_style],
-            )
-
-        enabled_display_names.change(
-            fn=self.on_enabled_display_names_change,
-            inputs=[enabled_display_names],
+        self.enable.select(
+            fn=lambda enabled_display_names, current_workflow_display_name, enable: list(
+                (operator.or_ if enable else operator.sub)(
+                    set(enabled_display_names),
+                    {current_workflow_display_name},
+                )
+            ),
+            inputs=[self.enabled_display_names, self.current_workflow_display_name, self.enable],
+            outputs=[self.enabled_display_names]
         )
-
-        workflows_infotext_field = gr.Textbox(visible=False)
-        workflows_infotext_field.change(
-            fn=self.on_infotext_change,
-            inputs=[workflows_infotext_field, self.current_workflow_display_name],
-            outputs=[workflows_infotext_field, enabled_display_names, self.enable],
-        )
-        script.infotext_fields = [(workflows_infotext_field, 'ComfyUI Workflows')]
-
-        self._rendered = True
 
     def on_enabled_display_names_change(self, enabled_display_names):
-        workflow_types = external_code.get_workflow_types(self.tab)
-        workflow_type_ids = {
-            workflow_type.display_name: workflow_type.get_ids(self.tab)[0]
-            for workflow_type in workflow_types
-        }
-
         if not hasattr(global_state, 'enabled_workflow_type_ids'):
             global_state.enabled_workflow_type_ids = {}
 
         enabled_workflow_type_ids = {
-            workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
-            for workflow_type in workflow_types
+            self.workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
+            for workflow_type in self.workflow_types
         }
         global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
 

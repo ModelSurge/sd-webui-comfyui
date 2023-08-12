@@ -97,17 +97,17 @@ class ComfyUIScript(scripts.Script):
             outputs=[enable],
         )
         enable.select(
-            fn=lambda current_workflow_display_name, enabled_display_names, enable: list(
+            fn=lambda enabled_display_names, current_workflow_display_name, enable: list(
                 set(enabled_display_names) | {current_workflow_display_name}
                 if enable else
                 set(enabled_display_names) - {current_workflow_display_name}
             ),
-            inputs=[current_workflow_display_name, enabled_display_names, enable],
+            inputs=[enabled_display_names, current_workflow_display_name, enable],
             outputs=[enabled_display_names]
         )
 
         enable_style = gr.HTML()
-        for comp in [current_workflow_display_name, enabled_display_names]:
+        for comp in [enabled_display_names, current_workflow_display_name]:
             comp.change(
                 fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
                     {f'div#{self.elem_id("displayed_workflow_type")} input,' if current_workflow_display_name in enabled_display_names else ''
@@ -138,15 +138,15 @@ class ComfyUIScript(scripts.Script):
             inputs=[enabled_display_names],
         )
 
-        self.setup_infotext_updates(workflow_types, xxx2img)
+        self.setup_infotext_updates(workflow_types, xxx2img, enabled_display_names, current_workflow_display_name, enable)
 
         return queue_front,
 
-    def setup_infotext_updates(self, workflow_types, xxx2img):
+    def setup_infotext_updates(self, workflow_types, xxx2img, enabled_display_names, current_workflow_display_name, enable):
         workflows_infotext_field = gr.Textbox(visible=False, interactive=False)
-        def change_function(serialized_graphs):
+        def change_function(serialized_graphs, current_workflow_display_name):
             if not serialized_graphs:
-                return gr.Textbox.update(value='')
+                return (gr.skip(),) * 3
 
             if not hasattr(global_state, 'enabled_workflow_type_ids'):
                 global_state.enabled_workflow_type_ids = {}
@@ -155,22 +155,29 @@ class ComfyUIScript(scripts.Script):
             workflow_graphs = {
                 workflow_type.get_ids(xxx2img)[0]: (
                     serialized_graphs.get(workflow_type.base_id, json.loads(workflow_type.default_workflow)),
-                    workflow_type.base_id in serialized_graphs,
+                    workflow_type,
                 )
                 for workflow_type in workflow_types
             }
 
-            for workflow_type_id, (graph, is_custom_workflow) in workflow_graphs.items():
+            new_enabled_display_names = []
+            for workflow_type_id, (graph, workflow_type) in workflow_graphs.items():
+                is_custom_workflow = workflow_type.base_id in serialized_graphs
                 global_state.enabled_workflow_type_ids[workflow_type_id] = is_custom_workflow
+                if is_custom_workflow:
+                    new_enabled_display_names.append(workflow_type.display_name)
                 iframe_requests.set_workflow_graph(graph, workflow_type_id)
 
-            return gr.Textbox.update(value='')
+            return (
+                gr.Textbox.update(value=''),
+                gr.update(value=new_enabled_display_names),
+                gr.update(value=current_workflow_display_name in new_enabled_display_names),
+            )
 
-        change_function = functools.partial(change_function)
         workflows_infotext_field.change(
             fn=change_function,
-            inputs=[workflows_infotext_field],
-            outputs=[workflows_infotext_field],
+            inputs=[workflows_infotext_field, current_workflow_display_name],
+            outputs=[workflows_infotext_field, enabled_display_names, enable],
         )
         self.infotext_fields = [(workflows_infotext_field, 'ComfyUI Workflows')]
 

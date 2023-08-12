@@ -9,10 +9,10 @@ from lib_comfyui.comfyui import iframe_requests
 
 
 class AccordionInterface:
-    def __init__(self, get_elem_id, is_img2img):
+    def __init__(self, get_elem_id, is_img2img, tab):
         from modules import ui
 
-        self.tab = "img2img" if is_img2img else "txt2img"
+        self.tab = tab
 
         self.workflow_types = external_code.get_workflow_types(self.tab)
         self.first_workflow_type = self.workflow_types[0]

@@ -137,7 +137,7 @@ async function patchDefaultGraph(workflowTypeId) {
 
 const iframeRegisteredEvent = new Promise((resolve, reject) => {
     let resolved = false;
-    const cancellable = setTimeout(() => {
+    const timeout = setTimeout(() => {
         reject('Cannot identify comfyui client: the webui host did not make a request on time.');
     }, 2000);
     window.addEventListener("message", event => {
@@ -146,7 +146,7 @@ const iframeRegisteredEvent = new Promise((resolve, reject) => {
             return;
         }
 
-        clearTimeout(cancellable);
+        clearTimeout(timeout);
         resolved = true;
         resolve(data);
     });

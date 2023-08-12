@@ -9,7 +9,7 @@ from lib_comfyui.comfyui import iframe_requests
 
 
 class AccordionInterface:
-    def __init__(self, get_elem_id, is_img2img, tab):
+    def __init__(self, get_elem_id, tab):
         from modules import ui
 
         self.tab = tab

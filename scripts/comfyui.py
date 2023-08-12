@@ -25,7 +25,7 @@ class ComfyUIScript(scripts.Script):
         self._is_img2img = is_img2img
         if self.accordion is None:
             # now, we can instantiate the accordion
-            self.accordion = accordion.AccordionInterface(self.elem_id, is_img2img, self.get_xxx2img_str())
+            self.accordion = accordion.AccordionInterface(self.elem_id, self.get_xxx2img_str())
 
     def get_xxx2img_str(self, is_img2img: bool = None):
         if is_img2img is None:

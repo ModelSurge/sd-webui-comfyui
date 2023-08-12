@@ -27,7 +27,12 @@ const ext = {
         };
     },
     async beforeRegisterNodeDef(node, nodeData) {
-        const iframeInfo = await iframeRegisteredEvent;
+        let iframeInfo = null;
+        try {
+            iframeInfo = await iframeRegisteredEvent;
+        } catch (error) {
+            return;
+        }
 
         if (!iframeInfo.webuiIoNodeNames.includes(nodeData.name)) {
             return;

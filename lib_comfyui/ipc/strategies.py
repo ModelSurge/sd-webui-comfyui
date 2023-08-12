@@ -2,6 +2,7 @@ import contextlib
 import dataclasses
 import os
 import pickle
+import platform
 from abc import ABC, abstractmethod
 from multiprocessing.shared_memory import SharedMemory
 from typing import IO, Union
@@ -124,7 +125,7 @@ class SharedMemoryIpcStrategy(IpcStrategy):
         self._shm = None
 
 
-if os.name == 'nt':
-    OsFriendlyIpcStrategy = SharedMemoryIpcStrategy
-else:
+if platform.system().lower() == 'linux':
     OsFriendlyIpcStrategy = FileSystemIpcStrategy
+else:
+    OsFriendlyIpcStrategy = SharedMemoryIpcStrategy

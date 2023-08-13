@@ -168,7 +168,7 @@ def get_default_workflow_json(workflow_type_id: str) -> str:
 def run_workflow(
     workflow_type: WorkflowType,
     tab: str,
-    batch_input: List[Any],
+    batch_input: Any,
     queue_front: Optional[bool] = None,
 ) -> List[Any]:
     """
@@ -180,15 +180,14 @@ def run_workflow(
         batch_input (List[ANy]): Batch objects to pass to the workflow. The number of elements in batch_input is the size of the comfyui batch
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
     Returns:
-        The output of the workflow. The size of the output does not necessarily match len(batch_input)
+        The outputs of the workflow
+        The size of the returned list corresponds to the number of output nodes in the workflow
+        Each element of the list will have the same batch size as batch_input
     Raises:
         ValueError: If workflow_type is not present on the given tab
         AssertionError: If multiple candidate ids exist for workflow_type
     """
     from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
-
-    if queue_front is None:
-        queue_front = getattr(global_state, 'queue_front', True)
 
     candidate_ids = workflow_type.get_ids(tab)
     assert len(candidate_ids) <= 1, f'Found multiple candidate workflow type ids for tab {tab} and workflow type {workflow_type.pretty_str()}: {candidate_ids}'
@@ -196,8 +195,15 @@ def run_workflow(
     if not candidate_ids:
         raise ValueError(f'Incompatible tab {tab} and workflow type {workflow_type.pretty_str()}. Valid tabs for the given workflow type: {workflow_type.tabs}')
 
+    workflow_type_id = candidate_ids[0]
+    if not (getattr(global_state, 'enable', True) and getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)):
+        return [batch_input]
+
+    if queue_front is None:
+        queue_front = getattr(global_state, 'queue_front', True)
+
     return ComfyuiIFrameRequests.start_workflow_sync(
         batch_input=batch_input,
-        workflow_type_id=candidate_ids[0],
+        workflow_type_id=workflow_type_id,
         queue_front=queue_front,
     )

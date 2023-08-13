@@ -37,17 +37,17 @@ class ComfyuiIFrameRequests:
     @staticmethod
     @ipc.restrict_to_process('webui')
     def start_workflow_sync(
-        batch_input: List[torch.Tensor],
+        batch_input: torch.Tensor,
         workflow_type_id: str,
         queue_front: bool,
-    ):
+    ) -> List[torch.Tensor]:
         from modules import shared
         if shared.state.interrupted:
-            return batch_input
+            return [batch_input]
 
         if is_default_workflow(workflow_type_id):
             print('[sd-webui-comfyui]', f'Skipping workflow {workflow_type_id} because it is empty.')
-            return batch_input
+            return [batch_input]
 
         global_state.node_inputs = batch_input
         global_state.node_outputs = []
@@ -64,10 +64,10 @@ class ComfyuiIFrameRequests:
             })
         except RuntimeError as e:
             print('\n'.join(traceback.format_exception_only(e)))
-            return batch_input
+            return [batch_input]
 
         if not queue_tracker.wait_until_done():
-            return batch_input
+            return [batch_input]
 
         return global_state.node_outputs
 
@@ -125,6 +125,8 @@ def is_default_workflow(workflow_type_id, current_graph=None):
 
     current_graph['nodes'].sort(key=lambda e: e['type'])
     default_graph['nodes'].sort(key=lambda e: e['type'])
+    if not all(current_graph['nodes'][i]['type'] == default_graph['nodes'][i]['type'] for i in range(nodes_len)):
+        return False
 
     def create_adjacency_matrix(graph):
         adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)
@@ -149,6 +151,9 @@ def extend_infotext_with_comfyui_workflows(p, tab):
     workflows = {}
     for workflow_type in external_code.get_workflow_types(tab):
         workflow_type_id = workflow_type.get_ids(tab)[0]
+        if not getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False):
+            continue
+
         graph = get_workflow_graph(workflow_type_id)
         if is_default_workflow(workflow_type_id, graph):
             continue

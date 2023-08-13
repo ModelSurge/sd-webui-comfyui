@@ -39,7 +39,7 @@ class WebuiImageOutput:
     OUTPUT_NODE = True
 
     def set_images(self, images):
-        global_state.node_outputs += images.permute(0, 3, 1, 2)
+        global_state.node_outputs += [images.permute(0, 3, 1, 2)]
         return []
 
 
@@ -78,7 +78,7 @@ class WebuiLatentOutput:
 
     def set_images(self, latents):
         latent_format = get_comfy_model_config().latent_format
-        global_state.node_outputs += latent_format.process_in(latents['samples'].to('cpu'))
+        global_state.node_outputs += [latent_format.process_in(latents['samples'].to('cpu'))]
         return []
 
 

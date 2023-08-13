@@ -83,6 +83,8 @@ def wait_until_done():
         has_been_set = check_done_event(timeout=1)
         if has_been_set:
             return True
+        elif not tracked_id_present():
+            return False
         elif shared.state.interrupted:
             cancel_queued_workflow()
             return False
@@ -98,9 +100,6 @@ def wait_until_put():
     was_put = PromptQueueTracker.put_event.wait(timeout=3)
     if not was_put:
         PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
-        return False
-
-    if not tracked_id_present():
         return False
 
     return True
@@ -122,7 +121,7 @@ def cancel_queued_workflow():
         PromptQueueTracker.queue_instance.delete_queue_item(lambda a: a[1] == PromptQueueTracker.tracked_id)
 
 
-@ipc.restrict_to_process('comfyui')
+@ipc.run_in_process('comfyui')
 def tracked_id_present():
     with PromptQueueTracker.queue_instance.mutex:
         for v in PromptQueueTracker.queue_instance.currently_running.values():

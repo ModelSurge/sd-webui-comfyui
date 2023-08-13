@@ -87,9 +87,7 @@ def get_comfyui_app_html():
         <div id="comfyui_webui_container">
             <iframe
                 src="{settings.get_comfyui_client_url()}"
-                workflow_type_id="{sandbox_tab_workflow_type.get_ids()[0]}"
-                class="comfyui-embedded-widget comfyui-embedded-widget-display"
-                style="width:100%; height:100%;">
+                workflow_type_id="{sandbox_tab_workflow_type.get_ids()[0]}">
             </iframe>
         </div>
     ''')

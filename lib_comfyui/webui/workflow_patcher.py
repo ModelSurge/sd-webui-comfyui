@@ -1,4 +1,6 @@
 import functools
+import sys
+
 import torch
 import torchvision.transforms.functional as F
 from lib_comfyui import ipc, global_state, default_workflow_types, external_code
@@ -33,15 +35,13 @@ def create_sampler_hijack(name: str, model, original_function):
 
 @ipc.restrict_to_process('webui')
 def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
-    if getattr(global_state, 'enabled', True):
-        preprocessed_x = external_code.run_workflow(
-            workflow_type=default_workflow_types.preprocess_latent_workflow_type,
-            tab='img2img',
-            batch_input=x.to(device='cpu'),
-        )
-        x = torch.stack(preprocessed_x).to(device=x.device) if isinstance(preprocessed_x, list) else preprocessed_x.to(device=x.device)
-
-    return original_function(p, x, *args, **kwargs)
+    processed_x = external_code.run_workflow(
+        workflow_type=default_workflow_types.preprocess_latent_workflow_type,
+        tab='img2img',
+        batch_input=x.to(device='cpu'),
+    )
+    verify_singleton(processed_x)
+    return original_function(p, processed_x[0].to(device=x.device), *args, **kwargs)
 
 
 @ipc.restrict_to_process('webui')
@@ -62,24 +62,29 @@ def patch_processing(p):
 
 def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     x = original_function(*args, **kwargs)
-    if getattr(global_state, 'enabled', True):
-        postprocessed_x = external_code.run_workflow(
-            workflow_type=default_workflow_types.postprocess_latent_workflow_type,
-            tab='img2img' if is_img2img else 'txt2img',
-            batch_input=x.to(device='cpu'),
-        )
-        x = torch.stack(postprocessed_x).to(device=x.device) if isinstance(postprocessed_x, list) else postprocessed_x.to(device=x.device)
-
-    return x
+    processed_x = external_code.run_workflow(
+        workflow_type=default_workflow_types.postprocess_latent_workflow_type,
+        tab='img2img' if is_img2img else 'txt2img',
+        batch_input=x.to(device='cpu'),
+    )
+    verify_singleton(processed_x)
+    return processed_x[0].to(device=x.device)
 
 
 def p_img2img_init(*args, original_function, p_ref, **kwargs):
-    if getattr(global_state, 'enabled', True):
-        preprocessed_images = external_code.run_workflow(
-            workflow_type=default_workflow_types.preprocess_workflow_type,
-            tab='img2img',
-            batch_input=[F.pil_to_tensor(image) / 255 for image in p_ref.init_images],
-        )
-        p_ref.init_images = [F.to_pil_image(image_tensor) for image_tensor in preprocessed_images]
-
+    processed_images = external_code.run_workflow(
+        workflow_type=default_workflow_types.preprocess_workflow_type,
+        tab='img2img',
+        batch_input=[F.pil_to_tensor(image) / 255 for image in p_ref.init_images],
+    )
+    verify_singleton(processed_images)
+    p_ref.init_images = [F.to_pil_image(image_tensor) for image_tensor in processed_images[0]]
     return original_function(*args, **kwargs)
+
+
+def verify_singleton(l: list):
+    if len(l) != 1:
+        prefix = '\n[sd-webui-comfyui] '
+        print(f'{prefix}The last ComfyUI workflow returned {len(l)} batches instead of 1.'
+              f'{prefix}This is likely due to the workflow not having exactly 1 "To Webui" node.'
+              f'{prefix}Please verify that the workflow is valid.', file=sys.stderr)

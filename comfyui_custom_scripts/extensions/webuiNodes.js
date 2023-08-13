@@ -7,7 +7,7 @@ function createVoidWidget(node, name) {
         type: "customtext",
         name,
         get value() {
-            return `${Math.random()}{Date.now()}`;
+            return `${Math.random()}${Date.now()}`;
         },
         set value(x) {},
     };

@@ -17,7 +17,7 @@ function createVoidWidget(node, name) {
     return widget;
 }
 
-const ext = {
+app.registerExtension({
     name: "sd-webui-comfyui",
     async getCustomWidgets(app) {
         return {
@@ -26,7 +26,7 @@ const ext = {
             },
         };
     },
-    async beforeRegisterNodeDef(node, nodeData) {
+    async nodeCreated(node) {
         let iframeInfo = null;
         try {
             iframeInfo = await iframeRegisteredEvent;
@@ -34,13 +34,34 @@ const ext = {
             return;
         }
 
-        if (!iframeInfo.webuiIoNodeNames.includes(nodeData.name)) {
+        if (!iframeInfo.webuiIoNodeNames.includes(node.type)) {
             return;
         }
 
-        nodeData.display_name = `${nodeData.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
-        node.title = nodeData.display_name;
+        if (node.type.includes('From')) {
+            node.outputs[0].type = iframeInfo.webuiIoTypes.outputs[0];
+        } else if (node.type.includes('To')) {
+            node.inputs[0].type = iframeInfo.webuiIoTypes.inputs[0];
+        }
     },
-};
+    async addCustomNodeDefs(defs) {
+        let iframeInfo = null;
 
-app.registerExtension(ext);
+        try {
+            iframeInfo = await iframeRegisteredEvent;
+        } catch {}
+
+        if (!iframeInfo) {
+            return;
+        }
+
+        const nodes = iframeInfo.webuiIoNodeNames.map(name => defs[name]);
+        for (const node of nodes) {
+            node.display_name = `${node.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
+        }
+    },
+});
+
+app.registerExtension({
+    name: "webui_io.WebuiInput",
+});

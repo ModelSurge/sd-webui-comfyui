@@ -6,10 +6,8 @@ from lib_comfyui.webui.proxies import get_comfy_model_config
 
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ImageFromWebui": 'Image From Webui',
-    "ImageToWebui": 'Image To Webui',
-    "LatentFromWebui": 'Latent From Webui',
-    "LatentToWebui": 'Latent To Webui',
+    "FromWebui": 'From Webui',
+    "ToWebui": 'To Webui',
 }
 
 

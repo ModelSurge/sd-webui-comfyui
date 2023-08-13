@@ -18,7 +18,7 @@
       "mode": 0,
       "outputs": [
         {
-          "name": "*",
+          "name": "input",
           "type": "*",
           "links": [
             575
@@ -50,7 +50,7 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "*",
+          "name": "output",
           "type": "*",
           "link": 575
         }

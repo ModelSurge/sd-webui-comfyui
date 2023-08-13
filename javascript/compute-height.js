@@ -129,6 +129,10 @@ function getWebuiIoNodeNames() {
     return getExtensionDynamicProperty('webui_io_node_names');
 }
 
+function getWebuiIoTypes() {
+    return getExtensionDynamicProperty('webui_io_types');
+}
+
 function getExtensionDynamicProperty(key) {
     return JSON.parse(document.querySelector(`[sd_webui_comfyui_key="${key}"]`)?.innerText ?? "null");
 }
@@ -156,6 +160,7 @@ function forceFeedIdToIFrame(workflowTypeId) {
         const message = {
             workflowTypeId: workflowTypeId,
             workflowTypeDisplayName: getWorkflowTypeDisplayNameMap()[workflowTypeId],
+            webuiIoTypes: getWebuiIoTypes()[workflowTypeId],
             webuiIoNodeNames: getWebuiIoNodeNames(),
             webuiClientId: WEBUI_CLIENT_KEY,
         };

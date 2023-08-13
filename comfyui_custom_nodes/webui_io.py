@@ -22,6 +22,7 @@ class WebuiInput:
             },
         }
     RETURN_TYPES = (any_type, )
+    RETURN_NAMES = ("input", )
     FUNCTION = "get_images"
 
     CATEGORY = "webui"
@@ -37,7 +38,7 @@ class WebuiOutput:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "images": (any_type, ),
+                "output": (any_type, ),
             },
         }
     RETURN_TYPES = ()
@@ -47,8 +48,8 @@ class WebuiOutput:
 
     OUTPUT_NODE = True
 
-    def set_images(self, images):
-        global_state.node_outputs += [images]
+    def set_images(self, output):
+        global_state.node_outputs += [output]
         return ()
 
 

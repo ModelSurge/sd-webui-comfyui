@@ -5,7 +5,7 @@ from lib_comfyui import global_state
 
 
 ALL_TABS = ...
-Tabs = Union[str, Tuple[str]]
+Tabs = Union[str, Tuple[str, ...]]
 
 
 @dataclasses.dataclass
@@ -18,10 +18,18 @@ class WorkflowType:
     display_name: str
     tabs: Tabs = ('txt2img', 'img2img')
     default_workflow: Union[str, Path] = "null"
+    input_types: Union[str, Tuple[str, ...]] = dataclasses.field(default_factory=list)
+    output_types: Union[str, Tuple[str, ...]] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
             self.tabs = (self.tabs,)
+
+        if isinstance(self.input_types, str):
+            self.input_types = (self.input_types,)
+
+        if isinstance(self.output_types, str):
+            self.output_types = (self.output_types,)
 
         assert self.tabs, "tabs must not be empty"
 
@@ -193,7 +201,7 @@ def run_workflow(
     assert len(candidate_ids) <= 1, f'Found multiple candidate workflow type ids for tab {tab} and workflow type {workflow_type.pretty_str()}: {candidate_ids}'
 
     if not candidate_ids:
-        raise ValueError(f'Incompatible tab {tab} and workflow type {workflow_type.pretty_str()}. Valid tabs for the given workflow type: {workflow_type.tabs}')
+        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type: {workflow_type.tabs}')
 
     workflow_type_id = candidate_ids[0]
     if not (getattr(global_state, 'enable', True) and getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)):

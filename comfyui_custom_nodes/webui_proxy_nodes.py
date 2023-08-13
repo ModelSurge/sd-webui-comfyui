@@ -13,7 +13,7 @@ class WebuiCheckpointLoader:
     RETURN_TYPES = ("MODEL", "CLIP", "VAE")
     FUNCTION = "load_checkpoint"
 
-    CATEGORY = "loaders"
+    CATEGORY = "text"
 
     def load_checkpoint(self, void):
         config = proxies.get_comfy_model_config()

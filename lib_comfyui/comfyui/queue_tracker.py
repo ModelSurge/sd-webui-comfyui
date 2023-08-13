@@ -83,6 +83,8 @@ def wait_until_done():
         has_been_set = check_done_event(timeout=1)
         if has_been_set:
             return True
+        elif not tracked_id_present():
+            return False
         elif shared.state.interrupted:
             cancel_queued_workflow()
             return False
@@ -98,9 +100,6 @@ def wait_until_put():
     was_put = PromptQueueTracker.put_event.wait(timeout=3)
     if not was_put:
         PromptQueueTracker.tracked_id = PromptQueueTracker.original_id
-        return False
-
-    if not tracked_id_present():
         return False
 
     return True

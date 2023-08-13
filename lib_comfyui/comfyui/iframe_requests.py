@@ -150,7 +150,10 @@ def extend_infotext_with_comfyui_workflows(p, tab):
     for workflow_type in external_code.get_workflow_types(tab):
         workflow_type_id = workflow_type.get_ids(tab)[0]
         graph = get_workflow_graph(workflow_type_id)
-        if is_default_workflow(workflow_type_id, graph):
+        if (
+            not getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)
+            or is_default_workflow(workflow_type_id, graph)
+        ):
             continue
 
         workflows[workflow_type.base_id] = graph

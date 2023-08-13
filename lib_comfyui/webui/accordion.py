@@ -27,17 +27,17 @@ class AccordionInterface:
             elem_id=get_elem_id('accordion'),
         )
 
-        self.iframes = gr.HTML(value=self.get_iframes_html(self.workflow_type_ids[self.first_workflow_type.display_name]))
-        self.enable = gr.Checkbox(
+        self.iframes = gr.HTML(value=self.get_iframes_html())
+        self.enabled_checkbox = gr.Checkbox(
             label='Enable',
-            elem_id=get_elem_id('enabled'),
+            elem_id=get_elem_id('enable'),
             value=False,
         )
-        self.current_workflow_display_name = gr.Dropdown(
+        self.current_display_name = gr.Dropdown(
             label='Edit workflow type',
             choices=[workflow_type.display_name for workflow_type in self.workflow_types],
             value=self.first_workflow_type.display_name,
-            elem_id=get_elem_id('displayed_workflow_type'),
+            elem_id=get_elem_id('current_display_name'),
         )
         self.queue_front = gr.Checkbox(
             label='Queue front',
@@ -50,31 +50,30 @@ class AccordionInterface:
         )
 
         self.enabled_display_names = gradio_utils.ExtensionDynamicProperty(
-            key=f'enabled_display_names_{self.tab}',
             value=[],
         )
-        self.enabled_workflow_type_ids = gradio_utils.ExtensionDynamicProperty(
-            key=f'enabled_workflow_type_ids_{self.tab}',
+        self.enabled_type_ids = gradio_utils.ExtensionDynamicProperty(
             value={
                 workflow_type_id: False
                 for workflow_type_id in self.workflow_type_ids.values()
             },
         )
-        self.clear_enabled_workflow_types_button = gr.Button(
-            elem_id=get_elem_id('clear_enabled_workflow_types'),
+        self.clear_enabled_display_names_button = gr.Button(
+            elem_id=get_elem_id('clear_enabled_display_names'),
             visible=False,
         )
 
         self._rendered = False
 
-    def get_iframes_html(self, first_workflow_type_id: str) -> str:
+    def get_iframes_html(self) -> str:
         comfyui_client_url = settings.get_comfyui_client_url()
+        first_workflow_type_id = self.workflow_type_ids[self.first_workflow_type.display_name]
 
         iframes = []
         for workflow_type_id in external_code.get_workflow_type_ids(self.tab):
-            html_classes = ['comfyui-embedded-widget']
+            html_classes = []
             if workflow_type_id == first_workflow_type_id:
-                html_classes.append('comfyui-embedded-widget-display')
+                html_classes.append('comfyui-workflow-type-visible')
 
             iframes.append(f"""
                 <iframe
@@ -101,16 +100,16 @@ class AccordionInterface:
 
             with gr.Row():
                 with gr.Column():
-                    self.enable.render()
-                    self.current_workflow_display_name.render()
+                    self.enabled_checkbox.render()
+                    self.current_display_name.render()
 
                 with gr.Column():
                     self.queue_front.render()
                     self.refresh_button.render()
 
         self.enabled_display_names.render()
-        self.enabled_workflow_type_ids.render()
-        self.clear_enabled_workflow_types_button.render()
+        self.enabled_type_ids.render()
+        self.clear_enabled_display_names_button.render()
 
     def connect_events(self):
         if self._rendered:
@@ -120,38 +119,35 @@ class AccordionInterface:
             fn=None,
             _js='reloadComfyuiIFrames'
         )
+        self.clear_enabled_display_names_button.click(
+            fn=list,
+            outputs=[self.enabled_display_names],
+        )
 
-        self.activate_clear_enabled_workflow_types_button()
-        self.activate_displayed_workflow_type()
+        self.activate_current_workflow_type()
         self.activate_enabled_workflow_types()
         self._rendered = True
 
     def get_script_ui_components(self) -> Tuple[gr.components.Component, ...]:
-        return self.queue_front, self.enabled_workflow_type_ids
+        return self.queue_front, self.enabled_type_ids
 
     def setup_infotext_fields(self, script):
-        workflows_infotext_field = gr.Textbox(visible=False)
+        workflows_infotext_field = gr.HTML(visible=False)
         workflows_infotext_field.change(
             fn=self.on_infotext_change,
-            inputs=[workflows_infotext_field, self.current_workflow_display_name],
-            outputs=[workflows_infotext_field, self.enabled_display_names, self.enable],
+            inputs=[workflows_infotext_field, self.current_display_name],
+            outputs=[workflows_infotext_field, self.enabled_display_names, self.enabled_checkbox],
         )
         script.infotext_fields = [(workflows_infotext_field, 'ComfyUI Workflows')]
 
-    def activate_clear_enabled_workflow_types_button(self):
-        self.clear_enabled_workflow_types_button.click(
-            fn=lambda: [],
-            outputs=[self.enabled_display_names],
-        )
-
-    def activate_displayed_workflow_type(self):
+    def activate_current_workflow_type(self):
         current_workflow_type_id = gr.HTML(
             value=self.workflow_type_ids[self.first_workflow_type.display_name],
             visible=False,
         )
-        self.current_workflow_display_name.change(
+        self.current_display_name.change(
             fn=self.workflow_type_ids.get,
-            inputs=[self.current_workflow_display_name],
+            inputs=[self.current_display_name],
             outputs=[current_workflow_type_id],
         )
         current_workflow_type_id.change(
@@ -162,27 +158,27 @@ class AccordionInterface:
 
     def activate_enabled_workflow_types(self):
         self.enabled_display_names.change(
-            fn=self.on_enabled_display_names_change,
+            fn=self.display_names_to_enabled_type_ids,
             inputs=[self.enabled_display_names],
-            outputs=[self.enabled_workflow_type_ids],
+            outputs=[self.enabled_type_ids],
         )
 
         self.activate_enabled_checkbox()
-        self.activate_dropdown_colors()
+        self.activate_enabled_display_names_colors()
 
-    def activate_dropdown_colors(self):
+    def activate_enabled_display_names_colors(self):
         style_body = '''{
             color: greenyellow !important;
             font-weight: bold;
         }'''
 
         dropdown_input_style = gr.HTML()
-        for comp in (self.enabled_display_names, self.current_workflow_display_name):
+        for comp in (self.enabled_display_names, self.current_display_name):
             comp.change(
                 fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
-                    div#{self.current_workflow_display_name.elem_id} input {style_body}
+                    div#{self.current_display_name.elem_id} input {style_body}
                 </style>''' if current_workflow_display_name in enabled_display_names else '',
-                inputs=[self.enabled_display_names, self.current_workflow_display_name],
+                inputs=[self.enabled_display_names, self.current_display_name],
                 outputs=[dropdown_input_style],
             )
 
@@ -190,45 +186,44 @@ class AccordionInterface:
         self.enabled_display_names.change(
             fn=lambda enabled_display_names, current_workflow_display_name: f'''<style>
                 {','.join(
-                    f'div#{self.current_workflow_display_name.elem_id} ul.options > li.item[data-value="{display_name}"]'
+                    f'div#{self.current_display_name.elem_id} ul.options > li.item[data-value="{display_name}"]'
                     for display_name in enabled_display_names
                 )} {style_body}
             </style>''',
-            inputs=[self.enabled_display_names, self.current_workflow_display_name],
+            inputs=[self.enabled_display_names, self.current_display_name],
             outputs=[dropdown_list_style],
         )
 
     def activate_enabled_checkbox(self):
-        self.current_workflow_display_name.change(
+        self.current_display_name.change(
             fn=operator.contains,
-            inputs=[self.enabled_display_names, self.current_workflow_display_name],
-            outputs=[self.enable],
+            inputs=[self.enabled_display_names, self.current_display_name],
+            outputs=[self.enabled_checkbox],
         )
 
-        self.enable.select(
+        self.enabled_checkbox.select(
             fn=lambda enabled_display_names, current_workflow_display_name, enable: list(
                 (operator.or_ if enable else operator.sub)(
                     set(enabled_display_names),
                     {current_workflow_display_name},
                 )
             ),
-            inputs=[self.enabled_display_names, self.current_workflow_display_name, self.enable],
+            inputs=[self.enabled_display_names, self.current_display_name, self.enabled_checkbox],
             outputs=[self.enabled_display_names]
         )
 
-    def on_enabled_display_names_change(self, enabled_display_names):
-        enabled_workflow_type_ids = {
+    def display_names_to_enabled_type_ids(self, enabled_display_names):
+        return {
             self.workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
             for workflow_type in self.workflow_types
         }
-        return enabled_workflow_type_ids
 
-    def on_infotext_change(self, serialized_graphs, current_workflow_display_name):
+    def on_infotext_change(self, serialized_graphs, current_workflow_display_name) -> Tuple[dict, dict, dict]:
         if not serialized_graphs:
             return (gr.skip(),) * 3
 
         if not hasattr(global_state, 'enabled_workflow_type_ids'):
-            global_state.enabled_workflow_type_ids = {}
+            global_state.enabled_type_ids = {}
 
         serialized_graphs = json.loads(serialized_graphs)
         workflow_graphs = {
@@ -242,13 +237,13 @@ class AccordionInterface:
         new_enabled_display_names = []
         for workflow_type_id, (graph, workflow_type) in workflow_graphs.items():
             is_custom_workflow = workflow_type.base_id in serialized_graphs
-            global_state.enabled_workflow_type_ids[workflow_type_id] = is_custom_workflow
+            global_state.enabled_type_ids[workflow_type_id] = is_custom_workflow
             if is_custom_workflow:
                 new_enabled_display_names.append(workflow_type.display_name)
             iframe_requests.set_workflow_graph(graph, workflow_type_id)
 
         return (
-            gr.Textbox.update(value=''),
+            gr.update(value=''),
             gr.update(value=new_enabled_display_names),
             gr.update(value=current_workflow_display_name in new_enabled_display_names),
         )

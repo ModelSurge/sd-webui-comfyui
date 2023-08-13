@@ -25,9 +25,9 @@ class ComfyUIScript(scripts.Script):
         self._is_img2img = is_img2img
         if self.accordion is None:
             # now, we can instantiate the accordion
-            self.accordion = accordion.AccordionInterface(self.elem_id, self.get_xxx2img_str())
+            self.accordion = accordion.AccordionInterface(self.elem_id, self.get_tab())
 
-    def get_xxx2img_str(self, is_img2img: bool = None):
+    def get_tab(self, is_img2img: bool = None):
         if is_img2img is None:
             is_img2img = self.is_img2img
         return "img2img" if is_img2img else "txt2img"
@@ -44,9 +44,9 @@ class ComfyUIScript(scripts.Script):
             return
 
         if not hasattr(global_state, 'enabled_workflow_type_ids'):
-            global_state.enabled_workflow_type_ids = {}
+            global_state.enabled_type_ids = {}
 
-        global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
+        global_state.enabled_type_ids.update(enabled_workflow_type_ids)
 
         global_state.queue_front = queue_front
         workflow_patcher.patch_processing(p)
@@ -59,7 +59,7 @@ class ComfyUIScript(scripts.Script):
 
         batch_results = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_workflow_type,
-            tab=self.get_xxx2img_str(),
+            tab=self.get_tab(),
             batch_input=list(pp.images),
         )
 
@@ -71,7 +71,7 @@ class ComfyUIScript(scripts.Script):
         pp.images.clear()
         pp.images.extend(batch_results)
 
-        iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_xxx2img_str())
+        iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
 
 
 callbacks.register_callbacks()

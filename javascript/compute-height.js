@@ -8,9 +8,9 @@ const WEBUI_CLIENT_KEY = uuidv4();
 
 function changeDisplayedWorkflowType(targetWorkflowType) {
     const targetIFrameElement = getWorkflowTypeIFrame(targetWorkflowType);
-    const currentIFrameElement = targetIFrameElement.parentElement.querySelector(".comfyui-embedded-widget-display");
-    currentIFrameElement.classList.remove("comfyui-embedded-widget-display");
-    targetIFrameElement.classList.add("comfyui-embedded-widget-display");
+    const currentIFrameElement = targetIFrameElement.parentElement.querySelector(".comfyui-workflow-type-visible");
+    currentIFrameElement.classList.remove("comfyui-workflow-type-visible");
+    targetIFrameElement.classList.add("comfyui-workflow-type-visible");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -33,7 +33,7 @@ function onComfyuiTabLoaded(callback) {
 }
 
 function clearEnabledWorkflowTypes() {
-    for (let clearButton of getClearEnabledWorkflowTypesButtons()) {
+    for (const clearButton of getClearEnabledWorkflowTypesButtons()) {
         clearButton.click();
     }
 }
@@ -91,8 +91,8 @@ function updateFooterStyle() {
 
 function getClearEnabledWorkflowTypesButtons() {
     return [
-        document.getElementById("script_txt2txt_comfyui_clear_enabled_workflow_types") ?? null,
-        document.getElementById("script_img2img_comfyui_clear_enabled_workflow_types") ?? null,
+        document.getElementById("script_txt2txt_comfyui_clear_enabled_display_names") ?? null,
+        document.getElementById("script_img2img_comfyui_clear_enabled_display_names") ?? null,
     ];
 }
 

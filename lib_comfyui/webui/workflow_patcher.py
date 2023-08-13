@@ -38,8 +38,7 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
         tab='img2img',
         batch_input=x.to(device='cpu'),
     )
-    x = torch.stack(processed_x).to(device=x.device) if isinstance(processed_x, list) else processed_x.to(device=x.device)
-    return original_function(p, x, *args, **kwargs)
+    return original_function(p, processed_x[0].to(device=x.device), *args, **kwargs)
 
 
 @ipc.restrict_to_process('webui')
@@ -65,7 +64,7 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
         tab='img2img' if is_img2img else 'txt2img',
         batch_input=x.to(device='cpu'),
     )
-    return torch.stack(processed_x).to(device=x.device) if isinstance(processed_x, list) else processed_x.to(device=x.device)
+    return processed_x[0].to(device=x.device)
 
 
 def p_img2img_init(*args, original_function, p_ref, **kwargs):
@@ -74,5 +73,5 @@ def p_img2img_init(*args, original_function, p_ref, **kwargs):
         tab='img2img',
         batch_input=[F.pil_to_tensor(image) / 255 for image in p_ref.init_images],
     )
-    p_ref.init_images = [F.to_pil_image(image_tensor) for image_tensor in preprocessed_images]
+    p_ref.init_images = [F.to_pil_image(image_tensor) for image_tensor in preprocessed_images[0]]
     return original_function(*args, **kwargs)

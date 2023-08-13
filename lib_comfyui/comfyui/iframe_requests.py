@@ -4,7 +4,7 @@ import multiprocessing
 import traceback
 import torch
 from queue import Empty
-from typing import List
+from typing import List, Any
 from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 
@@ -37,17 +37,17 @@ class ComfyuiIFrameRequests:
     @staticmethod
     @ipc.restrict_to_process('webui')
     def start_workflow_sync(
-        batch_input: List[torch.Tensor],
+        batch_input: torch.Tensor,
         workflow_type_id: str,
         queue_front: bool,
-    ):
+    ) -> List[torch.Tensor]:
         from modules import shared
         if shared.state.interrupted:
-            return batch_input
+            return [batch_input]
 
         if is_default_workflow(workflow_type_id):
             print('[sd-webui-comfyui]', f'Skipping workflow {workflow_type_id} because it is empty.')
-            return batch_input
+            return [batch_input]
 
         global_state.node_inputs = batch_input
         global_state.node_outputs = []

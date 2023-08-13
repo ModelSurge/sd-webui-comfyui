@@ -195,7 +195,7 @@ def run_workflow(
 
     workflow_type_id = candidate_ids[0]
     if not (getattr(global_state, 'enable', True) and getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)):
-        return batch_input
+        return [batch_input]
 
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)

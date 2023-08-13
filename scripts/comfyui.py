@@ -63,13 +63,11 @@ class ComfyUIScript(scripts.Script):
             batch_input=list(pp.images),
         )
 
-        batch_size_factor = max(1, len(batch_results) // len(pp.images))
-
         for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
-            list_to_scale[:] = list_to_scale * batch_size_factor
+            list_to_scale[:] = list_to_scale * len(batch_results)
 
         pp.images.clear()
-        pp.images.extend(batch_results)
+        pp.images.extend(image for batch in batch_results for image in batch)
 
         iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
 

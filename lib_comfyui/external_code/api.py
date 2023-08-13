@@ -168,7 +168,7 @@ def get_default_workflow_json(workflow_type_id: str) -> str:
 def run_workflow(
     workflow_type: WorkflowType,
     tab: str,
-    batch_input: List[Any],
+    batch_input: Any,
     queue_front: Optional[bool] = None,
 ) -> List[Any]:
     """
@@ -180,7 +180,9 @@ def run_workflow(
         batch_input (List[ANy]): Batch objects to pass to the workflow. The number of elements in batch_input is the size of the comfyui batch
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
     Returns:
-        The output of the workflow. The size of the output does not necessarily match len(batch_input)
+        The outputs of the workflow
+        The size of the returned list corresponds to the number of output nodes in the workflow
+        Each element of the list will have the same batch size as batch_input
     Raises:
         ValueError: If workflow_type is not present on the given tab
         AssertionError: If multiple candidate ids exist for workflow_type

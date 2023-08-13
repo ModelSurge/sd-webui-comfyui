@@ -8,7 +8,6 @@ async function onElementDomIdRegistered(callback) {
     const iframeInfo = await iframeRegisteredEvent;
     console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${iframeInfo.workflowTypeDisplayName}" (${iframeInfo.workflowTypeId}) / ${iframeInfo.webuiClientId}`);
 
-    event.source.postMessage(iframeInfo.workflowTypeId, event.origin);
     await patchUiEnv(iframeInfo.workflowTypeId);
     const clientResponse = 'register_cid';
     console.log(`[sd-webui-comfyui][comfyui] INIT WS - ${clientResponse}`);

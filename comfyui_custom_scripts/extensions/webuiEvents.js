@@ -16,6 +16,7 @@ const iframeRegisteredEvent = new Promise((resolve, reject) => {
         }
 
         clearTimeout(timeout);
+        event.source.postMessage(data.workflowTypeId, event.origin);
         resolved = true;
         resolve(data);
     });

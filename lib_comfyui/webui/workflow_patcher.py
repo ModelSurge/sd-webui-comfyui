@@ -23,7 +23,7 @@ def watch_prompts(component, **kwargs):
         for tab in ('txt2img', 'img2img')
         for negative in ('', '_neg')
     }
-    event_listeners = ('change', 'input', 'blur')
+    event_listeners = ('change', 'blur')
 
     elem_id = getattr(component, 'elem_id', None)
     if elem_id in possible_elem_ids:

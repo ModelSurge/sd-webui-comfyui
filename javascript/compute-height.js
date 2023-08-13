@@ -14,7 +14,7 @@ function changeDisplayedWorkflowType(targetWorkflowType) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    onComfyuiTabLoaded(clearEnabledWorkflowTypes);
+    onComfyuiTabLoaded(clearEnabledDisplayNames);
     onComfyuiTabLoaded(setupComfyuiTabEvents);
 });
 
@@ -32,8 +32,8 @@ function onComfyuiTabLoaded(callback) {
     callback();
 }
 
-function clearEnabledWorkflowTypes() {
-    for (const clearButton of getClearEnabledWorkflowTypesButtons()) {
+function clearEnabledDisplayNames() {
+    for (const clearButton of getClearEnabledDisplayNamesButtons()) {
         clearButton.click();
     }
 }
@@ -89,7 +89,7 @@ function updateFooterStyle() {
     }
 }
 
-function getClearEnabledWorkflowTypesButtons() {
+function getClearEnabledDisplayNamesButtons() {
     return [
         document.getElementById("script_txt2txt_comfyui_clear_enabled_display_names") ?? null,
         document.getElementById("script_img2img_comfyui_clear_enabled_display_names") ?? null,

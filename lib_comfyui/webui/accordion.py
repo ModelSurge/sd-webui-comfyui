@@ -230,7 +230,7 @@ class AccordionInterface:
                 serialized_graphs.get(workflow_type.base_id, json.loads(workflow_type.default_workflow)),
                 workflow_type,
             )
-            for workflow_type in global_state.get_workflow_types(self.tab)
+            for workflow_type in self.workflow_types
         }
 
         new_enabled_display_names = []

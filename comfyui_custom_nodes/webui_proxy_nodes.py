@@ -13,7 +13,7 @@ class WebuiCheckpointLoader:
     RETURN_TYPES = ("MODEL", "CLIP", "VAE")
     FUNCTION = "load_checkpoint"
 
-    CATEGORY = "text"
+    CATEGORY = "loaders"
 
     def load_checkpoint(self, void):
         config = proxies.get_comfy_model_config()
@@ -37,7 +37,7 @@ class WebuiPrompts:
     RETURN_NAMES = ("positive", "negative")
     FUNCTION = "get_prompts"
 
-    CATEGORY = "loaders"
+    CATEGORY = "text"
 
     def get_prompts(self, void):
         positive_prompts, _extra_networks = proxies.extra_networks_parse_prompts([getattr(global_state, 'last_positive_prompt', '')])

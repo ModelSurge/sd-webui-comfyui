@@ -55,7 +55,10 @@ class AccordionInterface:
         )
         self.enabled_workflow_type_ids = gradio_utils.ExtensionDynamicProperty(
             key=f'enabled_workflow_type_ids_{self.tab}',
-            value={},
+            value={
+                workflow_type_id: False
+                for workflow_type_id in self.workflow_type_ids.values()
+            },
         )
         self.clear_enabled_workflow_types_button = gr.Button(
             elem_id=get_elem_id('clear_enabled_workflow_types'),

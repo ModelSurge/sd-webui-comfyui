@@ -64,10 +64,10 @@ class ComfyuiIFrameRequests:
             })
         except RuntimeError as e:
             print('\n'.join(traceback.format_exception_only(e)))
-            return batch_input
+            return [batch_input]
 
         if not queue_tracker.wait_until_done():
-            return batch_input
+            return [batch_input]
 
         return global_state.node_outputs
 

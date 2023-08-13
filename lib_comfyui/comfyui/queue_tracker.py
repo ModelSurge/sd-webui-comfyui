@@ -121,7 +121,7 @@ def cancel_queued_workflow():
         PromptQueueTracker.queue_instance.delete_queue_item(lambda a: a[1] == PromptQueueTracker.tracked_id)
 
 
-@ipc.restrict_to_process('comfyui')
+@ipc.run_in_process('comfyui')
 def tracked_id_present():
     with PromptQueueTracker.queue_instance.mutex:
         for v in PromptQueueTracker.queue_instance.currently_running.values():

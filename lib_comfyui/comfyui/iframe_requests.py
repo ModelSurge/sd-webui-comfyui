@@ -125,6 +125,8 @@ def is_default_workflow(workflow_type_id, current_graph=None):
 
     current_graph['nodes'].sort(key=lambda e: e['type'])
     default_graph['nodes'].sort(key=lambda e: e['type'])
+    if not all(current_graph['nodes'][i]['type'] == default_graph['nodes'][i]['type'] for i in range(nodes_len)):
+        return False
 
     def create_adjacency_matrix(graph):
         adjacency_matrix = torch.zeros((nodes_len,) * 2, dtype=torch.bool)

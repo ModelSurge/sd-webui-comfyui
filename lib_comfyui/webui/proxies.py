@@ -373,5 +373,11 @@ def sd_model_get_config():
     return sd_models_config.find_checkpoint_config(shared.sd_model.state_dict(), sd_models.select_checkpoint())
 
 
+@ipc.run_in_process('webui')
+def extra_networks_parse_prompts(prompts):
+    from modules import extra_networks
+    return extra_networks.parse_prompts(prompts)
+
+
 def soft_raise(message):
     print(f'[sd-webui-comfyui] {message}', file=sys.stderr)

@@ -40,8 +40,10 @@ class WebuiPrompts:
     CATEGORY = "loaders"
 
     def get_prompts(self, void):
+        positive_prompts, _extra_networks = proxies.extra_networks_parse_prompts([getattr(global_state, 'last_positive_prompt', '')])
+
         return (
-            getattr(global_state, 'last_positive_prompt', ''),
+            positive_prompts[0],
             getattr(global_state, 'last_negative_prompt', ''),
         )
 

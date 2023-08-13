@@ -52,7 +52,7 @@ class AccordionInterface:
         self.enabled_display_names = gradio_utils.ExtensionDynamicProperty(
             value=[],
         )
-        self.enabled_type_ids = gradio_utils.ExtensionDynamicProperty(
+        self.enabled_ids = gradio_utils.ExtensionDynamicProperty(
             value={
                 workflow_type_id: False
                 for workflow_type_id in self.workflow_type_ids.values()
@@ -108,7 +108,7 @@ class AccordionInterface:
                     self.refresh_button.render()
 
         self.enabled_display_names.render()
-        self.enabled_type_ids.render()
+        self.enabled_ids.render()
         self.clear_enabled_display_names_button.render()
 
     def connect_events(self):
@@ -129,7 +129,7 @@ class AccordionInterface:
         self._rendered = True
 
     def get_script_ui_components(self) -> Tuple[gr.components.Component, ...]:
-        return self.queue_front, self.enabled_type_ids
+        return self.queue_front, self.enabled_ids
 
     def setup_infotext_fields(self, script):
         workflows_infotext_field = gr.HTML(visible=False)
@@ -158,9 +158,9 @@ class AccordionInterface:
 
     def activate_enabled_workflow_types(self):
         self.enabled_display_names.change(
-            fn=self.display_names_to_enabled_type_ids,
+            fn=self.display_names_to_enabled_ids,
             inputs=[self.enabled_display_names],
-            outputs=[self.enabled_type_ids],
+            outputs=[self.enabled_ids],
         )
 
         self.activate_enabled_checkbox()
@@ -212,7 +212,7 @@ class AccordionInterface:
             outputs=[self.enabled_display_names]
         )
 
-    def display_names_to_enabled_type_ids(self, enabled_display_names):
+    def display_names_to_enabled_ids(self, enabled_display_names):
         return {
             self.workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
             for workflow_type in self.workflow_types
@@ -223,7 +223,7 @@ class AccordionInterface:
             return (gr.skip(),) * 3
 
         if not hasattr(global_state, 'enabled_workflow_type_ids'):
-            global_state.enabled_type_ids = {}
+            global_state.enabled_workflow_type_ids = {}
 
         serialized_graphs = json.loads(serialized_graphs)
         workflow_graphs = {
@@ -237,7 +237,7 @@ class AccordionInterface:
         new_enabled_display_names = []
         for workflow_type_id, (graph, workflow_type) in workflow_graphs.items():
             is_custom_workflow = workflow_type.base_id in serialized_graphs
-            global_state.enabled_type_ids[workflow_type_id] = is_custom_workflow
+            global_state.enabled_workflow_type_ids[workflow_type_id] = is_custom_workflow
             if is_custom_workflow:
                 new_enabled_display_names.append(workflow_type.display_name)
             iframe_requests.set_workflow_graph(graph, workflow_type_id)

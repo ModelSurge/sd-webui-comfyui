@@ -39,9 +39,14 @@ class ComfyUIScript(scripts.Script):
         self.accordion.setup_infotext_fields(self)
         return self.accordion.get_script_ui_components()
 
-    def process(self, p, queue_front, **kwargs):
+    def process(self, p, queue_front, enabled_workflow_type_ids, **kwargs):
         if not getattr(global_state, 'enabled', True):
             return
+
+        if not hasattr(global_state, 'enabled_workflow_type_ids'):
+            global_state.enabled_workflow_type_ids = {}
+
+        global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
 
         global_state.queue_front = queue_front
         workflow_patcher.patch_processing(p)

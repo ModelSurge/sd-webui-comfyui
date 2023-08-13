@@ -53,6 +53,10 @@ class AccordionInterface:
             key=f'enabled_display_names_{self.tab}',
             value=[],
         )
+        self.enabled_workflow_type_ids = gradio_utils.ExtensionDynamicProperty(
+            key=f'enabled_workflow_type_ids_{self.tab}',
+            value={},
+        )
         self.clear_enabled_workflow_types_button = gr.Button(
             elem_id=get_elem_id('clear_enabled_workflow_types'),
             visible=False,
@@ -102,6 +106,7 @@ class AccordionInterface:
                     self.refresh_button.render()
 
         self.enabled_display_names.render()
+        self.enabled_workflow_type_ids.render()
         self.clear_enabled_workflow_types_button.render()
 
     def connect_events(self):
@@ -119,7 +124,7 @@ class AccordionInterface:
         self._rendered = True
 
     def get_script_ui_components(self) -> Tuple[gr.components.Component, ...]:
-        return self.queue_front,
+        return self.queue_front, self.enabled_workflow_type_ids
 
     def setup_infotext_fields(self, script):
         workflows_infotext_field = gr.Textbox(visible=False)
@@ -156,6 +161,7 @@ class AccordionInterface:
         self.enabled_display_names.change(
             fn=self.on_enabled_display_names_change,
             inputs=[self.enabled_display_names],
+            outputs=[self.enabled_workflow_type_ids],
         )
 
         self.activate_enabled_checkbox()
@@ -208,14 +214,11 @@ class AccordionInterface:
         )
 
     def on_enabled_display_names_change(self, enabled_display_names):
-        if not hasattr(global_state, 'enabled_workflow_type_ids'):
-            global_state.enabled_workflow_type_ids = {}
-
         enabled_workflow_type_ids = {
             self.workflow_type_ids[workflow_type.display_name]: workflow_type.display_name in enabled_display_names
             for workflow_type in self.workflow_types
         }
-        global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
+        return enabled_workflow_type_ids
 
     def on_infotext_change(self, serialized_graphs, current_workflow_display_name):
         if not serialized_graphs:

@@ -18,15 +18,16 @@ def apply_patches():
 
 @ipc.restrict_to_process('webui')
 def watch_prompts(component, **kwargs):
-    possible_ids = {
+    possible_elem_ids = {
         f'{tab}{negative}_prompt': bool(negative)
         for tab in ('txt2img', 'img2img')
         for negative in ('', '_neg')
     }
     event_listeners = ('change', 'input', 'blur')
 
-    if (elem_id := getattr(component, 'elem_id', None)) in possible_ids:
-        attribute = f'last_{"negative" if possible_ids[elem_id] else "positive"}_prompt'
+    elem_id = getattr(component, 'elem_id', None)
+    if elem_id in possible_elem_ids:
+        attribute = f'last_{"negative" if possible_elem_ids[elem_id] else "positive"}_prompt'
         for event_listener in event_listeners:
             getattr(component, event_listener)(
                 fn = lambda p: setattr(global_state, attribute, p),

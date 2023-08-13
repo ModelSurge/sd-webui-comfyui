@@ -4,7 +4,7 @@ import multiprocessing
 import traceback
 import torch
 from queue import Empty
-from typing import List, Any
+from typing import List
 from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 

@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function onComfyuiTabLoaded(callback) {
-    if (getClearEnabledWorkflowTypesButtons().some(e => e === null) ||
+    if (getClearEnabledDisplayNamesButtons().some(e => e === null) ||
         getWorkflowTypeIds() === null ||
         getComfyuiContainer() === null ||
         getTabNav() === null

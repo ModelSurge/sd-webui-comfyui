@@ -4,7 +4,7 @@
   "nodes": [
     {
       "id": 316,
-      "type": "ImageFromWebui",
+      "type": "FromWebui",
       "pos": [
         16,
         229
@@ -18,8 +18,8 @@
       "mode": 0,
       "outputs": [
         {
-          "name": "IMAGE",
-          "type": "IMAGE",
+          "name": "*",
+          "type": "*",
           "links": [
             575
           ],
@@ -28,7 +28,7 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "ImageFromWebui"
+        "Node name for S&R": "FromWebui"
       },
       "widgets_values": [
         "5358"
@@ -36,7 +36,7 @@
     },
     {
       "id": 317,
-      "type": "ImageToWebui",
+      "type": "ToWebui",
       "pos": [
         537,
         190
@@ -50,13 +50,13 @@
       "mode": 0,
       "inputs": [
         {
-          "name": "images",
-          "type": "IMAGE",
+          "name": "*",
+          "type": "*",
           "link": 575
         }
       ],
       "properties": {
-        "Node name for S&R": "ImageToWebui"
+        "Node name for S&R": "ToWebui"
       },
       "widgets_values": [
         "5358"
@@ -70,7 +70,7 @@
       0,
       317,
       0,
-      "IMAGE"
+      "*"
     ]
   ],
   "groups": [],

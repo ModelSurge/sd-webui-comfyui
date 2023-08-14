@@ -68,7 +68,6 @@ app.registerExtension({
                     }
                 }
             }
-            console.log(node);
         }
     },
     async nodeCreated(node) {
@@ -84,24 +83,20 @@ app.registerExtension({
             return;
         }
 
-        let i = 0;
-        const outputs = iframeInfo.webuiIoTypes.outputs;
-        if (typeof outputs === "string" || outputs instanceof String) {
-            i = 1;
-        } else if (Array.isArray(outputs)) {
-            i = outputs.length;
-        } else {
-            for (const k in outputs) { ++i; }
-        }
-        let j = 0;
-        const inputs = iframeInfo.webuiIoTypes.inputs;
-        if (typeof outputs === "string" || outputs instanceof String) {
-            j = 1;
-        } else if (Array.isArray(outputs)) {
-            j = outputs.length;
-        } else {
-            for (const k in outputs) { ++j; }
-        }
-        node.size = [256, 48 + 16 * Math.max(i, j)];
+        const maxIoConnections = Math.max(
+            getTypesLength(iframeInfo.webuiIoTypes.outputs),
+            getTypesLength(iframeInfo.webuiIoTypes.inputs),
+        );
+        node.size = [256, 48 + 16 * maxIoConnections];
     },
 });
+
+function getTypesLength(types) {
+    if (typeof types === "string" || types instanceof String) {
+        return 1;
+    } else if (Array.isArray(types)) {
+        return types.length;
+    } else {
+        return Object.keys(types).length;
+    }
+}

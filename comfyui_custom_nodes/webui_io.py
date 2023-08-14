@@ -11,12 +11,12 @@ class WebuiInput:
         }
     RETURN_TYPES = ()
     RETURN_NAMES = ()
-    FUNCTION = "get_images"
+    FUNCTION = "get_node_inputs"
 
     CATEGORY = "webui"
 
     @staticmethod
-    def get_images(void):
+    def get_node_inputs(void):
         return global_state.node_input_args
 
 
@@ -29,14 +29,14 @@ class WebuiOutput:
             "required": {},
         }
     RETURN_TYPES = ()
-    FUNCTION = "update_global_state"
+    FUNCTION = "extend_node_outputs"
 
     CATEGORY = "webui"
 
     OUTPUT_NODE = True
 
     @staticmethod
-    def update_global_state(**outputs):
+    def extend_node_outputs(**outputs):
         global_state.node_outputs += [outputs]
         return ()
 

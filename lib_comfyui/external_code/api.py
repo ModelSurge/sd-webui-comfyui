@@ -196,7 +196,7 @@ def run_workflow(
     Args:
         workflow_type (WorkflowType): Target workflow type to run
         tab (str): The tab on which to run the workflow type. The workflow type must be present on the tab
-        batch_input (List[ANy]): Batch objects to pass to the workflow. The number of elements in batch_input is the size of the comfyui batch
+        batch_input (Any): Batch object to pass to the workflow. The number of elements in this batch object will be the size of the comfyui batch
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
     Returns:
         The outputs of the workflow

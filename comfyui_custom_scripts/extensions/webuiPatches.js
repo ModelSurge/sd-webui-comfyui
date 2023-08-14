@@ -1,6 +1,6 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
-import { appReadyEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { appReadyEvent, iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
 
 
 async function patchUiEnv(workflowTypeId) {

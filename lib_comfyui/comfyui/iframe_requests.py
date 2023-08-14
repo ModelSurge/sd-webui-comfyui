@@ -48,12 +48,14 @@ class ComfyuiIFrameRequests:
         queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
-        ComfyuiIFrameRequests.send({
-            'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-            'workflowType': workflow_type_id,
-            'requiredNodeTypes': [],
-            'queueFront': queue_front,
-        })
+        ComfyuiIFrameRequests.send(
+            request='/sd-webui-comfyui/webui_request_queue_prompt',
+            workflow_type=workflow_type_id,
+            data={
+                'requiredNodeTypes': [],
+                'queueFront': queue_front,
+            }
+        )
 
         if not queue_tracker.wait_until_done():
             raise RuntimeError('The workflow has not returned normally')

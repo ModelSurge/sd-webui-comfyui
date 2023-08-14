@@ -125,13 +125,14 @@ async function patchDefaultGraph(workflowTypeId) {
         return;
     }
 
+    const iframeInfo = await iframeRegisteredEvent;
+
     app.original_loadGraphData = app.loadGraphData;
     app.loadGraphData = (graphData) => {
         if (graphData) {
             return app.original_loadGraphData(graphData);
         }
 
-        console.log(defaultGraph);
         if (defaultGraph !== "auto") {
             return app.original_loadGraphData(defaultGraph);
         }
@@ -144,9 +145,13 @@ async function patchDefaultGraph(workflowTypeId) {
         app.graph.add(from_webui);
         app.graph.add(to_webui);
 
-        from_webui.connect(0, to_webui, 0);
+        let i = 0;
+        for (const k in iframeInfo.webuiIoTypes.outputs) {
+            from_webui.connect(i, to_webui, i);
+            ++i;
+        }
 
-        graph.arrange();
+        app.graph.arrange();
     };
 
     app.loadGraphData();

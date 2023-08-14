@@ -45,16 +45,32 @@ app.registerExtension({
         for (const node of nodes) {
             node.display_name = `${node.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
 
-            if (node.name.includes('From')) {
-                node.output[0] = iframeInfo.webuiIoTypes.outputs[0];
-            } else if (node.name.includes('To')) {
-                node.input.required.output[0] = iframeInfo.webuiIoTypes.inputs[0];
+            if (node.name === 'FromWebui') {
+                for (const k in iframeInfo.webuiIoTypes.outputs) {
+                    node.output_name.push(k);
+                    node.output_is_list.push(false);
+                    node.output.push(iframeInfo.webuiIoTypes.outputs[k]);
+                }
+            } else if (node.name === 'ToWebui') {
+                for (const k in iframeInfo.webuiIoTypes.inputs) {
+                    node.input.required[k] = [iframeInfo.webuiIoTypes.inputs[k]];
+                }
             }
             console.log(node);
         }
     },
     async nodeCreated(node) {
-        node.size = [256, 64];
+        let iframeInfo = null;
+
+        try {
+            iframeInfo = await iframeRegisteredEvent;
+        } catch {
+            return;
+        }
+
+        let i = 0;
+        for (const k in iframeInfo.webuiIoTypes.outputs) { ++i; }
+        node.size = [256, 48 + 16 * i];
     },
 });
 

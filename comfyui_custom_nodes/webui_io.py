@@ -1,17 +1,6 @@
 from lib_comfyui import global_state
 
 
-class AnyStr(str):
-    def __ne__(self, _value: object) -> bool:
-        return False
-
-    def __eq__(self, _value: object) -> bool:
-        return True
-
-
-any_type = AnyStr("*")
-
-
 class WebuiInput:
     @classmethod
     def INPUT_TYPES(cls):
@@ -20,14 +9,15 @@ class WebuiInput:
                 "void": ("VOID", ),
             },
         }
-    RETURN_TYPES = (any_type, )
-    RETURN_NAMES = ("input", )
+    RETURN_TYPES = ()
+    RETURN_NAMES = ()
     FUNCTION = "get_images"
 
     CATEGORY = "webui"
 
-    def get_images(self, void):
-        return global_state.node_inputs,
+    @staticmethod
+    def get_images(void):
+        return global_state.node_inputs, global_state.node_inputs
 
 
 class WebuiOutput:
@@ -36,19 +26,18 @@ class WebuiOutput:
     @classmethod
     def INPUT_TYPES(cls):
         return {
-            "required": {
-                "output": (any_type, ),
-            },
+            "required": {},
         }
     RETURN_TYPES = ()
-    FUNCTION = "set_images"
+    FUNCTION = "update_global_state"
 
     CATEGORY = "webui"
 
     OUTPUT_NODE = True
 
-    def set_images(self, output):
-        global_state.node_outputs += [output]
+    @staticmethod
+    def update_global_state(**outputs):
+        global_state.node_outputs += [outputs]
         return ()
 
 

@@ -1,7 +1,10 @@
 import dataclasses
+import traceback
 from pathlib import Path
 from typing import List, Tuple, Union, Any, Optional, Dict
 from lib_comfyui import global_state
+from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
+
 
 
 ALL_TABS = ...
@@ -28,8 +31,6 @@ class WorkflowType:
 
         if self.input_types is None:
             self.input_types = self.types
-        if self.types is None:
-            self.types = self.input_types
 
         if not isinstance(self.input_types, (str, tuple, dict)):
             raise TypeError(f'input_types should be str, tuple or dict but it is {type(self.input_types)}')
@@ -43,9 +44,7 @@ class WorkflowType:
             with open(str(self.default_workflow), 'r') as f:
                 self.default_workflow = f.read()
         elif self.default_workflow == AUTO_WORKFLOW:
-            input_values = self.input_types.values() if isinstance(self.input_types, dict) else self.input_types
-            output_values = self.types.values() if isinstance(self.types, dict) else self.types
-            if list(input_values) != list(output_values):
+            if not self.is_same_io():
                 raise ValueError('auto workflow is currently not supported for different input and output types')
 
     def get_ids(self, tabs: Tabs = ALL_TABS) -> List[str]:
@@ -60,6 +59,11 @@ class WorkflowType:
 
     def pretty_str(self):
         return f'"{self.display_name}" ({self.base_id})'
+
+    def is_same_io(self):
+        input_values = self.input_types.values() if isinstance(self.input_types, dict) else self.input_types
+        output_values = self.types.values() if isinstance(self.types, dict) else self.types
+        return list(input_values) == list(output_values)
 
 
 def get_workflow_types(tabs: Tabs = ALL_TABS) -> List[WorkflowType]:
@@ -184,11 +188,19 @@ def get_default_workflow_json(workflow_type_id: str) -> str:
     raise ValueError(workflow_type_id)
 
 
+def is_workflow_type_enabled(workflow_type_id: str) -> bool:
+    return (
+        getattr(global_state, 'enable', True) and
+        getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)
+    )
+
+
 def run_workflow(
     workflow_type: WorkflowType,
     tab: str,
     batch_input: Any,
     queue_front: Optional[bool] = None,
+    identity_on_error: Optional[bool] = False,
 ) -> List[Any]:
     """
     Run a comfyui workflow synchronously
@@ -196,41 +208,83 @@ def run_workflow(
     Args:
         workflow_type (WorkflowType): Target workflow type to run
         tab (str): The tab on which to run the workflow type. The workflow type must be present on the tab
-        batch_input (Any): Batch object to pass to the workflow. The number of elements in this batch object will be the size of the comfyui batch
+        batch_input (Any): Batch object to pass as input to the workflow. The number of elements in this batch object will be the size of the comfyui batch.
+            The particular type of batch_input depends on **workflow_type.input_types**:
+            - if **input_types** is a dict, **batch_input** should be a dict. For each **k, v** pair of **batch_input**, **v** should match the type expected by **input_types[k]**.
+            - if **input_types** is a tuple, **batch_input** should be a tuple. Each element **v** at index **i** of **batch_input** should match the type expected by **input_types[i]**.
+            - if **input_types** is a str, **batch_input** should be a single value that should match the type expected by **input_types**.
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
+        identity_on_error (Optional[bool]): Whether to return [batch_input] instead of raising a RuntimeError when the workflow fails to run
     Returns:
-        The outputs of the workflow
-        The size of the returned list corresponds to the number of output nodes in the workflow
-        Each element of the list will have the same batch size as batch_input
+        The outputs of the workflow, as a list.
+        Each element of the list corresponds to one output node in the workflow.
+        You can expect multiple values when a user has multiple output nodes in their workflow.
+        The particular type of each returned element depends on workflow_type.types:
+            - **types** is a dict: each element is a dict. For each **k, v** pair, **v** matches the type expected by **types[k]**
+            - **types** is a tuple: each element is a tuple. For each element **v** at index **i**, **v** matches the type expected by **types[i]**
+            - **types** is a str: each element is a single value that matches the type expected by **types**
+        Each element of the list will have the same batch size as **batch_input**
     Raises:
         ValueError: If workflow_type is not present on the given tab
+        TypeError: If the type of batch_input does not match the type expected by workflow_type.input_types
+        RuntimeError: If identity_on_error is False and workflow execution fails for any reason
         AssertionError: If multiple candidate ids exist for workflow_type
     """
-    from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
-
     candidate_ids = workflow_type.get_ids(tab)
-    assert len(candidate_ids) <= 1, f'Found multiple candidate workflow type ids for tab {tab} and workflow type {workflow_type.pretty_str()}: {candidate_ids}'
+    assert len(candidate_ids) <= 1, (
+        f'Found multiple candidate workflow type ids for tab {tab} and workflow type {workflow_type.pretty_str()}: {candidate_ids}\n'
+        'The workflow type is likely to not be correctly configured'
+    )
+
+    if isinstance(workflow_type.input_types, dict):
+        if not isinstance(batch_input, dict):
+            raise TypeError(f'batch_input should be dict but is instead {type(batch_input)}')
+
+        expected_keys = set(workflow_type.input_types.keys())
+        actual_keys = set(batch_input.keys())
+        if expected_keys - actual_keys:
+            raise TypeError(f'batch_input is missing keys: {expected_keys - actual_keys}')
+
+        # convert to tuple in the same order as the items in input_types
+        batch_input_args = tuple(batch_input[k] for k in workflow_type.input_types.keys())
+    elif isinstance(workflow_type.input_types, str):
+        batch_input_args = (batch_input,)
+    elif isinstance(workflow_type.input_types, tuple):
+        if not isinstance(batch_input, tuple):
+            raise TypeError(f'batch_input should be tuple but is instead {type(batch_input)}')
+
+        if len(batch_input) != len(workflow_type.input_types):
+            raise TypeError(f'batch_input received {len(batch_input)} values instead of {len(workflow_type.input_types)} (signature is {workflow_type.input_types})')
+
+        batch_input_args = batch_input
+    else:
+        raise TypeError(f'batch_input should be str, tuple or dict instead of {type(batch_input)}')
 
     if not candidate_ids:
         raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type: {workflow_type.tabs}')
 
     workflow_type_id = candidate_ids[0]
-    if not (getattr(global_state, 'enable', True) and getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)):
-        return [batch_input] if workflow_type.types == workflow_type.input_types else []
+    if not is_workflow_type_enabled(workflow_type_id):
+        if identity_on_error:
+            return [batch_input]
 
-    if isinstance(batch_input, dict):
-        batch_input = tuple(batch_input.values())
-    elif not isinstance(workflow_type.input_types, tuple):
-        batch_input = (batch_input,)
+        raise RuntimeError(f'workflow type {workflow_type.pretty_str()} is not enabled')
 
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    batch_output_params = ComfyuiIFrameRequests.start_workflow_sync(
-        batch_input_args=batch_input,
-        workflow_type_id=workflow_type_id,
-        queue_front=queue_front,
-    )
+    try:
+        batch_output_params = ComfyuiIFrameRequests.start_workflow_sync(
+            batch_input_args=batch_input_args,
+            workflow_type_id=workflow_type_id,
+            queue_front=queue_front,
+        )
+    except RuntimeError as e:
+        if identity_on_error:
+            print('\n'.join(traceback.format_exception_only(e)))
+            return [batch_input]
+        else:
+            raise e
 
     if isinstance(workflow_type.types, tuple):
         return [tuple(params.values()) for params in batch_output_params]

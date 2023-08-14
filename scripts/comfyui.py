@@ -62,11 +62,9 @@ class ComfyUIScript(scripts.Script):
         batch_results = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_workflow_type,
             tab=self.get_tab(),
-            batch_input=webui_io.webui_image_to_comfyui(torch.stack(pp.images)),
+            batch_input=webui_io.webui_image_to_comfyui(torch.stack(pp.images).to('cpu')),
+            identity_on_error=True,
         )
-
-        if not batch_results:
-            return
 
         for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
             list_to_scale[:] = list_to_scale * len(batch_results)

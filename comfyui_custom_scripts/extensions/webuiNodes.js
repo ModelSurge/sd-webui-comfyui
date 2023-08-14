@@ -80,6 +80,10 @@ app.registerExtension({
             return;
         }
 
+        if (!webuiIoNodeNames.includes(node.type)) {
+            return;
+        }
+
         let i = 0;
         const outputs = iframeInfo.webuiIoTypes.outputs;
         if (typeof outputs === "string" || outputs instanceof String) {
@@ -90,7 +94,7 @@ app.registerExtension({
             for (const k in outputs) { ++i; }
         }
         let j = 0;
-        const inputs = iframeInfo.webuiIoTypes.outputs;
+        const inputs = iframeInfo.webuiIoTypes.inputs;
         if (typeof outputs === "string" || outputs instanceof String) {
             j = 1;
         } else if (Array.isArray(outputs)) {

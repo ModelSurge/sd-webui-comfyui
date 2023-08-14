@@ -41,29 +41,21 @@ class ComfyuiIFrameRequests:
         workflow_type_id: str,
         queue_front: bool,
     ) -> List[Dict[str, Any]]:
-        from modules import shared
-        if shared.state.interrupted:
-            return []
-
         global_state.node_input_args = batch_input_args
         global_state.node_outputs = []
 
         queue_tracker.setup_tracker_id()
 
         # unsafe queue tracking
-        try:
-            ComfyuiIFrameRequests.send({
-                'request': '/sd-webui-comfyui/webui_request_queue_prompt',
-                'workflowType': workflow_type_id,
-                'requiredNodeTypes': [],
-                'queueFront': queue_front,
-            })
-        except RuntimeError as e:
-            print('\n'.join(traceback.format_exception_only(e)))
-            return []
+        ComfyuiIFrameRequests.send({
+            'request': '/sd-webui-comfyui/webui_request_queue_prompt',
+            'workflowType': workflow_type_id,
+            'requiredNodeTypes': [],
+            'queueFront': queue_front,
+        })
 
         if not queue_tracker.wait_until_done():
-            return []
+            raise RuntimeError('The workflow has not returned normally')
 
         return global_state.node_outputs
 

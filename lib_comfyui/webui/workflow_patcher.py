@@ -2,7 +2,6 @@ import functools
 import sys
 
 import torch
-import torchvision.transforms.functional as F
 from lib_comfyui import ipc, global_state, default_workflow_types, external_code
 from lib_comfyui.comfyui import webui_io
 
@@ -59,6 +58,7 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
         workflow_type=default_workflow_types.preprocess_latent_workflow_type,
         tab='img2img',
         batch_input=webui_io.webui_latent_to_comfyui(x).to(device='cpu'),
+        identity_on_error=True,
     )
     verify_singleton(processed_x)
     x = webui_io.comfyui_latent_to_webui(processed_x[0]).to(device=x.device)
@@ -87,6 +87,7 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
         workflow_type=default_workflow_types.postprocess_latent_workflow_type,
         tab='img2img' if is_img2img else 'txt2img',
         batch_input=webui_io.webui_latent_to_comfyui(x.to(device='cpu')),
+        identity_on_error=True,
     )
     verify_singleton(processed_x)
     return webui_io.comfyui_latent_to_webui(processed_x[0]).to(device=x.device)
@@ -97,6 +98,7 @@ def p_img2img_init(*args, original_function, p_ref, **kwargs):
         workflow_type=default_workflow_types.preprocess_workflow_type,
         tab='img2img',
         batch_input=torch.stack([webui_io.webui_image_to_comfyui(image) for image in p_ref.init_images]),
+        identity_on_error=True,
     )
     verify_singleton(processed_images)
     p_ref.init_images = webui_io.comfyui_image_to_webui(processed_images[0])

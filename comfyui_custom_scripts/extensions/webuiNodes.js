@@ -81,7 +81,8 @@ app.registerExtension({
             getTypesLength(iframeInfo.webuiIoTypes.outputs),
             getTypesLength(iframeInfo.webuiIoTypes.inputs),
         );
-        node.size = [240, 40 + 20 * maxIoLength];
+        // 240 and 40 are empirical values that seem to work
+        node.size = [240, 40 + distanceBetweenIoSlots * maxIoLength];
     },
 });
 
@@ -103,3 +104,5 @@ const webuiIoNodeNames = [
     'FromWebui',
     'ToWebui',
 ];
+
+const distanceBetweenIoSlots = 20;

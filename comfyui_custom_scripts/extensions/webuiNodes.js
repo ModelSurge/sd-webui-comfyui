@@ -83,11 +83,11 @@ app.registerExtension({
             return;
         }
 
-        const maxIoConnections = Math.max(
+        const maxIoLength = Math.max(
             getTypesLength(iframeInfo.webuiIoTypes.outputs),
             getTypesLength(iframeInfo.webuiIoTypes.inputs),
         );
-        node.size = [256, 48 + 16 * maxIoConnections];
+        node.size = [256, 48 + 16 * maxIoLength];
     },
 });
 

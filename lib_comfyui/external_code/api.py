@@ -6,6 +6,7 @@ from lib_comfyui import global_state
 
 ALL_TABS = ...
 Tabs = Union[str, Tuple[str, ...]]
+AUTO_WORKFLOW = "\"auto\""
 
 
 @dataclasses.dataclass
@@ -27,9 +28,13 @@ class WorkflowType:
 
         if isinstance(self.input_types, str):
             self.input_types = (self.input_types,)
+        if len(self.input_types) > 1:
+            raise ValueError('multiple input types are not yet supported')
 
         if isinstance(self.output_types, str):
             self.output_types = (self.output_types,)
+        if len(self.output_types) > 1:
+            raise ValueError('multiple output types are not yet supported')
 
         assert self.tabs, "tabs must not be empty"
 

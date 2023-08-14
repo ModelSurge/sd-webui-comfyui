@@ -119,17 +119,34 @@ async function patchDefaultGraph(workflowTypeId) {
         cache: "no-store",
     });
     const defaultGraph = await response.json();
+
+    // preserve the normal default graph
     if (!defaultGraph) {
         return;
     }
 
     app.original_loadGraphData = app.loadGraphData;
     app.loadGraphData = (graphData) => {
-        if (!graphData) {
-            return app.original_loadGraphData(defaultGraph);
-        } else {
+        if (graphData) {
             return app.original_loadGraphData(graphData);
         }
+
+        console.log(defaultGraph);
+        if (defaultGraph !== "auto") {
+            return app.original_loadGraphData(defaultGraph);
+        }
+
+        app.graph.clear();
+
+        const from_webui = LiteGraph.createNode("FromWebui");
+        const to_webui = LiteGraph.createNode("ToWebui");
+
+        app.graph.add(from_webui);
+        app.graph.add(to_webui);
+
+        from_webui.connect(0, to_webui, 0);
+
+        graph.arrange();
     };
 
     app.loadGraphData();

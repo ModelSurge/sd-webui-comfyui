@@ -44,36 +44,17 @@ app.registerExtension({
         const nodes = webuiIoNodeNames.map(name => defs[name]);
         for (const node of nodes) {
             node.display_name = `${node.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
+
+            if (node.name.includes('From')) {
+                node.output[0] = iframeInfo.webuiIoTypes.outputs[0];
+            } else if (node.name.includes('To')) {
+                node.input.required.output[0] = iframeInfo.webuiIoTypes.inputs[0];
+            }
+            console.log(node);
         }
     },
     async nodeCreated(node) {
-        let iframeInfo = null;
-        let output_type = null;
-        let input_type = null;
-
-        try {
-            iframeInfo = await iframeRegisteredEvent;
-            output_type = iframeInfo.webuiIoTypes.outputs[0];
-            input_type = iframeInfo.webuiIoTypes.inputs[0];
-        } catch {
-            output_type = undefined;
-            input_type = undefined;
-        }
-
-        if (node.type.includes('From')) {
-            node.outputs[0].type = output_type;
-            if (output_type === input_type) {
-                for (const link of node.outputs[0].links) {
-                    if (output_type === undefined) {
-                        node.disconnectInput(link.target_slot);
-                    }
-                    app.graph.links[link].type = output_type;
-                }
-            }
-        } else if (node.type.includes('To')) {
-            node.inputs[0].type = input_type;
-            app.graph.links[node.inputs[0].link].type = input_type;
-        }
+        node.size = [256, 64];
     },
 });
 

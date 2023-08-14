@@ -65,6 +65,9 @@ class ComfyUIScript(scripts.Script):
             batch_input=webui_io.webui_image_to_comfyui(torch.stack(pp.images)),
         )
 
+        if not batch_results:
+            return
+
         for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
             list_to_scale[:] = list_to_scale * len(batch_results)
 

@@ -216,20 +216,25 @@ def run_workflow(
 
     workflow_type_id = candidate_ids[0]
     if not (getattr(global_state, 'enable', True) and getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False)):
-        return [batch_input]
+        return [batch_input] if workflow_type.types == workflow_type.input_types else []
+
+    if isinstance(batch_input, dict):
+        batch_input = tuple(batch_input.values())
+    elif not isinstance(workflow_type.input_types, tuple):
+        batch_input = (batch_input,)
 
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    res = ComfyuiIFrameRequests.start_workflow_sync(
-        batch_input=batch_input,
+    batch_output_params = ComfyuiIFrameRequests.start_workflow_sync(
+        batch_input_args=batch_input,
         workflow_type_id=workflow_type_id,
         queue_front=queue_front,
     )
 
     if isinstance(workflow_type.types, tuple):
-        res = [tuple(e.values()) for e in res]
+        return [tuple(params.values()) for params in batch_output_params]
     elif isinstance(workflow_type.types, str):
-        res = [next(iter(e.values())) for e in res]
-
-    return res
+        return [next(iter(params.values())) for params in batch_output_params]
+    else:
+        return batch_output_params

@@ -4,7 +4,7 @@ import multiprocessing
 import traceback
 import torch
 from queue import Empty
-from typing import List
+from typing import List, Any, Dict, Tuple
 from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 
@@ -37,19 +37,15 @@ class ComfyuiIFrameRequests:
     @staticmethod
     @ipc.restrict_to_process('webui')
     def start_workflow_sync(
-        batch_input: torch.Tensor,
+        batch_input_args: Tuple[Any],
         workflow_type_id: str,
         queue_front: bool,
-    ) -> List[torch.Tensor]:
+    ) -> List[Dict[str, Any]]:
         from modules import shared
         if shared.state.interrupted:
-            return [batch_input]
+            return []
 
-        if is_default_workflow(workflow_type_id):
-            print('[sd-webui-comfyui]', f'Skipping workflow {workflow_type_id} because it is empty.')
-            return [batch_input]
-
-        global_state.node_inputs = batch_input
+        global_state.node_input_args = batch_input_args
         global_state.node_outputs = []
 
         queue_tracker.setup_tracker_id()
@@ -64,10 +60,10 @@ class ComfyuiIFrameRequests:
             })
         except RuntimeError as e:
             print('\n'.join(traceback.format_exception_only(e)))
-            return [batch_input]
+            return []
 
         if not queue_tracker.wait_until_done():
-            return [batch_input]
+            return []
 
         return global_state.node_outputs
 
@@ -157,11 +153,7 @@ def extend_infotext_with_comfyui_workflows(p, tab):
         if not getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False):
             continue
 
-        graph = get_workflow_graph(workflow_type_id)
-        if is_default_workflow(workflow_type_id, graph):
-            continue
-
-        workflows[workflow_type.base_id] = graph
+        workflows[workflow_type.base_id] = get_workflow_graph(workflow_type_id)
 
     p.extra_generation_params['ComfyUI Workflows'] = json.dumps(workflows)
 

@@ -17,7 +17,7 @@ class WebuiInput:
 
     @staticmethod
     def get_images(void):
-        return global_state.node_inputs,
+        return global_state.node_input_args
 
 
 class WebuiOutput:

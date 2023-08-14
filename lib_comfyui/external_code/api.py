@@ -219,7 +219,7 @@ def run_workflow(
             - if **input_types** is a tuple, **batch_input** should be a tuple. Each element **v** at index **i** of **batch_input** should match the type expected by **input_types[i]**.
             - if **input_types** is a str, **batch_input** should be a single value that should match the type expected by **input_types**.
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
-        identity_on_error (Optional[bool]): Whether to return [batch_input] instead of raising a RuntimeError when the workflow fails to run
+        identity_on_error (Optional[bool]): Whether to return batch_input (converted to the type expected by workflow_type.types) instead of raising a RuntimeError when the workflow fails to run
     Returns:
         The outputs of the workflow, as a list.
         Each element of the list corresponds to one output node in the workflow.
@@ -278,7 +278,7 @@ def run_workflow(
 
     try:
         if not is_workflow_type_enabled(workflow_type_id):
-            raise RuntimeError(f'Workflow type {workflow_type.pretty_str()} is not enabled')
+            raise RuntimeError(f'Workflow type {workflow_type.pretty_str()} is not enabled on tab {tab}')
 
         batch_output_params = ComfyuiIFrameRequests.start_workflow_sync(
             batch_input_args=batch_input_args,

@@ -25,7 +25,7 @@ const iframeRegisteredEvent = new Promise((resolve, reject) => {
 
 const appReadyEvent = new Promise(resolve => {
     const appReadyOrRecursiveSetTimeout = () => {
-        if (app.graph) {
+        if (app.graph && window.name) {
             resolve();
         }
         else {

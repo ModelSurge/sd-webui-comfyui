@@ -8,7 +8,7 @@ from lib_comfyui import global_state, ipc
 
 ALL_TABS = ...
 Tabs = Union[str, Tuple[str, ...]]
-AUTO_WORKFLOW = "\"auto\""
+AUTO_WORKFLOW = '"auto"'  # json encoded string "auto"
 
 
 @dataclasses.dataclass
@@ -44,7 +44,7 @@ class WorkflowType:
                 self.default_workflow = f.read()
         elif self.default_workflow == AUTO_WORKFLOW:
             if not self.is_same_io():
-                raise ValueError('auto workflow is only supported for same input and output types')
+                raise ValueError('AUTO_WORKFLOW default workflow is only supported for same input and output types')
 
     def get_ids(self, tabs: Tabs = ALL_TABS) -> List[str]:
         if isinstance(tabs, str):

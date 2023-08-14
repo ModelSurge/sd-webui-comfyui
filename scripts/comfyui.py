@@ -3,7 +3,7 @@ import torch
 from modules import scripts
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils, accordion
-from lib_comfyui.comfyui import iframe_requests, webui_io
+from lib_comfyui.comfyui import iframe_requests, type_conversion
 
 
 class ComfyUIScript(scripts.Script):
@@ -62,7 +62,7 @@ class ComfyUIScript(scripts.Script):
         batch_results = external_code.run_workflow(
             workflow_type=default_workflow_types.postprocess_workflow_type,
             tab=self.get_tab(),
-            batch_input=webui_io.webui_image_to_comfyui(torch.stack(pp.images).to('cpu')),
+            batch_input=type_conversion.webui_image_to_comfyui(torch.stack(pp.images).to('cpu')),
             identity_on_error=True,
         )
 
@@ -73,7 +73,7 @@ class ComfyUIScript(scripts.Script):
         pp.images.extend(
             image
             for batch in batch_results
-            for image in webui_io.comfyui_image_to_webui(batch, return_tensors=True))
+            for image in type_conversion.comfyui_image_to_webui(batch, return_tensors=True))
 
         iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
 

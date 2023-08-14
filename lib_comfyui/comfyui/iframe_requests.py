@@ -41,6 +41,10 @@ class ComfyuiIFrameRequests:
         workflow_type_id: str,
         queue_front: bool,
     ) -> List[Dict[str, Any]]:
+        from modules import shared
+        if shared.state.interrupted:
+            raise RuntimeError('The workflow was not started because the webui has been interrupted')
+
         global_state.node_input_args = batch_input_args
         global_state.node_outputs = []
 
@@ -142,7 +146,7 @@ def extend_infotext_with_comfyui_workflows(p, tab):
     workflows = {}
     for workflow_type in external_code.get_workflow_types(tab):
         workflow_type_id = workflow_type.get_ids(tab)[0]
-        if not getattr(global_state, 'enabled_workflow_type_ids', {}).get(workflow_type_id, False):
+        if not external_code.is_workflow_type_enabled(workflow_type_id):
             continue
 
         workflows[workflow_type.base_id] = get_workflow_graph(workflow_type_id)

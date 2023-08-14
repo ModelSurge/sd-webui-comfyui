@@ -1,5 +1,4 @@
 from lib_comfyui import global_state
-from lib_comfyui.comfyui.webui_io import NODE_DISPLAY_NAME_MAPPINGS
 
 
 class AnyStr(str):
@@ -56,4 +55,9 @@ class WebuiOutput:
 NODE_CLASS_MAPPINGS = {
     "FromWebui": WebuiInput,
     "ToWebui": WebuiOutput,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "FromWebui": 'From Webui',
+    "ToWebui": 'To Webui',
 }

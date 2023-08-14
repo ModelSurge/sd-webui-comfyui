@@ -5,7 +5,6 @@ import gradio as gr
 import install_comfyui
 from lib_comfyui import external_code, ipc
 from lib_comfyui.webui import settings, gradio_utils
-from lib_comfyui.comfyui import webui_io
 from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
 
 
@@ -41,10 +40,6 @@ def create_tab():
                 for workflow_type in external_code.get_workflow_types()
                 for workflow_type_id in workflow_type.get_ids()
             },
-        )
-        gradio_utils.ExtensionDynamicProperty(
-            key='webui_io_node_names',
-            value=list(webui_io.NODE_DISPLAY_NAME_MAPPINGS.keys()),
         )
         gradio_utils.ExtensionDynamicProperty(
             key='webui_io_types',

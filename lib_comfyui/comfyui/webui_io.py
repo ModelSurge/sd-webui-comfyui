@@ -5,12 +5,6 @@ from lib_comfyui import ipc
 from lib_comfyui.webui.proxies import get_comfy_model_config
 
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "FromWebui": 'From Webui',
-    "ToWebui": 'To Webui',
-}
-
-
 def webui_image_to_comfyui(batch):
     if isinstance(batch[0], Image.Image):
         batch = torch.stack([F.pil_to_tensor(image) / 255 for image in batch])

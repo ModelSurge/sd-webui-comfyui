@@ -8,7 +8,7 @@ from lib_comfyui import global_state, ipc
 
 ALL_TABS = ...
 Tabs = Union[str, Tuple[str, ...]]
-AUTO_WORKFLOW = '"auto"'  # json encoded string "auto"
+AUTO_WORKFLOW = '"auto"'  # json encoded string
 
 
 @dataclasses.dataclass
@@ -240,7 +240,7 @@ def run_workflow(
     candidate_ids = workflow_type.get_ids(tab)
     assert len(candidate_ids) <= 1, (
         f'Found multiple candidate workflow type ids for tab {tab} and workflow type {workflow_type.pretty_str()}: {candidate_ids}\n'
-        'The workflow type is likely to not be correctly configured'
+        'The workflow type is likely to be incorrectly configured'
     )
 
     if queue_front is None:

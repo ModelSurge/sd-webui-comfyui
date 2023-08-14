@@ -59,23 +59,40 @@ class ComfyUIScript(scripts.Script):
         if len(pp.images) == 0:
             return
 
-        batch_results = external_code.run_workflow(
-            workflow_type=default_workflow_types.postprocess_workflow_type,
-            tab=self.get_tab(),
-            batch_input=type_conversion.webui_image_to_comfyui(torch.stack(pp.images).to('cpu')),
-            identity_on_error=True,
-        )
+        all_results = []
+        for batch_input in extract_contiguous_buckets(pp.images, p.batch_size):
+            batch_results = external_code.run_workflow(
+                workflow_type=default_workflow_types.postprocess_workflow_type,
+                tab=self.get_tab(),
+                batch_input=type_conversion.webui_image_to_comfyui(torch.stack(batch_input).to('cpu')),
+                identity_on_error=True,
+            )
 
-        for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
-            list_to_scale[:] = list_to_scale * len(batch_results)
+            for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
+                list_to_scale[:] = list_to_scale * len(batch_results)
+
+            all_results.extend(
+                image
+                for batch in batch_results
+                for image in type_conversion.comfyui_image_to_webui(batch, return_tensors=True))
 
         pp.images.clear()
-        pp.images.extend(
-            image
-            for batch in batch_results
-            for image in type_conversion.comfyui_image_to_webui(batch, return_tensors=True))
-
+        pp.images.extend(all_results)
         iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
+
+
+def extract_contiguous_buckets(images, batch_size):
+    common_shape = None
+    batch_begin = 0
+
+    for i in range(len(images)):
+        if common_shape is None:
+            common_shape = images[i].size()
+
+        if images[i].size() != common_shape or i - batch_begin >= batch_size or (i := i + 1) == len(images):
+            yield images[batch_begin:i]
+            batch_begin = i
+            common_shape = None
 
 
 callbacks.register_callbacks()

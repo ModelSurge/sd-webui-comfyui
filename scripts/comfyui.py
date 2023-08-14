@@ -71,8 +71,8 @@ class ComfyUIScript(scripts.Script):
         pp.images.clear()
         pp.images.extend(
             image
-            for batch_results_kwargs in batch_results
-            for image in webui_io.comfyui_image_to_webui(next(iter(batch_results_kwargs.values())), return_tensors=True))
+            for batch in batch_results
+            for image in webui_io.comfyui_image_to_webui(batch, return_tensors=True))
 
         iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
 

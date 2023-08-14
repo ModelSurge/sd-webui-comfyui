@@ -145,10 +145,16 @@ async function patchDefaultGraph(workflowTypeId) {
         app.graph.add(from_webui);
         app.graph.add(to_webui);
 
-        let i = 0;
-        for (const k in iframeInfo.webuiIoTypes.outputs) {
+        let outputs = iframeInfo.webuiIoTypes.outputs;
+        if (typeof outputs === "string" || outputs instanceof String) {
+            outputs = [outputs];
+        } else if (!Array.isArray(outputs)) {
+            outputs = Object.keys(outputs).map(parseInt);
+        }
+        console.log(outputs);
+        for (let i in outputs) {
+            i = parseInt(i);
             from_webui.connect(i, to_webui, i);
-            ++i;
         }
 
         app.graph.arrange();

@@ -258,10 +258,10 @@ def run_workflow(
 
         batch_input_args = batch_input
     else:
-        raise TypeError(f'batch_input should be str, tuple or dict instead of {type(batch_input)}')
+        raise TypeError(f'batch_input should be str, tuple or dict but is instead {type(batch_input)}')
 
     if not candidate_ids:
-        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type: {workflow_type.tabs}')
+        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type are: {workflow_type.tabs}')
 
     workflow_type_id = candidate_ids[0]
     if not is_workflow_type_enabled(workflow_type_id):

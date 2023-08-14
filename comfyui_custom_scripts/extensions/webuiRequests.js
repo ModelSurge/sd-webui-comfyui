@@ -149,7 +149,7 @@ async function patchDefaultGraph(workflowTypeId) {
         if (typeof outputs === "string" || outputs instanceof String) {
             outputs = [outputs];
         } else if (!Array.isArray(outputs)) {
-            outputs = Object.keys(outputs).map(parseInt);
+            outputs = Object.keys(outputs);
         }
         console.log(outputs);
         for (let i in outputs) {

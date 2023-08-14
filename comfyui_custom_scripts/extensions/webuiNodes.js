@@ -47,7 +47,7 @@ app.registerExtension({
 
             if (node.name === 'FromWebui') {
                 let outputs = iframeInfo.webuiIoTypes.outputs;
-                if (typeof outputs === "string" || outputs instanceof String) {
+                if (isString(outputs)) {
                     outputs = [outputs];
                 }
                 const are_types_array = Array.isArray(outputs);
@@ -59,7 +59,7 @@ app.registerExtension({
                 }
             } else if (node.name === 'ToWebui') {
                 let inputs = iframeInfo.webuiIoTypes.inputs;
-                if (typeof inputs === "string" || inputs instanceof String) {
+                if (isString(inputs)) {
                     node.input.required[inputs] = [inputs];
                 } else {
                     for (const k in inputs) {
@@ -99,4 +99,8 @@ function getTypesLength(types) {
     } else {
         return Object.keys(types).length;
     }
+}
+
+function isString(value) {
+    return typeof value === "string" || value instanceof String;
 }

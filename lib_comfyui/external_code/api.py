@@ -4,7 +4,6 @@ import traceback
 from pathlib import Path
 from typing import List, Tuple, Union, Any, Optional, Dict
 from lib_comfyui import global_state, ipc
-from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
 
 
 ALL_TABS = ...
@@ -236,6 +235,8 @@ def run_workflow(
         RuntimeError: If identity_on_error is False and workflow execution fails for any reason
         AssertionError: If multiple candidate ids exist for workflow_type
     """
+    from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
+
     candidate_ids = workflow_type.get_ids(tab)
     assert len(candidate_ids) <= 1, (
         f'Found multiple candidate workflow type ids for tab {tab} and workflow type {workflow_type.pretty_str()}: {candidate_ids}\n'

@@ -2,12 +2,6 @@ import { app } from "/scripts/app.js";
 import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiRequests.js";
 
 
-const webuiIoNodeNames = [
-    'FromWebui',
-    'ToWebui',
-];
-
-
 function createVoidWidget(node, name) {
     const widget = {
         type: "customtext",
@@ -104,3 +98,8 @@ function getTypesLength(types) {
 function isString(value) {
     return typeof value === "string" || value instanceof String;
 }
+
+const webuiIoNodeNames = [
+    'FromWebui',
+    'ToWebui',
+];

@@ -6,11 +6,7 @@ import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extension
 
 async function setupWebuiRequestsEnvironment() {
     const iframeInfo = await iframeRegisteredEvent;
-    console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${iframeInfo.workflowTypeDisplayName}" (${iframeInfo.workflowTypeId}) / ${iframeInfo.webuiClientId}`);
-
     await patchUiEnv(iframeInfo.workflowTypeId);
-    const clientResponse = "register_cid";
-    console.log(`[sd-webui-comfyui][comfyui] INIT WS - ${clientResponse}`);
 
     function addWebuiRequestListener(type, callback, options) {
         api.addEventListener(`webui_${type}`, async (data) => {
@@ -18,15 +14,15 @@ async function setupWebuiRequestsEnvironment() {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 cache: "no-store",
-                body: JSON.stringify({response: await callback(params)}),
+                body: JSON.stringify({response: await callback(data)}),
             });
             console.log(`[sd-webui-comfyui] WEBUI REQUEST - ${iframeInfo.workflowTypeId} - ${type}`);
         }, options);
     };
 
     webuiRequests.forEach((request, type) => addWebuiRequestListener(type, request));
-
     await registerClientToWebui(iframeInfo.workflowTypeId, iframeInfo.webuiClientId, window.name);
+    console.log(`[sd-webui-comfyui][comfyui] INITIALIZED WS - ${iframeInfo.workflowTypeDisplayName}`);
 }
 
 async function registerClientToWebui(workflowTypeId, webuiClientId, sid) {

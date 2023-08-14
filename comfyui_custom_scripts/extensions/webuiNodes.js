@@ -1,5 +1,5 @@
 import { app } from "/scripts/app.js";
-import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiRequests.js";
+import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
 
 
 function createVoidWidget(node, name) {

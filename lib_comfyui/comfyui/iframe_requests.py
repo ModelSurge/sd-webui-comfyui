@@ -1,4 +1,3 @@
-import asyncio
 import json
 import multiprocessing
 from queue import Empty
@@ -9,27 +8,27 @@ from lib_comfyui.comfyui import queue_tracker
 
 class ComfyuiIFrameRequests:
     finished_comfyui_queue = multiprocessing.Queue()
-    workflow_type_ids = {}
-    param_events = {}
-    last_request = None
-    loop = None
     focused_webui_client_id = None
+    server_instance = None
+    sid_map = {}
 
     @staticmethod
     @ipc.run_in_process('comfyui')
-    def send(request_params):
+    def send(request, workflow_type, data=None):
+        if data is None:
+            data = {}
+
         cls = ComfyuiIFrameRequests
         if cls.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
-        events = cls.param_events[cls.focused_webui_client_id]
-        if request_params['workflowType'] not in events:
-            raise RuntimeError(f"The workflow type {cls.last_request['workflowType']} has not been registered by the active webui client {cls.focused_webui_client_id}")
+        ws_client_ids = cls.sid_map[cls.focused_webui_client_id]
+        if workflow_type not in ws_client_ids:
+            raise RuntimeError(f"The workflow type {workflow_type} has not been registered by the active webui client {cls.focused_webui_client_id}")
 
-        cls.last_request = request_params
         clear_queue(cls.finished_comfyui_queue)
-        event = events[request_params['workflowType']]
-        cls.loop.call_soon_threadsafe(event.set)
+        cls.server_instance.send_sync(request, data, ws_client_ids[workflow_type])
+
         return cls.finished_comfyui_queue.get()
 
     @staticmethod
@@ -61,44 +60,27 @@ class ComfyuiIFrameRequests:
 
         return global_state.node_outputs
 
-    @classmethod
-    def init_request_listener(cls, loop):
-        if loop is None or cls.loop is not None:
-            return
+    @staticmethod
+    @ipc.restrict_to_process('comfyui')
+    def register_client(request):
+        workflow_type_id = request['workflowTypeId']
+        webui_client_id = request['webuiClientId']
+        sid = request['sid']
 
-        cls.loop = loop
-
-    @classmethod
-    def add_client(cls, workflow_type_id, webui_client_id):
-        if webui_client_id not in cls.workflow_type_ids:
-            cls.workflow_type_ids[webui_client_id] = set()
-        if webui_client_id not in cls.param_events:
-            cls.param_events[webui_client_id] = {}
-        if workflow_type_id in cls.workflow_type_ids[webui_client_id]:
-            return
-
-        # REMOVE THIS AT SOME POINT
+        # TODO: generalize this
         ComfyuiIFrameRequests.focused_webui_client_id = webui_client_id
 
-        cls.param_events[webui_client_id][workflow_type_id] = asyncio.Event()
-        cls.workflow_type_ids[webui_client_id].add(workflow_type_id)
-        print(f'[sd-webui-comfyui] registered new ComfyUI client - {workflow_type_id}')
+        if webui_client_id not in ComfyuiIFrameRequests.sid_map:
+            ComfyuiIFrameRequests.sid_map[webui_client_id] = {}
 
-    @classmethod
-    async def create_client_request(cls, workflow_type_id, webui_client_id):
-        client_event = cls.param_events[webui_client_id][workflow_type_id]
-        try:
-            await asyncio.wait_for(client_event.wait(), timeout=0.5)
-        except asyncio.TimeoutError:
-            return {'request': '/sd-webui-comfyui/webui_request_timeout',}
+        ComfyuiIFrameRequests.sid_map[webui_client_id][workflow_type_id] = sid
 
-        client_event.clear()
-        print(f'[sd-webui-comfyui] send request - \n{cls.last_request}')
-        return cls.last_request
+        print(f'registered ws - {workflow_type_id} - {sid}')
 
-    @classmethod
-    async def handle_response(cls, response):
-        cls.finished_comfyui_queue.put(response)
+    @staticmethod
+    @ipc.restrict_to_process('comfyui')
+    def handle_response(response):
+        ComfyuiIFrameRequests.finished_comfyui_queue.put(response)
 
 
 def extend_infotext_with_comfyui_workflows(p, tab):
@@ -114,18 +96,15 @@ def extend_infotext_with_comfyui_workflows(p, tab):
 
 
 def set_workflow_graph(workflow_json, workflow_type_id):
-    return ComfyuiIFrameRequests.send({
-        'request': '/sd-webui-comfyui/webui_request_set_workflow',
-        'workflowType': workflow_type_id,
-        'workflow': workflow_json,
-    })
+    return ComfyuiIFrameRequests.send(
+        request='webui_set_workflow',
+        workflow_type=workflow_type_id,
+        data={'workflow': workflow_json}
+    )
 
 
 def get_workflow_graph(workflow_type_id):
-    return ComfyuiIFrameRequests.send({
-        'request': '/sd-webui-comfyui/webui_request_serialize_graph',
-        'workflowType': workflow_type_id,
-    })
+    return ComfyuiIFrameRequests.send(request='webui_serialize_graph', workflow_type=workflow_type_id)
 
 
 def clear_queue(queue: multiprocessing.Queue):

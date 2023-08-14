@@ -3,9 +3,8 @@ import sys
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union, Any, Optional, Dict
-from lib_comfyui import global_state
+from lib_comfyui import global_state, ipc
 from lib_comfyui.comfyui.iframe_requests import ComfyuiIFrameRequests
-
 
 
 ALL_TABS = ...
@@ -62,14 +61,14 @@ class WorkflowType:
         return f'"{self.display_name}" ({self.base_id})'
 
     def is_same_io(self):
-        def to_list(types):
+        def normalize_to_tuple(types):
             if isinstance(types, dict):
                 return tuple(types.values())
             elif isinstance(types, str):
                 return types,
             return types
 
-        return to_list(self.input_types) == to_list(self.types)
+        return normalize_to_tuple(self.input_types) == normalize_to_tuple(self.types)
 
 
 def get_workflow_types(tabs: Tabs = ALL_TABS) -> List[WorkflowType]:
@@ -201,6 +200,7 @@ def is_workflow_type_enabled(workflow_type_id: str) -> bool:
     )
 
 
+@ipc.restrict_to_process('webui')
 def run_workflow(
     workflow_type: WorkflowType,
     tab: str,
@@ -242,6 +242,9 @@ def run_workflow(
         'The workflow type is likely to not be correctly configured'
     )
 
+    if queue_front is None:
+        queue_front = getattr(global_state, 'queue_front', True)
+
     batch_input_args: Tuple[Any]
     if isinstance(workflow_type.input_types, dict):
         if not isinstance(batch_input, dict):
@@ -270,10 +273,8 @@ def run_workflow(
     if not candidate_ids:
         raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type are: {workflow_type.tabs}')
 
-    if queue_front is None:
-        queue_front = getattr(global_state, 'queue_front', True)
-
     workflow_type_id = candidate_ids[0]
+
     try:
         if not is_workflow_type_enabled(workflow_type_id):
             raise RuntimeError(f'Workflow type {workflow_type.pretty_str()} is not enabled')

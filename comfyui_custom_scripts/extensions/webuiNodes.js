@@ -81,7 +81,7 @@ app.registerExtension({
             getTypesLength(iframeInfo.webuiIoTypes.outputs),
             getTypesLength(iframeInfo.webuiIoTypes.inputs),
         );
-        node.size = [256, 48 + 16 * maxIoLength];
+        node.size = [240, 40 + 20 * maxIoLength];
     },
 });
 

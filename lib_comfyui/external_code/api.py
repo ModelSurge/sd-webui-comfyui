@@ -31,11 +31,11 @@ class WorkflowType:
         if self.input_types is None:
             self.input_types = self.types
 
-        if not isinstance(self.input_types, (str, tuple, dict)):
-            raise TypeError(f'input_types should be str, tuple or dict but it is {type(self.input_types)}')
-
         if not isinstance(self.types, (str, tuple, dict)):
             raise TypeError(f'types should be str, tuple or dict but it is {type(self.types)}')
+
+        if not isinstance(self.input_types, (str, tuple, dict)):
+            raise TypeError(f'input_types should be str, tuple or dict but it is {type(self.input_types)}')
 
         assert self.tabs, "tabs must not be empty"
 

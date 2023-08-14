@@ -16,7 +16,10 @@ class ComfyuiIFrameRequests:
 
     @staticmethod
     @ipc.run_in_process('comfyui')
-    def send(request, workflow_type, data={}):
+    def send(request, workflow_type, data=None):
+        if data is None:
+            data = {}
+
         cls = ComfyuiIFrameRequests
         if cls.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')

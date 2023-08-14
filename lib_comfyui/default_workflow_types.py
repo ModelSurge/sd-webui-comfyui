@@ -11,30 +11,26 @@ preprocess_workflow_type = external_code.WorkflowType(
     display_name='Preprocess',
     tabs='img2img',
     default_workflow=external_code.AUTO_WORKFLOW,
-    input_types='IMAGE',
-    output_types='IMAGE',
+    types='IMAGE',
 )
 preprocess_latent_workflow_type = external_code.WorkflowType(
     base_id='preprocess_latent',
     display_name='Preprocess (latent)',
     tabs='img2img',
     default_workflow=external_code.AUTO_WORKFLOW,
-    input_types='LATENT',
-    output_types='LATENT',
+    types='LATENT',
 )
 postprocess_workflow_type = external_code.WorkflowType(
     base_id='postprocess',
     display_name='Postprocess',
     default_workflow=external_code.AUTO_WORKFLOW,
-    input_types='IMAGE',
-    output_types='IMAGE',
+    types='IMAGE',
 )
 postprocess_latent_workflow_type = external_code.WorkflowType(
     base_id='postprocess_latent',
     display_name='Postprocess (latent)',
     default_workflow=external_code.AUTO_WORKFLOW,
-    input_types='LATENT',
-    output_types='LATENT',
+    types='LATENT',
 )
 
 

@@ -61,7 +61,8 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
         batch_input=webui_io.webui_latent_to_comfyui(x).to(device='cpu'),
     )
     verify_singleton(processed_x)
-    return original_function(p, webui_io.comfyui_latent_to_webui(processed_x[0]).to(device=x.device), *args, **kwargs)
+    x = webui_io.comfyui_latent_to_webui(next(iter(processed_x[0].values()))).to(device=x.device)
+    return original_function(p, x, *args, **kwargs)
 
 
 @ipc.restrict_to_process('webui')

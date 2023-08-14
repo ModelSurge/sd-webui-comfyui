@@ -19,34 +19,34 @@ class WorkflowType:
     display_name: str
     tabs: Tabs = ('txt2img', 'img2img')
     default_workflow: Union[str, Path] = "null"
-    input_types: Union[str, Tuple[str, ...], Dict[str, str]] = dataclasses.field(default_factory=tuple)
-    output_types: Union[str, Tuple[str, ...], Dict[str, str]] = dataclasses.field(default_factory=tuple)
+    types: Union[str, Tuple[str, ...], Dict[str, str]] = dataclasses.field(default_factory=tuple)
+    input_types: Union[str, Tuple[str, ...], Dict[str, str], None] = None
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
             self.tabs = (self.tabs,)
 
-        if isinstance(self.input_types, str):
-            self.input_types = (self.input_types,)
-        if isinstance(self.input_types, tuple):
-            self.input_types = {f'output{i}': input_type for i, input_type in enumerate(self.input_types)}
-        else:
+        if self.input_types is None:
+            self.input_types = self.types
+        if self.types is None:
+            self.types = self.input_types
+
+        if not isinstance(self.input_types, (str, tuple, dict)):
             raise TypeError(f'input_types should be str, tuple or dict but it is {type(self.input_types)}')
 
-        if isinstance(self.output_types, str):
-            self.output_types = (self.output_types,)
-        if isinstance(self.output_types, tuple):
-            self.output_types = {f'input{i}': output_type for i, output_type in enumerate(self.output_types)}
-        else:
-            raise TypeError(f'output_types should be str, tuple or dict but it is {type(self.output_types)}')
+        if not isinstance(self.types, (str, tuple, dict)):
+            raise TypeError(f'types should be str, tuple or dict but it is {type(self.types)}')
 
         assert self.tabs, "tabs must not be empty"
 
         if isinstance(self.default_workflow, Path):
             with open(str(self.default_workflow), 'r') as f:
                 self.default_workflow = f.read()
-        elif self.default_workflow == AUTO_WORKFLOW and list(self.input_types.values()) != list(self.output_types.values()):
-            raise ValueError('auto workflow is currently not supported for different input and output types')
+        elif self.default_workflow == AUTO_WORKFLOW:
+            input_values = self.input_types.values() if isinstance(self.input_types, dict) else self.input_types
+            output_values = self.types.values() if isinstance(self.types, dict) else self.types
+            if list(input_values) != list(output_values):
+                raise ValueError('auto workflow is currently not supported for different input and output types')
 
     def get_ids(self, tabs: Tabs = ALL_TABS) -> List[str]:
         if isinstance(tabs, str):
@@ -221,8 +221,15 @@ def run_workflow(
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    return ComfyuiIFrameRequests.start_workflow_sync(
+    res = ComfyuiIFrameRequests.start_workflow_sync(
         batch_input=batch_input,
         workflow_type_id=workflow_type_id,
         queue_front=queue_front,
     )
+
+    if isinstance(workflow_type.types, tuple):
+        res = [tuple(e.values()) for e in res]
+    elif isinstance(workflow_type.types, str):
+        res = [next(iter(e.values())) for e in res]
+
+    return res

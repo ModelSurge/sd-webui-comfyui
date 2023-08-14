@@ -46,14 +46,26 @@ app.registerExtension({
             node.display_name = `${node.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
 
             if (node.name === 'FromWebui') {
-                for (const k in iframeInfo.webuiIoTypes.outputs) {
-                    node.output_name.push(k);
+                let outputs = iframeInfo.webuiIoTypes.outputs;
+                if (typeof outputs === "string" || outputs instanceof String) {
+                    outputs = [outputs];
+                }
+                const are_types_array = Array.isArray(outputs);
+                for (const k in outputs) {
+                    const v = outputs[k];
+                    node.output_name.push(are_types_array ? v : k);
                     node.output_is_list.push(false);
-                    node.output.push(iframeInfo.webuiIoTypes.outputs[k]);
+                    node.output.push(v);
                 }
             } else if (node.name === 'ToWebui') {
-                for (const k in iframeInfo.webuiIoTypes.inputs) {
-                    node.input.required[k] = [iframeInfo.webuiIoTypes.inputs[k]];
+                let inputs = iframeInfo.webuiIoTypes.inputs;
+                if (typeof inputs === "string" || inputs instanceof String) {
+                    node.input.required[inputs] = [inputs];
+                } else {
+                    for (const k in inputs) {
+                        const v = inputs[k];
+                        node.input.required[k] = [v];
+                    }
                 }
             }
             console.log(node);
@@ -69,11 +81,23 @@ app.registerExtension({
         }
 
         let i = 0;
-        for (const k in iframeInfo.webuiIoTypes.outputs) { ++i; }
-        node.size = [256, 48 + 16 * i];
+        const outputs = iframeInfo.webuiIoTypes.outputs;
+        if (typeof outputs === "string" || outputs instanceof String) {
+            i = 1;
+        } else if (Array.isArray(outputs)) {
+            i = outputs.length;
+        } else {
+            for (const k in outputs) { ++i; }
+        }
+        let j = 0;
+        const inputs = iframeInfo.webuiIoTypes.outputs;
+        if (typeof outputs === "string" || outputs instanceof String) {
+            j = 1;
+        } else if (Array.isArray(outputs)) {
+            j = outputs.length;
+        } else {
+            for (const k in outputs) { ++j; }
+        }
+        node.size = [256, 48 + 16 * Math.max(i, j)];
     },
-});
-
-app.registerExtension({
-    name: "webui_io.WebuiInput",
 });

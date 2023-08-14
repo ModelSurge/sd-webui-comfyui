@@ -45,8 +45,8 @@ def create_tab():
             key='webui_io_types',
             value={
                 workflow_type_id: {
-                    'inputs': workflow_type.input_types,
-                    'outputs': workflow_type.output_types,
+                    'inputs': list(workflow_type.input_types) if isinstance(workflow_type.input_types, tuple) else workflow_type.input_types,
+                    'outputs': list(workflow_type.types) if isinstance(workflow_type.types, tuple) else workflow_type.types,
                 }
                 for workflow_type in external_code.get_workflow_types()
                 for workflow_type_id in workflow_type.get_ids()

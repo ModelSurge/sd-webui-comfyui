@@ -21,8 +21,6 @@ class WebuiInput:
 
 
 class WebuiOutput:
-    images = None
-
     @classmethod
     def INPUT_TYPES(cls):
         return {

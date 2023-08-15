@@ -1,7 +1,9 @@
+import torch
+
 from modules import scripts
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
 from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils, accordion
-from lib_comfyui.comfyui import iframe_requests
+from lib_comfyui.comfyui import iframe_requests, type_conversion
 
 
 class ComfyUIScript(scripts.Script):
@@ -57,19 +59,45 @@ class ComfyUIScript(scripts.Script):
         if len(pp.images) == 0:
             return
 
-        batch_results = external_code.run_workflow(
-            workflow_type=default_workflow_types.postprocess_workflow_type,
-            tab=self.get_tab(),
-            batch_input=list(pp.images),
-        )
+        all_results = []
+        for batch_input in extract_contiguous_buckets(pp.images, p.batch_size):
+            batch_results = external_code.run_workflow(
+                workflow_type=default_workflow_types.postprocess_workflow_type,
+                tab=self.get_tab(),
+                batch_input=type_conversion.webui_image_to_comfyui(torch.stack(batch_input).to('cpu')),
+                identity_on_error=True,
+            )
 
-        for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
-            list_to_scale[:] = list_to_scale * len(batch_results)
+            for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
+                list_to_scale[:] = list_to_scale * len(batch_results)
+
+            all_results.extend(
+                image
+                for batch in batch_results
+                for image in type_conversion.comfyui_image_to_webui(batch, return_tensors=True))
 
         pp.images.clear()
-        pp.images.extend(image for batch in batch_results for image in batch)
-
+        pp.images.extend(all_results)
         iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
+
+
+def extract_contiguous_buckets(images, batch_size):
+    current_shape = None
+    begin_index = 0
+
+    for i, image in enumerate(images):
+        if current_shape is None:
+            current_shape = image.size()
+
+        image_has_different_shape = image.size() != current_shape
+        batch_is_full = i - begin_index >= batch_size
+        is_last_image = i == len(images) - 1
+
+        if image_has_different_shape or batch_is_full or is_last_image:
+            end_index = i + 1 if is_last_image else i
+            yield images[begin_index:end_index]
+            begin_index = i
+            current_shape = None
 
 
 callbacks.register_callbacks()

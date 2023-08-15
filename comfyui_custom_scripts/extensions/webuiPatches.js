@@ -1,6 +1,7 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
-import { appReadyEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { appReadyEvent, iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
 
 
 async function patchUiEnv(workflowTypeId) {
@@ -53,17 +54,38 @@ async function patchDefaultGraph(workflowTypeId) {
         cache: "no-store",
     });
     const defaultGraph = await response.json();
+
+    // preserve the normal default graph
     if (!defaultGraph) {
         return;
     }
 
+    const iframeInfo = await iframeRegisteredEvent;
+
     app.original_loadGraphData = app.loadGraphData;
     app.loadGraphData = (graphData) => {
-        if (!graphData) {
-            return app.original_loadGraphData(defaultGraph);
-        } else {
+        if (graphData) {
             return app.original_loadGraphData(graphData);
         }
+
+        if (defaultGraph !== "auto") {
+            return app.original_loadGraphData(defaultGraph);
+        }
+
+        app.graph.clear();
+
+        const from_webui = LiteGraph.createNode("FromWebui");
+        const to_webui = LiteGraph.createNode("ToWebui");
+
+        app.graph.add(from_webui);
+        app.graph.add(to_webui);
+
+        const typesLength = getTypesLength(iframeInfo.webuiIoTypes.outputs);
+        for (let i = 0; i < typesLength; ++i) {
+            from_webui.connect(i, to_webui, i);
+        }
+
+        app.graph.arrange();
     };
 
     app.loadGraphData();

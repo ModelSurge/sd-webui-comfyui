@@ -1,9 +1,6 @@
-from pathlib import Path
 from lib_comfyui import external_code
-from lib_comfyui.webui import settings
 
 
-default_workflows_dir = Path(settings.get_extension_base_dir(), 'workflows', 'default')
 sandbox_tab_workflow_type = external_code.WorkflowType(
     base_id='sandbox',
     display_name='ComfyUI',
@@ -13,23 +10,27 @@ preprocess_workflow_type = external_code.WorkflowType(
     base_id='preprocess',
     display_name='Preprocess',
     tabs='img2img',
-    default_workflow=default_workflows_dir / 'process_image.json',
+    default_workflow=external_code.AUTO_WORKFLOW,
+    types='IMAGE',
 )
 preprocess_latent_workflow_type = external_code.WorkflowType(
     base_id='preprocess_latent',
     display_name='Preprocess (latent)',
     tabs='img2img',
-    default_workflow=default_workflows_dir / 'process_latent.json',
+    default_workflow=external_code.AUTO_WORKFLOW,
+    types='LATENT',
 )
 postprocess_workflow_type = external_code.WorkflowType(
     base_id='postprocess',
     display_name='Postprocess',
-    default_workflow=default_workflows_dir / 'process_image.json',
+    default_workflow=external_code.AUTO_WORKFLOW,
+    types='IMAGE',
 )
 postprocess_latent_workflow_type = external_code.WorkflowType(
     base_id='postprocess_latent',
     display_name='Postprocess (latent)',
-    default_workflow=default_workflows_dir / 'process_latent.json',
+    default_workflow=external_code.AUTO_WORKFLOW,
+    types='LATENT',
 )
 
 

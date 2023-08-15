@@ -2,8 +2,8 @@ import functools
 import sys
 
 import torch
-import torchvision.transforms.functional as F
 from lib_comfyui import ipc, global_state, default_workflow_types, external_code
+from lib_comfyui.comfyui import type_conversion
 
 
 __original_create_sampler = None
@@ -57,10 +57,12 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_latent_workflow_type,
         tab='img2img',
-        batch_input=x.to(device='cpu'),
+        batch_input=type_conversion.webui_latent_to_comfyui(x).to(device='cpu'),
+        identity_on_error=True,
     )
     verify_singleton(processed_x)
-    return original_function(p, processed_x[0].to(device=x.device), *args, **kwargs)
+    x = type_conversion.comfyui_latent_to_webui(processed_x[0]).to(device=x.device)
+    return original_function(p, x, *args, **kwargs)
 
 
 @ipc.restrict_to_process('webui')
@@ -84,20 +86,22 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.postprocess_latent_workflow_type,
         tab='img2img' if is_img2img else 'txt2img',
-        batch_input=x.to(device='cpu'),
+        batch_input=type_conversion.webui_latent_to_comfyui(x.to(device='cpu')),
+        identity_on_error=True,
     )
     verify_singleton(processed_x)
-    return processed_x[0].to(device=x.device)
+    return type_conversion.comfyui_latent_to_webui(processed_x[0]).to(device=x.device)
 
 
 def p_img2img_init(*args, original_function, p_ref, **kwargs):
     processed_images = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_workflow_type,
         tab='img2img',
-        batch_input=[F.pil_to_tensor(image) / 255 for image in p_ref.init_images],
+        batch_input=torch.stack([type_conversion.webui_image_to_comfyui(image) for image in p_ref.init_images]),
+        identity_on_error=True,
     )
     verify_singleton(processed_images)
-    p_ref.init_images = [F.to_pil_image(image_tensor) for image_tensor in processed_images[0]]
+    p_ref.init_images = type_conversion.comfyui_image_to_webui(processed_images[0])
     return original_function(*args, **kwargs)
 
 

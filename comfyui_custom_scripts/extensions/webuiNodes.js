@@ -1,5 +1,6 @@
 import { app } from "/scripts/app.js";
 import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { isString, getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
 
 
 function createVoidWidget(node, name) {
@@ -17,7 +18,7 @@ function createVoidWidget(node, name) {
     return widget;
 }
 
-const ext = {
+app.registerExtension({
     name: "sd-webui-comfyui",
     async getCustomWidgets(app) {
         return {
@@ -26,21 +27,72 @@ const ext = {
             },
         };
     },
-    async beforeRegisterNodeDef(node, nodeData) {
+    async addCustomNodeDefs(defs) {
         let iframeInfo = null;
+
+        try {
+            iframeInfo = await iframeRegisteredEvent;
+        }
+        catch {
+            return;
+        }
+
+        const nodes = webuiIoNodeNames.map(name => defs[name]);
+        for (const node of nodes) {
+            node.display_name = `${node.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
+
+            if (node.name === 'FromWebui') {
+                let outputs = iframeInfo.webuiIoTypes.outputs;
+                if (isString(outputs)) {
+                    outputs = [outputs];
+                }
+                const are_types_array = Array.isArray(outputs);
+                for (const k in outputs) {
+                    const v = outputs[k];
+                    node.output_name.push(are_types_array ? v : k);
+                    node.output_is_list.push(false);
+                    node.output.push(v);
+                }
+            }
+            else if (node.name === 'ToWebui') {
+                let inputs = iframeInfo.webuiIoTypes.inputs;
+                if (isString(inputs)) {
+                    node.input.required[inputs] = [inputs];
+                }
+                else {
+                    for (const k in inputs) {
+                        const v = inputs[k];
+                        node.input.required[k] = [v];
+                    }
+                }
+            }
+        }
+    },
+    async nodeCreated(node) {
+        let iframeInfo = null;
+
         try {
             iframeInfo = await iframeRegisteredEvent;
         } catch {
             return;
         }
 
-        if (!iframeInfo.webuiIoNodeNames.includes(nodeData.name)) {
+        if (!webuiIoNodeNames.includes(node.type)) {
             return;
         }
 
-        nodeData.display_name = `${nodeData.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
-        node.title = nodeData.display_name;
+        const maxIoLength = Math.max(
+            getTypesLength(iframeInfo.webuiIoTypes.outputs),
+            getTypesLength(iframeInfo.webuiIoTypes.inputs),
+        );
+        // 240 and 40 are empirical values that seem to work
+        node.size = [240, 40 + distanceBetweenIoSlots * maxIoLength];
     },
-};
+});
 
-app.registerExtension(ext);
+const webuiIoNodeNames = [
+    'FromWebui',
+    'ToWebui',
+];
+
+const distanceBetweenIoSlots = 20;

@@ -5,18 +5,6 @@ import { api } from "/scripts/api.js";
 const POLLING_TIMEOUT = 500;
 
 
-const appReadyEvent = new Promise(async (resolve) => {
-    const appReadyOrRecursiveSetTimeout = () => {
-        if (app.graph && window.name) {
-            resolve();
-        }
-        else {
-            setTimeout(appReadyOrRecursiveSetTimeout, POLLING_TIMEOUT);
-        }
-    };
-    appReadyOrRecursiveSetTimeout();
-});
-
 const iframeRegisteredEvent = new Promise(async (resolve, reject) => {
     const searchParams = new URLSearchParams(window.location.search);
     const workflowTypeId = searchParams.get("workflowTypeId");
@@ -45,6 +33,18 @@ async function fetchWorkflowTypeInfo(workflowTypeId) {
     });
     return await response.json();
 }
+
+const appReadyEvent = new Promise(async (resolve) => {
+    const appReadyOrRecursiveSetTimeout = () => {
+        if (app.graph && window.name) {
+            resolve();
+        }
+        else {
+            setTimeout(appReadyOrRecursiveSetTimeout, POLLING_TIMEOUT);
+        }
+    };
+    appReadyOrRecursiveSetTimeout();
+});
 
 
 export {

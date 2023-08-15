@@ -1,7 +1,7 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 import { appReadyEvent, iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
-import { getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiUtils.js";
+import { getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
 
 
 async function patchUiEnv(workflowTypeId) {

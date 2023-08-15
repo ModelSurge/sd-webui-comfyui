@@ -1,5 +1,6 @@
 import { app } from "/scripts/app.js";
 import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { isString, getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiUtils.js";
 
 
 function createVoidWidget(node, name) {
@@ -31,7 +32,8 @@ app.registerExtension({
 
         try {
             iframeInfo = await iframeRegisteredEvent;
-        } catch {
+        }
+        catch {
             return;
         }
 
@@ -51,11 +53,13 @@ app.registerExtension({
                     node.output_is_list.push(false);
                     node.output.push(v);
                 }
-            } else if (node.name === 'ToWebui') {
+            }
+            else if (node.name === 'ToWebui') {
                 let inputs = iframeInfo.webuiIoTypes.inputs;
                 if (isString(inputs)) {
                     node.input.required[inputs] = [inputs];
-                } else {
+                }
+                else {
                     for (const k in inputs) {
                         const v = inputs[k];
                         node.input.required[k] = [v];
@@ -85,20 +89,6 @@ app.registerExtension({
         node.size = [240, 40 + distanceBetweenIoSlots * maxIoLength];
     },
 });
-
-function getTypesLength(types) {
-    if (typeof types === "string" || types instanceof String) {
-        return 1;
-    } else if (Array.isArray(types)) {
-        return types.length;
-    } else {
-        return Object.keys(types).length;
-    }
-}
-
-function isString(value) {
-    return typeof value === "string" || value instanceof String;
-}
 
 const webuiIoNodeNames = [
     'FromWebui',

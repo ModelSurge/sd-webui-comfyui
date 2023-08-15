@@ -10,7 +10,6 @@ async function setupWebuiRequestsEnvironment() {
 
     function addWebuiRequestListener(type, callback, options) {
         api.addEventListener(`webui_${type}`, async (data) => {
-            console.log(`[sd-webui-comfyui] BEFORE WEBUI REQUEST - ${iframeInfo.workflowTypeId} - ${type}`);
             api.fetchApi("/sd-webui-comfyui/webui_ws_response", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -41,15 +40,12 @@ async function registerClientToWebui(workflowTypeId, webuiClientId, sid) {
 
 const webuiRequests = new Map([
     ["queue_prompt", async (json) => {
-        console.log("got request! queue prompt");
         await app.queuePrompt(json.queueFront ? -1 : 0, 1);
     }],
     ["serialize_graph", (json) => {
-        console.log("got request! Serialize graph");
         return app.graph.original_serialize();
     }],
     ["set_workflow", (json) => {
-        console.log("got request! set workflow");
         app.loadGraphData(json.workflow);
     }],
 ]);

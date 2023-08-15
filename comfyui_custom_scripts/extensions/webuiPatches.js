@@ -1,6 +1,7 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 import { appReadyEvent, iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiUtils.js";
 
 
 async function patchUiEnv(workflowTypeId) {
@@ -79,15 +80,8 @@ async function patchDefaultGraph(workflowTypeId) {
         app.graph.add(from_webui);
         app.graph.add(to_webui);
 
-        let outputs = iframeInfo.webuiIoTypes.outputs;
-        if (typeof outputs === "string" || outputs instanceof String) {
-            outputs = [outputs];
-        } else if (!Array.isArray(outputs)) {
-            outputs = Object.keys(outputs);
-        }
-        console.log(outputs);
-        for (let i in outputs) {
-            i = parseInt(i);
+        const typesLength = getTypesLength(iframeInfo.webuiIoTypes.outputs);
+        for (let i = 0; i < typesLength; ++i) {
             from_webui.connect(i, to_webui, i);
         }
 

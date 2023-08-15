@@ -82,17 +82,22 @@ class ComfyUIScript(scripts.Script):
 
 
 def extract_contiguous_buckets(images, batch_size):
-    common_shape = None
-    batch_begin = 0
+    current_shape = None
+    begin_index = 0
 
-    for i in range(len(images)):
-        if common_shape is None:
-            common_shape = images[i].size()
+    for i, image in enumerate(images):
+        if current_shape is None:
+            current_shape = image.size()
 
-        if images[i].size() != common_shape or i - batch_begin >= batch_size or (i := i + 1) == len(images):
-            yield images[batch_begin:i]
-            batch_begin = i
-            common_shape = None
+        image_has_different_shape = image.size() != current_shape
+        batch_is_full = i - begin_index >= batch_size
+        is_last_image = i == len(images) - 1
+
+        if image_has_different_shape or batch_is_full or is_last_image:
+            end_index = i + 1 if is_last_image else i
+            yield images[begin_index:end_index]
+            begin_index = i
+            current_shape = None
 
 
 callbacks.register_callbacks()

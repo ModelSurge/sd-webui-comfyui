@@ -34,7 +34,7 @@ async function fetchWorkflowTypeInfo(workflowTypeId) {
     return await response.json();
 }
 
-const appReadyEvent = new Promise(async (resolve) => {
+const appReadyEvent = new Promise(resolve => {
     const appReadyOrRecursiveSetTimeout = () => {
         if (app.graph && window.name) {
             resolve();

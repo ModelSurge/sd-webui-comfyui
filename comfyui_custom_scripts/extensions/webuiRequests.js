@@ -1,12 +1,13 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
 import { patchUiEnv } from "/webui_scripts/sd-webui-comfyui/extensions/webuiPatches.js";
-import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { iframeRegisteredEvent, appReadyEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
 
 
 async function setupWebuiRequestsEnvironment() {
     const iframeInfo = await iframeRegisteredEvent;
-    await patchUiEnv(iframeInfo.workflowTypeId);
+    await appReadyEvent;
+    await patchUiEnv(iframeInfo);
 
     function addWebuiRequestListener(type, callback, options) {
         api.addEventListener(`webui_${type}`, async (data) => {
@@ -22,7 +23,7 @@ async function setupWebuiRequestsEnvironment() {
 
     webuiRequests.forEach((request, type) => addWebuiRequestListener(type, request));
     await registerClientToWebui(iframeInfo.workflowTypeId, iframeInfo.webuiClientId, window.name);
-    console.log(`[sd-webui-comfyui][comfyui] INITIALIZED WS - ${iframeInfo.workflowTypeDisplayName}`);
+    console.log(`[sd-webui-comfyui][comfyui] INITIALIZED WS - ${iframeInfo.displayName}`);
 }
 
 async function registerClientToWebui(workflowTypeId, webuiClientId, sid) {

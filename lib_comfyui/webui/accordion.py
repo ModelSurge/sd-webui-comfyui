@@ -77,7 +77,7 @@ class AccordionInterface:
 
             iframes.append(f"""
                 <iframe
-                    src="{comfyui_client_url}"
+                    base_src="{comfyui_client_url}"
                     workflow_type_id="{workflow_type_id}"
                     class="{' '.join(html_classes)}"
                     style="width:100%; height:500px;">

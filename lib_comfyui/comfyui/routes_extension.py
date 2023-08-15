@@ -31,10 +31,10 @@ def websocket_handler_patch(instance, _loop):
 
         ComfyuiIFrameRequests.register_client(request)
 
-        return web.json_response(status=200)
+        return web.json_response()
 
     @instance.routes.post("/sd-webui-comfyui/webui_ws_response")
-    async def webui_register_client(response):
+    async def webui_ws_response(response):
         response = await response.json()
 
         ComfyuiIFrameRequests.handle_response(response['response'] if 'response' in response else response)
@@ -45,13 +45,19 @@ def websocket_handler_patch(instance, _loop):
 def workflow_type_ops_server_patch(instance, _loop):
     from aiohttp import web
 
-    @instance.routes.get("/sd-webui-comfyui/default_workflow")
-    async def get_default_workflow(request):
-        params = request.rel_url.query
-        workflow_type_id = params['workflow_type_id']
-
-        try:
-            res = web.json_response(json.loads(external_code.get_default_workflow_json(workflow_type_id)))
-            return res
-        except ValueError as e:
-            return web.json_response(status=422, reason=str(e))
+    @instance.routes.get("/sd-webui-comfyui/workflow_type")
+    async def get_workflow_type(request):
+        workflow_type_id = request.rel_url.query.get("workflowTypeId", None)
+        workflow_type = next(iter(
+            workflow_type
+            for workflow_type in external_code.get_workflow_types()
+            if workflow_type_id in workflow_type.get_ids()
+        ))
+        return web.json_response({
+            "displayName": workflow_type.display_name,
+            "webuiIoTypes": {
+                "inputs": list(workflow_type.input_types) if isinstance(workflow_type.input_types, tuple) else workflow_type.input_types,
+                "outputs": list(workflow_type.types) if isinstance(workflow_type.types, tuple) else workflow_type.types,
+            },
+            "defaultWorkflow": json.loads(external_code.get_default_workflow_json(workflow_type_id))
+        })

@@ -49,7 +49,7 @@ class ComfyuiIFrameRequests:
 
         # unsafe queue tracking
         ComfyuiIFrameRequests.send(
-            request='/sd-webui-comfyui/webui_request_queue_prompt',
+            request='webui_queue_prompt',
             workflow_type=workflow_type_id,
             data={
                 'requiredNodeTypes': [],

@@ -278,7 +278,7 @@ def run_workflow(
 
     try:
         if not is_workflow_type_enabled(workflow_type_id):
-            raise RuntimeError(f'Workflow type {workflow_type.pretty_str()} is not enabled on tab {tab}')
+            raise WorkflowTypeDisabled(f'Workflow type {workflow_type.pretty_str()} is not enabled on tab {tab}')
 
         batch_output_params = ComfyuiIFrameRequests.start_workflow_sync(
             batch_input_args=batch_input_args,
@@ -289,7 +289,9 @@ def run_workflow(
         if not identity_on_error:
             raise e
 
-        print('\n'.join(traceback.format_exception_only(e)))
+        if not isinstance(e, WorkflowTypeDisabled):
+            print('\n'.join(traceback.format_exception_only(e)))
+
         if not workflow_type.is_same_io():
             print('[sd-webui-comfyui]', f'Returning input of type {workflow_type.input_types}, which likely does not match the expected output type {workflow_type.types}', file=sys.stderr)
 
@@ -306,3 +308,7 @@ def run_workflow(
         return [next(iter(params.values())) for params in batch_output_params]
     else:
         return batch_output_params
+
+
+class WorkflowTypeDisabled(RuntimeError):
+    pass

@@ -44,7 +44,7 @@ function setupComfyuiTabEvents() {
 
     updateComfyuiTabHeight();
 
-    getWorkflowTypeIds().forEach(id => appendSearchParams(id));
+    getWorkflowTypeIds().forEach(id => setupIFrame(id));
 }
 
 function reloadComfyuiIFrames() {
@@ -130,7 +130,7 @@ function reloadFrameElement(iframeElement) {
     iframeElement.src = oldSrc;
 }
 
-function appendSearchParams(workflowTypeId) {
+function setupIFrame(workflowTypeId) {
     let messageToReceive = workflowTypeId;
 
     const iframeSearchParams = new URLSearchParams();

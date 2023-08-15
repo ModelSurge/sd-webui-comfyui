@@ -246,30 +246,7 @@ def run_workflow(
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    batch_input_args: Tuple[Any]
-    if isinstance(workflow_type.input_types, dict):
-        if not isinstance(batch_input, dict):
-            raise TypeError(f'batch_input should be dict but is instead {type(batch_input)}')
-
-        expected_keys = set(workflow_type.input_types.keys())
-        actual_keys = set(batch_input.keys())
-        if expected_keys - actual_keys:
-            raise TypeError(f'batch_input is missing keys: {expected_keys - actual_keys}')
-
-        # convert to tuple in the same order as the items in input_types
-        batch_input_args = tuple(batch_input[k] for k in workflow_type.input_types.keys())
-    elif isinstance(workflow_type.input_types, str):
-        batch_input_args = (batch_input,)
-    elif isinstance(workflow_type.input_types, tuple):
-        if not isinstance(batch_input, tuple):
-            raise TypeError(f'batch_input should be tuple but is instead {type(batch_input)}')
-
-        if len(batch_input) != len(workflow_type.input_types):
-            raise TypeError(f'batch_input received {len(batch_input)} values instead of {len(workflow_type.input_types)} (signature is {workflow_type.input_types})')
-
-        batch_input_args = batch_input
-    else:
-        raise TypeError(f'batch_input should be str, tuple or dict but is instead {type(batch_input)}')
+    batch_input_args = _normalize_batch_input_to_tuple(batch_input, workflow_type)
 
     if not candidate_ids:
         raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type are: {workflow_type.tabs}')
@@ -289,12 +266,14 @@ def run_workflow(
         if not identity_on_error:
             raise e
 
+        # don't print just because the workflow type is disabled
         if not isinstance(e, WorkflowTypeDisabled):
             print('\n'.join(traceback.format_exception_only(e)))
 
         if not workflow_type.is_same_io():
             print('[sd-webui-comfyui]', f'Returning input of type {workflow_type.input_types}, which likely does not match the expected output type {workflow_type.types}', file=sys.stderr)
 
+        # denormalize tuple -> tuple|str|dict
         if isinstance(workflow_type.types, tuple):
             return [batch_input_args]
         elif isinstance(workflow_type.types, str):
@@ -302,6 +281,7 @@ def run_workflow(
         else:
             return [dict(zip(workflow_type.types.keys(), batch_input_args))]
 
+    # denormalize dict -> tuple|str|dict
     if isinstance(workflow_type.types, tuple):
         return [tuple(params.values()) for params in batch_output_params]
     elif isinstance(workflow_type.types, str):
@@ -312,3 +292,30 @@ def run_workflow(
 
 class WorkflowTypeDisabled(RuntimeError):
     pass
+
+
+def _normalize_batch_input_to_tuple(batch_input, workflow_type):
+    if isinstance(workflow_type.input_types, dict):
+        if not isinstance(batch_input, dict):
+            raise TypeError(f'batch_input should be dict but is instead {type(batch_input)}')
+
+        expected_keys = set(workflow_type.input_types.keys())
+        actual_keys = set(batch_input.keys())
+        if expected_keys - actual_keys:
+            raise TypeError(f'batch_input is missing keys: {expected_keys - actual_keys}')
+
+        # convert to tuple in the same order as the items in input_types
+        return tuple(batch_input[k] for k in workflow_type.input_types.keys())
+    elif isinstance(workflow_type.input_types, str):
+        return batch_input,
+    elif isinstance(workflow_type.input_types, tuple):
+        if not isinstance(batch_input, tuple):
+            raise TypeError(f'batch_input should be tuple but is instead {type(batch_input)}')
+
+        if len(batch_input) != len(workflow_type.input_types):
+            raise TypeError(
+                f'batch_input received {len(batch_input)} values instead of {len(workflow_type.input_types)} (signature is {workflow_type.input_types})')
+
+        return batch_input
+    else:
+        raise TypeError(f'batch_input should be str, tuple or dict but is instead {type(batch_input)}')

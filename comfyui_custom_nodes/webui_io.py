@@ -1,7 +1,7 @@
 from lib_comfyui import global_state
 
 
-class WebuiInput:
+class FromWebui:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -20,7 +20,7 @@ class WebuiInput:
         return global_state.node_input_args
 
 
-class WebuiOutput:
+class ToWebui:
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -40,8 +40,8 @@ class WebuiOutput:
 
 
 NODE_CLASS_MAPPINGS = {
-    "FromWebui": WebuiInput,
-    "ToWebui": WebuiOutput,
+    "FromWebui": FromWebui,
+    "ToWebui": ToWebui,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {

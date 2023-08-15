@@ -296,7 +296,7 @@ def run_workflow(
             print('[sd-webui-comfyui]', f'Returning input of type {workflow_type.input_types}, which likely does not match the expected output type {workflow_type.types}', file=sys.stderr)
 
         if isinstance(workflow_type.types, tuple):
-            return [dict(zip(workflow_type.types, batch_input_args))]
+            return [batch_input_args]
         elif isinstance(workflow_type.types, str):
             return [batch_input_args[0]]
         else:

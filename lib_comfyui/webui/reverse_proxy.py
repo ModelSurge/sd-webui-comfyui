@@ -15,10 +15,9 @@ def register_comfyui(fast_api):
     from starlette.websockets import WebSocketDisconnect
     from websockets.exceptions import ConnectionClosedOK
 
-    # Constants & Configuration
     comfyui_target_url = settings.get_comfyui_server_url()
-    client = httpx.AsyncClient(base_url=comfyui_target_url)
     ws_client_url = http_to_ws(comfyui_target_url)
+
     proxy_path = settings.get_comfyui_reverse_proxy_route()
     proxy_path_bytes = bytes(proxy_path, "utf-8")
 
@@ -35,12 +34,14 @@ def register_comfyui(fast_api):
                 chunk = chunk.replace(substring, replacement)
             yield chunk
 
+    web_client = httpx.AsyncClient(base_url=comfyui_target_url)
+
     async def reverse_proxy(request: Request):
         """Proxy incoming requests to another server."""
         base_path = request.url.path.replace(proxy_path, "", 1)
         url = httpx.URL(path=base_path, query=request.url.query.encode("utf-8"))
-        rp_req = client.build_request(request.method, url, headers=request.headers.raw, content=await request.body())
-        rp_resp = await client.send(rp_req, stream=True)
+        rp_req = web_client.build_request(request.method, url, headers=request.headers.raw, content=await request.body())
+        rp_resp = await web_client.send(rp_req, stream=True)
         return StreamingResponse(
             async_iter_raw_patched(rp_resp),
             status_code=rp_resp.status_code,
@@ -51,16 +52,16 @@ def register_comfyui(fast_api):
     fast_api.add_route(f"{proxy_path}/{{path:path}}", reverse_proxy, ["GET", "POST", "PUT", "DELETE"])
 
     @fast_api.websocket(f"{proxy_path}/ws")
-    async def websocket_endpoint(websocket: WebSocket):
+    async def websocket_endpoint(ws_client: WebSocket):
         """Websocket endpoint to proxy incoming WS requests."""
-        await websocket.accept()
+        await ws_client.accept()
         async with websockets.connect(ws_client_url) as ws_server:
 
             async def listen_to_client():
                 """Forward messages from client to server."""
                 try:
                     while True:
-                        data = await websocket.receive_text()
+                        data = await ws_client.receive_text()
                         await ws_server.send(data)
                 except WebSocketDisconnect:
                     await ws_server.close()
@@ -70,7 +71,7 @@ def register_comfyui(fast_api):
                 try:
                     while True:
                         data = await ws_server.recv()
-                        await websocket.send_text(data)
+                        await ws_client.send_text(data)
                 except ConnectionClosedOK:
                     pass
 

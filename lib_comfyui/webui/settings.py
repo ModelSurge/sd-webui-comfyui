@@ -32,8 +32,8 @@ def create_section():
     shared.opts.onchange('comfyui_graceful_termination_timeout', update_comfyui_graceful_termination_timeout)
     update_comfyui_graceful_termination_timeout()
 
-    shared.opts.add_option("comfyui_reverse_proxy", shared.OptionInfo(
-        False, "Load ComfyUI iframes through a reverse proxy (requires reload UI. Needs --api. Check this if you are on colab or if all comfyui iframes fail to reload manually)", section=section))
+    shared.opts.add_option("comfyui_reverse_proxy_enabled", shared.OptionInfo(
+        next(iter(reverse_proxy_choices.keys())), "Load ComfyUI iframes through a reverse proxy (requires reload UI. Needs --api. Default is on if webui is remote)", gr.Dropdown, lambda: {"choices": list(reverse_proxy_choices.keys())}, section=section))
 
 
 @ipc.restrict_to_process('webui')
@@ -150,7 +150,37 @@ def get_port():
 @ipc.restrict_to_process('webui')
 def is_reverse_proxy_enabled():
     from modules import shared
-    return getattr(shared.cmd_opts, "api", False) and shared.opts.data.get('comfyui_reverse_proxy', False)
+    api_enabled = getattr(shared.cmd_opts, "api", False)
+    reverse_proxy_enabled = reverse_proxy_choices[shared.opts.data.get('comfyui_reverse_proxy_enabled', "Default")]()
+    return api_enabled and reverse_proxy_enabled
+
+
+@ipc.restrict_to_process('webui')
+def is_webui_server_remote():
+    from modules import shared
+    return any(
+        bool(getattr(shared.cmd_opts, opt, False))
+        for opt in (
+            "share",
+            "ngrok",
+
+            # additional reverse proxy options from https://github.com/Bing-su/sd-webui-tunnels
+            "cloudflared",
+            "localhostrun",
+            "remotemoe",
+            "jprq",
+            "bore",
+            "googleusercontent",
+            "tunnel-webhook",
+        )
+    )
+
+
+reverse_proxy_choices = {
+    "Default": is_webui_server_remote,
+    "Always": lambda: True,
+    "Never": lambda: False,
+}
 
 
 class WebuiOptions:

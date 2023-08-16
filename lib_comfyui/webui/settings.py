@@ -104,6 +104,7 @@ def get_setting_value(setting_key):
 
 @ipc.restrict_to_process('webui')
 def get_comfyui_iframe_url():
+    update_reverse_proxy_enabled()
     if global_state.reverse_proxy_enabled:
         return get_comfyui_reverse_proxy_url()
     else:

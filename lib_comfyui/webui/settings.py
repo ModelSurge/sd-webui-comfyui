@@ -106,7 +106,7 @@ def get_comfyui_reverse_proxy_url():
     """
     comfyui reverse proxy url, as seen from the browser
     """
-    return f"{get_comfyui_reverse_proxy_route()}/"
+    return get_comfyui_reverse_proxy_route()
 
 
 def get_comfyui_reverse_proxy_route():
@@ -120,7 +120,7 @@ def get_comfyui_client_url():
     """
     from modules import shared
     loopback_address = '127.0.0.1'
-    server_url = "http://" + (get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)) + ":" + str(get_port()) + "/"
+    server_url = "http://" + (get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)) + ":" + str(get_port())
     client_url = shared.opts.data.get('comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
     if client_url.startswith(('http://0.0.0.0', 'https://0.0.0.0')):
         print(textwrap.dedent(f"""
@@ -138,7 +138,7 @@ def get_comfyui_server_url():
     """
     comfyui server url, as seen from the webui server
     """
-    return f"http://localhost:{get_port()}/"
+    return f"http://localhost:{get_port()}"
 
 
 @ipc.restrict_to_process('webui')

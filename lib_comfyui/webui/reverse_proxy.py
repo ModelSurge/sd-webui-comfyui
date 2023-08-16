@@ -42,16 +42,16 @@ def create_http_reverse_proxy(fast_api, comfyui_url, proxy_route):
 
 async def async_iter_raw_patched(response, proxy_route):
     proxy_route_bytes = bytes(proxy_route, "utf-8")
+    paths_to_replace = [b"/scripts/", b"/extensions/", b"/webui_scripts/"]
+    replacements = [
+        (b'/favicon', proxy_route_bytes + b'/favicon'),
+        *(
+            (b'from "' + path, b'from "' + proxy_route_bytes + path)
+            for path in paths_to_replace
+        ),
+    ]
 
     async for chunk in response.aiter_raw():
-        paths_to_replace = [b"/scripts/", b"/extensions/", b"/webui_scripts/"]
-        replacements = [
-            (b'/favicon', proxy_route_bytes + b'/favicon'),
-            *(
-                (b'from "' + path, b'from "' + proxy_route_bytes + path)
-                for path in paths_to_replace
-            ),
-        ]
         for substring, replacement in replacements:
             chunk = chunk.replace(substring, replacement)
         yield chunk

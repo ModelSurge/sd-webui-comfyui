@@ -39,7 +39,7 @@ app.registerExtension({
 
         const nodes = webuiIoNodeNames.map(name => defs[name]);
         for (const node of nodes) {
-            node.display_name = `${node.display_name} - ${iframeInfo.workflowTypeDisplayName}`;
+            node.display_name = `${node.display_name} - ${iframeInfo.displayName}`;
 
             if (node.name === 'FromWebui') {
                 let outputs = iframeInfo.webuiIoTypes.outputs;

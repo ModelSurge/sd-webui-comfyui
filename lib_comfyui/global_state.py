@@ -3,6 +3,16 @@ from types import ModuleType
 from lib_comfyui import ipc
 
 
+enabled: bool = True
+reverse_proxy_enabled: bool = False
+
+workflow_types: list
+enabled_workflow_type_ids: dict
+
+ipc_strategy_class: type
+ipc_strategy_class_name: str
+
+
 class GlobalState(ModuleType):
     __state = {}
 

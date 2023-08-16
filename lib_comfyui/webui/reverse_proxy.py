@@ -1,8 +1,10 @@
 from lib_comfyui.webui import settings
+from lib_comfyui import ipc, global_state
 
 
+@ipc.restrict_to_process("webui")
 def create_comfyui_proxy(fast_api):
-    if not settings.is_reverse_proxy_enabled():
+    if not (global_state.enabled and global_state.reverse_proxy_enabled):
         return
 
     comfyui_url = settings.get_comfyui_server_url()

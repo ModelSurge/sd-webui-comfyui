@@ -34,6 +34,8 @@ def create_section():
 
     shared.opts.add_option("comfyui_reverse_proxy_enabled", shared.OptionInfo(
         next(iter(reverse_proxy_choices.keys())), "Load ComfyUI iframes through a reverse proxy (requires reload UI. Needs --api. Default is on if webui is remote)", gr.Dropdown, lambda: {"choices": list(reverse_proxy_choices.keys())}, section=section))
+    shared.opts.onchange("comfyui_reverse_proxy_enabled", update_reverse_proxy_enabled)
+    update_reverse_proxy_enabled()
 
 
 @ipc.restrict_to_process('webui')
@@ -55,6 +57,13 @@ def update_comfyui_graceful_termination_timeout():
     from modules import shared
     timeout = shared.opts.data.get('comfyui_graceful_termination_timeout', 5)
     global_state.comfyui_graceful_termination_timeout = timeout if timeout >= 0 else None
+
+
+@ipc.restrict_to_process("webui")
+def update_reverse_proxy_enabled():
+    from modules import shared
+    reverse_proxy_enabled = shared.opts.data.get('comfyui_reverse_proxy_enabled', next(iter(reverse_proxy_choices.keys())))
+    global_state.reverse_proxy_enabled = reverse_proxy_choices[reverse_proxy_enabled]() and getattr(shared.cmd_opts, "api", False)
 
 
 ipc_strategy_choices = {
@@ -95,7 +104,7 @@ def get_setting_value(setting_key):
 
 @ipc.restrict_to_process('webui')
 def get_comfyui_iframe_url():
-    if is_reverse_proxy_enabled():
+    if global_state.reverse_proxy_enabled:
         return get_comfyui_reverse_proxy_url()
     else:
         return get_comfyui_client_url()
@@ -145,14 +154,6 @@ def get_comfyui_server_url():
 def get_port():
     from modules import shared
     return get_setting_value('--port') or getattr(shared.cmd_opts, 'comfyui_port', 8188)
-
-
-@ipc.restrict_to_process('webui')
-def is_reverse_proxy_enabled():
-    from modules import shared
-    api_enabled = getattr(shared.cmd_opts, "api", False)
-    reverse_proxy_enabled = reverse_proxy_choices[shared.opts.data.get('comfyui_reverse_proxy_enabled', "Default")]()
-    return api_enabled and reverse_proxy_enabled
 
 
 @ipc.restrict_to_process('webui')

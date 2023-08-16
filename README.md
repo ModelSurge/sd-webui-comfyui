@@ -24,7 +24,7 @@ For a full overview of all the advantageous features this extension adds to Comf
 5) Restart the webui
 6) Go to the `ComfyUI` tab, and follow the instructions
 
-# Remote users, reverse proxies, etc.
+## Remote users, reverse proxies, etc.
 The extension is now able to load comfyui for remote users using a local reverse proxy.
 This is necessary when the webui is started remotely, for example when:
 - using the command line arguments `--share`, or `--ngrok`

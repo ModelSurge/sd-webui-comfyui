@@ -41,7 +41,7 @@ def create_http_reverse_proxy(fast_api, comfyui_url, proxy_route):
 
 
 async def async_iter_raw_patched(response, proxy_route):
-    proxy_route_bytes = bytes(proxy_route, "utf-8")
+    proxy_route_bytes = proxy_route.encode("utf-8")
     import_paths_to_patch = [
         "/scripts/",
         "/extensions/",
@@ -51,8 +51,8 @@ async def async_iter_raw_patched(response, proxy_route):
         (b'/favicon', proxy_route_bytes + b'/favicon'),
         *(
             (
-                b'from "' + bytes(import_path, "utf-8"),
-                b'from "' + proxy_route_bytes + bytes(import_path, "utf-8"),
+                b'from "' + import_path.encode("utf-8"),
+                b'from "' + proxy_route_bytes + import_path.encode("utf-8"),
             )
             for import_path in import_paths_to_patch
         ),

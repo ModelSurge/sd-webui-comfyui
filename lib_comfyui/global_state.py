@@ -3,8 +3,8 @@ from types import ModuleType
 from lib_comfyui import ipc
 
 
-enabled: bool = True
-reverse_proxy_enabled: bool = False
+enabled: bool
+reverse_proxy_enabled: bool
 
 workflow_types: list
 enabled_workflow_type_ids: dict

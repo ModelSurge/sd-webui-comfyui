@@ -106,9 +106,7 @@ def get_comfyui_reverse_proxy_url():
     """
     comfyui reverse proxy url, as seen from the browser
     """
-    from modules import shared
-    webui_port = shared.cmd_opts.port if shared.cmd_opts.port is not None else 7860
-    return f"http://localhost:{webui_port}{get_comfyui_reverse_proxy_route()}/"
+    return f"{get_comfyui_reverse_proxy_route()}/"
 
 
 def get_comfyui_reverse_proxy_route():

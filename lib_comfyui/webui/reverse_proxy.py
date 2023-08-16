@@ -1,7 +1,7 @@
 from lib_comfyui.webui import settings
 
 
-def register_comfyui(fast_api):
+def create_comfyui_proxy(fast_api):
     if not settings.is_reverse_proxy_enabled():
         return
 

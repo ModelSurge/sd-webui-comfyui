@@ -30,7 +30,7 @@ def on_after_component(*args, **kwargs):
 @ipc.restrict_to_process('webui')
 def on_app_started(_gr_root, fast_api):
     comfyui_process.start()
-    reverse_proxy.register_comfyui(fast_api)
+    reverse_proxy.create_comfyui_proxy(fast_api)
 
 
 @ipc.restrict_to_process('webui')

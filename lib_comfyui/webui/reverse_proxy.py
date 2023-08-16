@@ -101,7 +101,6 @@ def create_ws_reverse_proxy(fast_api, comfyui_url, proxy_route):
 
 
 def http_to_ws(url: str) -> str:
-    """Convert http or https URL to its websocket equivalent."""
     from urllib.parse import urlparse, urlunparse
 
     parsed_url = urlparse(url)

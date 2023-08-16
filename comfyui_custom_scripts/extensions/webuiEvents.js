@@ -1,27 +1,38 @@
 import { app } from "/scripts/app.js";
+import { api } from "/scripts/api.js";
 
 
 const POLLING_TIMEOUT = 500;
 
 
-const iframeRegisteredEvent = new Promise((resolve, reject) => {
-    let resolved = false;
-    const timeout = setTimeout(() => {
-        reject('Cannot identify comfyui client: the webui host did not make a request on time.');
-    }, 2000);
-    window.addEventListener("message", event => {
-        const data = event.data;
-        if (resolved || !data || !data.workflowTypeId) {
-            return;
-        }
+const iframeRegisteredEvent = new Promise(async (resolve, reject) => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const workflowTypeId = searchParams.get("workflowTypeId");
+    const webuiClientId = searchParams.get("webuiClientId");
 
-        clearTimeout(timeout);
-        event.source.postMessage(data.workflowTypeId, event.origin);
-        console.log(`[sd-webui-comfyui][comfyui] REGISTERED WORKFLOW TYPE ID - "${data.workflowTypeDisplayName}" (${data.workflowTypeId}) - ${data.webuiClientId}`);
-        resolved = true;
-        resolve(data);
-    });
+    if (!workflowTypeId || !webuiClientId) {
+        reject("Cannot identify comfyui client: search params missing.");
+    }
+    else {
+        const workflowTypeInfo = await fetchWorkflowTypeInfo(workflowTypeId);
+        resolve({
+            workflowTypeId,
+            webuiClientId,
+            ...workflowTypeInfo,
+        });
+    }
 });
+
+async function fetchWorkflowTypeInfo(workflowTypeId) {
+    const response = await api.fetchApi("/sd-webui-comfyui/workflow_type?" + new URLSearchParams({
+        workflowTypeId,
+    }), {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        cache: "no-store",
+    });
+    return await response.json();
+}
 
 const appReadyEvent = new Promise(resolve => {
     const appReadyOrRecursiveSetTimeout = () => {

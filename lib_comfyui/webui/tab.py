@@ -33,26 +33,6 @@ def create_tab():
             key='workflow_type_ids',
             value=external_code.get_workflow_type_ids(),
         )
-        gradio_utils.ExtensionDynamicProperty(
-            key='workflow_type_display_name_map',
-            value={
-                workflow_type_id: workflow_type.display_name
-                for workflow_type in external_code.get_workflow_types()
-                for workflow_type_id in workflow_type.get_ids()
-            },
-        )
-        gradio_utils.ExtensionDynamicProperty(
-            key='webui_io_types',
-            value={
-                workflow_type_id: {
-                    'inputs': list(workflow_type.input_types) if isinstance(workflow_type.input_types, tuple) else workflow_type.input_types,
-                    'outputs': list(workflow_type.types) if isinstance(workflow_type.types, tuple) else workflow_type.types,
-                }
-                for workflow_type in external_code.get_workflow_types()
-                for workflow_type_id in workflow_type.get_ids()
-            }
-        )
-
     return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]
 
 
@@ -92,7 +72,7 @@ def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
             <iframe
-                src="{settings.get_comfyui_client_url()}"
+                base_src="{settings.get_comfyui_client_url()}"
                 workflow_type_id="{sandbox_tab_workflow_type.get_ids()[0]}">
             </iframe>
         </div>

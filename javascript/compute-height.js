@@ -4,7 +4,7 @@ function uuidv4() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 }
 
-const WEBUI_CLIENT_KEY = uuidv4();
+const WEBUI_CLIENT_ID = uuidv4();
 
 function changeDisplayedWorkflowType(targetWorkflowType) {
     const targetIFrameElement = getWorkflowTypeIFrame(targetWorkflowType);
@@ -44,14 +44,13 @@ function setupComfyuiTabEvents() {
 
     updateComfyuiTabHeight();
 
-    getWorkflowTypeIds().forEach(id => forceFeedIdToIFrame(id));
+    getWorkflowTypeIds().forEach(id => setupIFrame(id));
 }
 
 function reloadComfyuiIFrames() {
     getWorkflowTypeIds().forEach(id => {
         const comfyuiFrame = getWorkflowTypeIFrame(id);
         reloadFrameElement(comfyuiFrame);
-        forceFeedIdToIFrame(id);
     });
 }
 
@@ -121,14 +120,6 @@ function getWorkflowTypeIds() {
     return getExtensionDynamicProperty('workflow_type_ids');
 }
 
-function getWorkflowTypeDisplayNameMap() {
-    return getExtensionDynamicProperty('workflow_type_display_name_map');
-}
-
-function getWebuiIoTypes() {
-    return getExtensionDynamicProperty('webui_io_types');
-}
-
 function getExtensionDynamicProperty(key) {
     return JSON.parse(document.querySelector(`[sd_webui_comfyui_key="${key}"]`)?.innerText ?? "null");
 }
@@ -139,28 +130,13 @@ function reloadFrameElement(iframeElement) {
     iframeElement.src = oldSrc;
 }
 
-function forceFeedIdToIFrame(workflowTypeId) {
-    let received = false;
+function setupIFrame(workflowTypeId) {
     let messageToReceive = workflowTypeId;
 
-    window.addEventListener('message', (event) => {
-        if(messageToReceive !== event.data) return;
-        console.log(`[sd-webui-comfyui][webui] hs - ${event.data}`);
-        received = true;
-    });
-
-    const feed = () => {
-        if(received) return;
-        const frameEl = getWorkflowTypeIFrame(workflowTypeId);
-        const targetOrigin = frameEl.src;
-        const message = {
-            workflowTypeId: workflowTypeId,
-            workflowTypeDisplayName: getWorkflowTypeDisplayNameMap()[workflowTypeId],
-            webuiIoTypes: getWebuiIoTypes()[workflowTypeId],
-            webuiClientId: WEBUI_CLIENT_KEY,
-        };
-        frameEl.contentWindow.postMessage(message, targetOrigin);
-        setTimeout(() => feed(), POLLING_TIMEOUT);
-    };
-    setTimeout(() => feed(), POLLING_TIMEOUT);
+    const iframeSearchParams = new URLSearchParams();
+    iframeSearchParams.set("workflowTypeId", workflowTypeId);
+    iframeSearchParams.set("webuiClientId", WEBUI_CLIENT_ID);
+    const iframe = getWorkflowTypeIFrame(workflowTypeId);
+    const base_src = iframe.getAttribute("base_src");
+    iframe.src = base_src + "?" + iframeSearchParams.toString();
 }

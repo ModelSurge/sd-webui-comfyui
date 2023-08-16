@@ -1,19 +1,17 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
-import { appReadyEvent, iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
 import { getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
 
 
-async function patchUiEnv(workflowTypeId) {
-    await appReadyEvent;
-
-    if (workflowTypeId.endsWith('_txt2img') || workflowTypeId.endsWith('_img2img')) {
+async function patchUiEnv(iframeInfo) {
+    if (iframeInfo.workflowTypeId.endsWith('_txt2img') || iframeInfo.workflowTypeId.endsWith('_img2img')) {
         const menuToHide = document.querySelector('.comfy-menu');
         menuToHide.style.display = 'none';
         patchSavingMechanism();
     }
 
-    await patchDefaultGraph(workflowTypeId);
+    await patchDefaultGraph(iframeInfo);
 }
 
 function patchSavingMechanism() {
@@ -43,24 +41,11 @@ function patchSavingMechanism() {
     };
 }
 
-async function patchDefaultGraph(workflowTypeId) {
-    const response = await api.fetchApi("/sd-webui-comfyui/default_workflow?" + new URLSearchParams({
-        workflow_type_id: workflowTypeId,
-    }), {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        cache: "no-store",
-    });
-    const defaultGraph = await response.json();
-
+async function patchDefaultGraph(iframeInfo) {
     // preserve the normal default graph
-    if (!defaultGraph) {
+    if (!iframeInfo.defaultWorkflow) {
         return;
     }
-
-    const iframeInfo = await iframeRegisteredEvent;
 
     app.original_loadGraphData = app.loadGraphData;
     app.loadGraphData = (graphData) => {
@@ -68,8 +53,8 @@ async function patchDefaultGraph(workflowTypeId) {
             return app.original_loadGraphData(graphData);
         }
 
-        if (defaultGraph !== "auto") {
-            return app.original_loadGraphData(defaultGraph);
+        if (iframeInfo.defaultWorkflow !== "auto") {
+            return app.original_loadGraphData(iframeInfo.defaultWorkflow);
         }
 
         app.graph.clear();

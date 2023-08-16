@@ -66,7 +66,7 @@ class AccordionInterface:
         self._rendered = False
 
     def get_iframes_html(self) -> str:
-        comfyui_client_url = settings.get_comfyui_client_url()
+        comfyui_client_url = settings.get_comfyui_iframe_url()
         first_workflow_type_id = self.workflow_type_ids[self.first_workflow_type.display_name]
 
         iframes = []

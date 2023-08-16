@@ -2,6 +2,9 @@ from lib_comfyui.webui import settings
 
 
 def register_comfyui(fast_api):
+    if not settings.is_reverse_proxy_enabled():
+        return
+
     from starlette.requests import Request
     from starlette.responses import StreamingResponse
     from starlette.background import BackgroundTask
@@ -13,11 +16,11 @@ def register_comfyui(fast_api):
     from websockets.exceptions import ConnectionClosedOK
 
     # Constants & Configuration
-    comfyui_target_url = f"http://localhost:{settings.get_port()}/"
+    comfyui_target_url = settings.get_comfyui_server_url()
     client = httpx.AsyncClient(base_url=comfyui_target_url)
     ws_client_url = http_to_ws(comfyui_target_url)
-    proxy_path = "/sd-webui-comfyui/comfyui-reverse-proxy"
-    proxy_path_bytes = bytes("/sd-webui-comfyui/comfyui-reverse-proxy", "utf-8")
+    proxy_path = settings.get_comfyui_reverse_proxy_route()
+    proxy_path_bytes = bytes(proxy_path, "utf-8")
 
     async def async_iter_raw_patched(response):
         async for chunk in response.aiter_raw():

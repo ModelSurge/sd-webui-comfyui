@@ -32,6 +32,9 @@ def create_section():
     shared.opts.onchange('comfyui_graceful_termination_timeout', update_comfyui_graceful_termination_timeout)
     update_comfyui_graceful_termination_timeout()
 
+    shared.opts.add_option("comfyui_reverse_proxy", shared.OptionInfo(
+        False, "Load ComfyUI iframes through a reverse proxy (requires reload UI. Needs --api. Check this if you are on colab or if all comfyui iframes fail to reload manually)", section=section))
+
 
 @ipc.restrict_to_process('webui')
 def update_enabled():
@@ -91,26 +94,65 @@ def get_setting_value(setting_key):
 
 
 @ipc.restrict_to_process('webui')
+def get_comfyui_iframe_url():
+    if is_reverse_proxy_enabled():
+        return get_comfyui_reverse_proxy_url()
+    else:
+        return get_comfyui_client_url()
+
+
+@ipc.restrict_to_process('webui')
+def get_comfyui_reverse_proxy_url():
+    """
+    comfyui reverse proxy url, as seen from the browser
+    """
+    from modules import shared
+    webui_port = shared.cmd_opts.port if shared.cmd_opts.port is not None else 7860
+    return f"http://localhost:{webui_port}{get_comfyui_reverse_proxy_route()}/"
+
+
+def get_comfyui_reverse_proxy_route():
+    return "/sd-webui-comfyui/comfyui"
+
+
+@ipc.restrict_to_process('webui')
+def get_comfyui_client_url():
+    """
+    comfyui server direct url, as seen from the browser
+    """
+    from modules import shared
+    loopback_address = '127.0.0.1'
+    server_url = "http://" + (get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)) + ":" + str(get_port()) + "/"
+    client_url = shared.opts.data.get('comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
+    if client_url.startswith(('http://0.0.0.0', 'https://0.0.0.0')):
+        print(textwrap.dedent(f"""
+            [sd-webui-comfyui] changing the ComfyUI client address from {client_url} to http://{loopback_address}
+            This does not change the --listen address passed to ComfyUI, but instead the address used by the extension to load the iframe
+            To override this behavior, navigate to the extension settings or use the --webui-comfyui-client-address <address> cli argument
+        """), sys.stderr)
+        client_url = client_url.replace("0.0.0.0", "127.0.0.1", 1)
+
+    return client_url
+
+
+@ipc.restrict_to_process('webui')
+def get_comfyui_server_url():
+    """
+    comfyui server url, as seen from the webui server
+    """
+    return f"http://localhost:{get_port()}/"
+
+
+@ipc.restrict_to_process('webui')
 def get_port():
     from modules import shared
     return get_setting_value('--port') or getattr(shared.cmd_opts, 'comfyui_port', 8188)
 
 
 @ipc.restrict_to_process('webui')
-def get_comfyui_client_url():
+def is_reverse_proxy_enabled():
     from modules import shared
-    loopback_address = '127.0.0.1'
-    server_url = get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)
-    client_url = shared.opts.data.get('comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
-    if client_url == '0.0.0.0':
-        print(textwrap.dedent(f"""
-            [ComfyUI extension] changing the ComfyUI client address from {client_url} to {loopback_address}
-            This does not change the --listen address passed to ComfyUI, but instead the address used by the extension to load the iframe
-            To override this behavior, navigate to the extension settings or use the --webui-comfyui-client-address <address> cli argument
-        """), sys.stderr)
-        client_url = loopback_address
-
-    return f'http://{client_url}:{get_port()}/'
+    return getattr(shared.cmd_opts, "api", False) and shared.opts.data.get('comfyui_reverse_proxy', False)
 
 
 class WebuiOptions:

@@ -24,6 +24,21 @@ For a full overview of all the advantageous features this extension adds to Comf
 5) Restart the webui
 6) Go to the `ComfyUI` tab, and follow the instructions
 
+# Remote users, reverse proxies, etc.
+The extension is now able to load comfyui for remote users using a local reverse proxy.
+This is necessary when the webui is started remotely, for example when:
+- using the command line arguments `--share`, or `--ngrok`
+- using reverse proxy options of the [sd-webui-tunnels](https://github.com/Bing-su/sd-webui-tunnels) extension
+
+If you want the extension to keep the reverse proxy disabled or always enable it for some reason, you can update your preferences in the settings tab.
+
+To start the reverse proxy, the extension needs the command line argument `--api` for the webui, which starts a fastapi server.
+Without fastapi, the extension will not be able to create a reverse proxy for comfyui, and then remote browsers will not be able to load comfyui iframes.
+
+In practice, if the webui url is `http://localhost:7860`, then the extension effectively creates two reverse proxies:
+- An HTTP reverse proxy at POST, GET, PUT and DELETE http://localhost:7860/sd-webui-comfyui/comfyui
+- A websockets reverse proxy at ws://localhost:7860/sd-webui-comfyui/comfyui/ws
+
 ## Contributing
 We welcome contributions from anyone who is interested in improving sd-webui-comfyui. If you would like to contribute, please follow these steps:
 

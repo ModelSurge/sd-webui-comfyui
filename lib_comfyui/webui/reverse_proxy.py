@@ -17,17 +17,17 @@ def register_comfyui(fast_api):
 
     comfyui_url = settings.get_comfyui_server_url()
 
-    proxy_path = settings.get_comfyui_reverse_proxy_route()
-    proxy_path_bytes = bytes(proxy_path, "utf-8")
+    proxy_route = settings.get_comfyui_reverse_proxy_route()
+    proxy_route_bytes = bytes(proxy_route, "utf-8")
 
     async def async_iter_raw_patched(response):
         async for chunk in response.aiter_raw():
             replacements = [
-                (b'/favicon', proxy_path_bytes + b'/favicon'),
-                (b'from "/scripts/', b'from "' + proxy_path_bytes + b'/scripts/'),
-                (b'from "/extensions/', b'from "' + proxy_path_bytes + b'/extensions/'),
-                (b'from "/webui_scripts/', b'from "' + proxy_path_bytes + b'/webui_scripts/'),
-                (proxy_path_bytes * 2, proxy_path_bytes),
+                (b'/favicon', proxy_route_bytes + b'/favicon'),
+                (b'from "/scripts/', b'from "' + proxy_route_bytes + b'/scripts/'),
+                (b'from "/extensions/', b'from "' + proxy_route_bytes + b'/extensions/'),
+                (b'from "/webui_scripts/', b'from "' + proxy_route_bytes + b'/webui_scripts/'),
+                (proxy_route_bytes * 2, proxy_route_bytes),
             ]
             for substring, replacement in replacements:
                 chunk = chunk.replace(substring, replacement)
@@ -37,7 +37,7 @@ def register_comfyui(fast_api):
 
     async def reverse_proxy(request: Request):
         """Proxy incoming requests to another server."""
-        base_path = request.url.path.replace(proxy_path, "", 1)
+        base_path = request.url.path.replace(proxy_route, "", 1)
         url = httpx.URL(path=base_path, query=request.url.query.encode("utf-8"))
         rp_req = web_client.build_request(request.method, url, headers=request.headers.raw, content=await request.body())
         rp_resp = await web_client.send(rp_req, stream=True)
@@ -48,11 +48,11 @@ def register_comfyui(fast_api):
             background=BackgroundTask(rp_resp.aclose),
         )
 
-    fast_api.add_route(f"{proxy_path}/{{path:path}}", reverse_proxy, ["GET", "POST", "PUT", "DELETE"])
+    fast_api.add_route(f"{proxy_route}/{{path:path}}", reverse_proxy, ["GET", "POST", "PUT", "DELETE"])
 
     ws_comfyui_url = http_to_ws(comfyui_url)
 
-    @fast_api.websocket(f"{proxy_path}/ws")
+    @fast_api.websocket(f"{proxy_route}/ws")
     async def websocket_endpoint(ws_client: WebSocket):
         """Websocket endpoint to proxy incoming WS requests."""
         await ws_client.accept()
@@ -78,7 +78,7 @@ def register_comfyui(fast_api):
 
             await asyncio.gather(listen_to_client(), listen_to_server())
 
-    print("[sd-webui-comfyui]", f"Created a reverse proxy route to ComfyUI: {proxy_path}")
+    print("[sd-webui-comfyui]", f"Created a reverse proxy route to ComfyUI: {proxy_route}")
 
 
 def http_to_ws(url: str) -> str:

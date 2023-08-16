@@ -1,8 +1,5 @@
-from urllib.parse import urlparse, urlunparse
-
 from lib_comfyui import comfyui_process, ipc, global_state, external_code
 from lib_comfyui.webui import tab, settings, workflow_patcher, reverse_proxy
-from websockets.exceptions import ConnectionClosedOK
 
 
 @ipc.restrict_to_process('webui')

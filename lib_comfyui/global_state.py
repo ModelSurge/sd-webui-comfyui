@@ -1,5 +1,6 @@
 import sys
-from types import ModuleType, List, Tuple, Dict
+from types import ModuleType
+from typing import List, Tuple, Dict
 from lib_comfyui import ipc
 
 

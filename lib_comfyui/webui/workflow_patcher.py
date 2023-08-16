@@ -57,7 +57,7 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_latent_workflow_type,
         tab='img2img',
-        batch_input=type_conversion.webui_latent_to_comfyui(x).to(device='cpu'),
+        batch_input=type_conversion.webui_latent_to_comfyui(x.to(device='cpu')),
         identity_on_error=True,
     )
     verify_singleton(processed_x)

@@ -97,7 +97,7 @@ def p_img2img_init(*args, original_function, p_ref, **kwargs):
     processed_images = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_workflow_type,
         tab='img2img',
-        batch_input=torch.stack([type_conversion.webui_image_to_comfyui(image) for image in p_ref.init_images]),
+        batch_input=type_conversion.webui_image_to_comfyui(p_ref.init_images),
         identity_on_error=True,
     )
     verify_singleton(processed_images)

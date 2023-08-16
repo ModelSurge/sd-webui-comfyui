@@ -15,8 +15,7 @@ def register_comfyui(fast_api):
     from starlette.websockets import WebSocketDisconnect
     from websockets.exceptions import ConnectionClosedOK
 
-    comfyui_target_url = settings.get_comfyui_server_url()
-    ws_client_url = http_to_ws(comfyui_target_url)
+    comfyui_url = settings.get_comfyui_server_url()
 
     proxy_path = settings.get_comfyui_reverse_proxy_route()
     proxy_path_bytes = bytes(proxy_path, "utf-8")
@@ -34,7 +33,7 @@ def register_comfyui(fast_api):
                 chunk = chunk.replace(substring, replacement)
             yield chunk
 
-    web_client = httpx.AsyncClient(base_url=comfyui_target_url)
+    web_client = httpx.AsyncClient(base_url=comfyui_url)
 
     async def reverse_proxy(request: Request):
         """Proxy incoming requests to another server."""
@@ -51,11 +50,13 @@ def register_comfyui(fast_api):
 
     fast_api.add_route(f"{proxy_path}/{{path:path}}", reverse_proxy, ["GET", "POST", "PUT", "DELETE"])
 
+    ws_comfyui_url = http_to_ws(comfyui_url)
+
     @fast_api.websocket(f"{proxy_path}/ws")
     async def websocket_endpoint(ws_client: WebSocket):
         """Websocket endpoint to proxy incoming WS requests."""
         await ws_client.accept()
-        async with websockets.connect(ws_client_url) as ws_server:
+        async with websockets.connect(ws_comfyui_url) as ws_server:
 
             async def listen_to_client():
                 """Forward messages from client to server."""

@@ -21,6 +21,7 @@ def create_http_reverse_proxy(fast_api, comfyui_url, proxy_route):
 
     web_client = httpx.AsyncClient(base_url=comfyui_url)
 
+    # src: https://github.com/tiangolo/fastapi/issues/1788#issuecomment-1071222163
     async def reverse_proxy(request: Request):
         base_path = request.url.path.replace(proxy_route, "", 1)
         url = httpx.URL(path=base_path, query=request.url.query.encode("utf-8"))

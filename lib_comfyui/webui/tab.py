@@ -72,7 +72,7 @@ def get_comfyui_app_html():
     return textwrap.dedent(f'''
         <div id="comfyui_webui_container">
             <iframe
-                base_src="{settings.get_comfyui_client_url()}"
+                base_src="{settings.get_comfyui_iframe_url()}"
                 workflow_type_id="{sandbox_tab_workflow_type.get_ids()[0]}">
             </iframe>
         </div>

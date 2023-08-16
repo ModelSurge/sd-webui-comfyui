@@ -1,5 +1,5 @@
 from lib_comfyui import comfyui_process, ipc, global_state, external_code
-from lib_comfyui.webui import tab, settings, workflow_patcher
+from lib_comfyui.webui import tab, settings, workflow_patcher, reverse_proxy
 
 
 @ipc.restrict_to_process('webui')
@@ -28,8 +28,9 @@ def on_after_component(*args, **kwargs):
 
 
 @ipc.restrict_to_process('webui')
-def on_app_started(_gr_root, _fast_api):
+def on_app_started(_gr_root, fast_api):
     comfyui_process.start()
+    reverse_proxy.create_comfyui_proxy(fast_api)
 
 
 @ipc.restrict_to_process('webui')

@@ -15,9 +15,7 @@ comfyui_process = None
 
 @ipc.restrict_to_process('webui')
 def start():
-    from modules import shared
-
-    if not getattr(shared.opts, 'comfyui_enabled', True):
+    if not global_state.enabled:
         return
 
     install_location = settings.get_install_location()

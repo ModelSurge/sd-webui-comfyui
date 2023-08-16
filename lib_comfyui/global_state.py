@@ -1,16 +1,25 @@
 import sys
-from types import ModuleType
+from types import ModuleType, List, Tuple, Dict
 from lib_comfyui import ipc
 
 
 enabled: bool
-reverse_proxy_enabled: bool
+is_ui_instantiated: bool
+queue_front: bool
 
-workflow_types: list
-enabled_workflow_type_ids: dict
+workflow_types: List
+enabled_workflow_type_ids: Dict
+batch_input_args: Tuple
+batch_output_args: List[Dict]
 
 ipc_strategy_class: type
 ipc_strategy_class_name: str
+comfyui_graceful_termination_timeout: float
+
+reverse_proxy_enabled: bool
+
+last_positive_prompt: str
+last_negative_prompt: str
 
 
 class GlobalState(ModuleType):

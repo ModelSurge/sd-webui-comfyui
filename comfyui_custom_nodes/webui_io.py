@@ -1,6 +1,19 @@
 from lib_comfyui import global_state
 
 
+class AnyType(str):
+    def __ne__(self, _) -> bool:
+        return False
+
+
+class AnyReturnTypes(tuple):
+    def __init__(self):
+        super().__init__()
+
+    def __getitem__(self, _):
+        return AnyType()
+
+
 class FromWebui:
     @classmethod
     def INPUT_TYPES(cls):
@@ -9,7 +22,7 @@ class FromWebui:
                 "void": ("VOID", ),
             },
         }
-    RETURN_TYPES = ()
+    RETURN_TYPES = AnyReturnTypes()
     RETURN_NAMES = ()
     FUNCTION = "get_node_inputs"
 

@@ -47,7 +47,6 @@ const webuiRequests = new Map([
         return app.graph.original_serialize();
     }],
     ["set_workflow", (json) => {
-        console.log("recv", json.detail);
         app.loadGraphData(json.detail.workflow);
     }],
 ]);

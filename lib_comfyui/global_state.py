@@ -1,6 +1,6 @@
 import sys
 from types import ModuleType
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 from lib_comfyui import ipc
 
 
@@ -9,9 +9,10 @@ is_ui_instantiated: bool
 queue_front: bool
 
 workflow_types: List
-enabled_workflow_type_ids: Dict
-batch_input_args: Tuple
-batch_output_args: List[Dict]
+enabled_workflow_type_ids: Dict[str, bool]
+batch_input_args: Tuple[Any, ...]
+batch_output_args: List[Dict[str, Any]]
+current_workflow_input_types: Tuple[str, ...] = ()
 
 ipc_strategy_class: type
 ipc_strategy_class_name: str

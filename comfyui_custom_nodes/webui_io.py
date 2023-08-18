@@ -1,17 +1,12 @@
 from lib_comfyui import global_state
 
 
-class AnyType(str):
-    def __ne__(self, _) -> bool:
-        return False
+class StaticProperty(object):
+    def __init__(self, f):
+        self.f = f
 
-
-class AnyReturnTypes(tuple):
-    def __init__(self):
-        super().__init__()
-
-    def __getitem__(self, _):
-        return AnyType()
+    def __get__(self, *args):
+        return self.f()
 
 
 class FromWebui:
@@ -22,7 +17,11 @@ class FromWebui:
                 "void": ("VOID", ),
             },
         }
-    RETURN_TYPES = AnyReturnTypes()
+
+    @StaticProperty
+    def RETURN_TYPES():
+        return global_state.current_workflow_input_types
+
     RETURN_NAMES = ()
     FUNCTION = "get_node_inputs"
 
@@ -48,7 +47,7 @@ class ToWebui:
 
     @staticmethod
     def extend_node_outputs(**outputs):
-        global_state.node_outputs += [outputs]
+        global_state.batch_output_args += [outputs]
         return ()
 
 

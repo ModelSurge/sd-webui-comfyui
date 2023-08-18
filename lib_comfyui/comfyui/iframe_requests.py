@@ -34,8 +34,9 @@ class ComfyuiIFrameRequests:
     @staticmethod
     @ipc.restrict_to_process('webui')
     def start_workflow_sync(
-        batch_input_args: Tuple[Any],
+        batch_input_args: Tuple[Any, ...],
         workflow_type_id: str,
+        workflow_input_types: List[str],
         queue_front: bool,
     ) -> List[Dict[str, Any]]:
         from modules import shared
@@ -43,24 +44,31 @@ class ComfyuiIFrameRequests:
             raise RuntimeError('The workflow was not started because the webui has been interrupted')
 
         global_state.node_input_args = batch_input_args
-        global_state.node_outputs = []
+        global_state.batch_output_args = []
+        global_state.current_workflow_input_types = workflow_input_types
 
-        queue_tracker.setup_tracker_id()
+        try:
+            queue_tracker.setup_tracker_id()
 
-        # unsafe queue tracking
-        ComfyuiIFrameRequests.send(
-            request='webui_queue_prompt',
-            workflow_type=workflow_type_id,
-            data={
-                'requiredNodeTypes': [],
-                'queueFront': queue_front,
-            }
-        )
+            # unsafe queue tracking
+            ComfyuiIFrameRequests.send(
+                request='webui_queue_prompt',
+                workflow_type=workflow_type_id,
+                data={
+                    'requiredNodeTypes': [],
+                    'queueFront': queue_front,
+                }
+            )
 
-        if not queue_tracker.wait_until_done():
-            raise RuntimeError('The workflow has not returned normally')
+            if not queue_tracker.wait_until_done():
+                raise RuntimeError('The workflow has not returned normally')
 
-        return global_state.node_outputs
+            node_outputs = global_state.batch_output_args
+            global_state.batch_output_args = []
+
+            return node_outputs
+        finally:
+            global_state.current_workflow_input_types = ()
 
     @staticmethod
     @ipc.restrict_to_process('comfyui')

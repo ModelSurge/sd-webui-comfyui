@@ -246,7 +246,7 @@ def run_workflow(
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    batch_input_args = _normalize_batch_input_to_tuple(batch_input, workflow_type)
+    batch_input_args, input_types = _normalize_to_tuple(batch_input, workflow_type.input_types)
 
     if not candidate_ids:
         raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type are: {workflow_type.tabs}')
@@ -260,6 +260,7 @@ def run_workflow(
         batch_output_params = ComfyuiIFrameRequests.start_workflow_sync(
             batch_input_args=batch_input_args,
             workflow_type_id=workflow_type_id,
+            workflow_input_types=input_types,
             queue_front=queue_front,
         )
     except RuntimeError as e:
@@ -294,28 +295,31 @@ class WorkflowTypeDisabled(RuntimeError):
     pass
 
 
-def _normalize_batch_input_to_tuple(batch_input, workflow_type):
-    if isinstance(workflow_type.input_types, dict):
+def _normalize_to_tuple(batch_input, input_types):
+    if isinstance(input_types, str):
+        return (batch_input,), (input_types,)
+    elif isinstance(input_types, tuple):
+        if not isinstance(batch_input, tuple):
+            raise TypeError(f'batch_input should be tuple but is instead {type(batch_input)}')
+
+        if len(batch_input) != len(input_types):
+            raise TypeError(
+                f'batch_input received {len(batch_input)} values instead of {len(input_types)} (signature is {input_types})')
+
+        return batch_input, input_types
+    elif isinstance(input_types, dict):
         if not isinstance(batch_input, dict):
             raise TypeError(f'batch_input should be dict but is instead {type(batch_input)}')
 
-        expected_keys = set(workflow_type.input_types.keys())
+        expected_keys = set(input_types.keys())
         actual_keys = set(batch_input.keys())
         if expected_keys - actual_keys:
             raise TypeError(f'batch_input is missing keys: {expected_keys - actual_keys}')
 
         # convert to tuple in the same order as the items in input_types
-        return tuple(batch_input[k] for k in workflow_type.input_types.keys())
-    elif isinstance(workflow_type.input_types, str):
-        return batch_input,
-    elif isinstance(workflow_type.input_types, tuple):
-        if not isinstance(batch_input, tuple):
-            raise TypeError(f'batch_input should be tuple but is instead {type(batch_input)}')
-
-        if len(batch_input) != len(workflow_type.input_types):
-            raise TypeError(
-                f'batch_input received {len(batch_input)} values instead of {len(workflow_type.input_types)} (signature is {workflow_type.input_types})')
-
-        return batch_input
+        return (
+            tuple(batch_input[k] for k in input_types.keys()),
+            tuple(input_types.values())
+        )
     else:
         raise TypeError(f'batch_input should be str, tuple or dict but is instead {type(batch_input)}')

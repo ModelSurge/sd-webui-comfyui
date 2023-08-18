@@ -43,8 +43,8 @@ class ComfyuiIFrameRequests:
         if shared.state.interrupted:
             raise RuntimeError('The workflow was not started because the webui has been interrupted')
 
-        global_state.node_input_args = batch_input_args
-        global_state.batch_output_args = []
+        global_state.node_inputs = batch_input_args
+        global_state.node_outputs = []
         global_state.current_workflow_input_types = workflow_input_types
 
         try:
@@ -63,12 +63,11 @@ class ComfyuiIFrameRequests:
             if not queue_tracker.wait_until_done():
                 raise RuntimeError('The workflow has not returned normally')
 
-            node_outputs = global_state.batch_output_args
-            global_state.batch_output_args = []
-
-            return node_outputs
+            return global_state.node_outputs
         finally:
             global_state.current_workflow_input_types = ()
+            global_state.node_outputs = []
+            global_state.node_inputs = None
 
     @staticmethod
     @ipc.restrict_to_process('comfyui')

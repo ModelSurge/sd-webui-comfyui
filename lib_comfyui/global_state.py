@@ -10,9 +10,9 @@ queue_front: bool
 
 workflow_types: List
 enabled_workflow_type_ids: Dict[str, bool]
-batch_input_args: Tuple[Any, ...]
-batch_output_args: List[Dict[str, Any]]
-current_workflow_input_types: Tuple[str, ...] = ()
+node_inputs: Tuple[Any, ...]
+node_outputs: List[Dict[str, Any]]
+current_workflow_input_types: Tuple[str, ...]
 
 ipc_strategy_class: type
 ipc_strategy_class_name: str

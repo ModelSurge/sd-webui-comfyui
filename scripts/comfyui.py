@@ -1,10 +1,8 @@
-import re
-
 import torch
 
 from modules import scripts
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
-from lib_comfyui.webui import callbacks, settings, workflow_patcher, gradio_utils, accordion
+from lib_comfyui.webui import callbacks, settings, patches, gradio_utils, accordion
 from lib_comfyui.comfyui import iframe_requests, type_conversion
 
 
@@ -53,7 +51,7 @@ class ComfyUIScript(scripts.Script):
         global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
 
         global_state.queue_front = queue_front
-        workflow_patcher.patch_processing(p)
+        patches.patch_processing(p)
 
     def postprocess_batch_list(self, p, pp, *args, **kwargs):
         if not getattr(global_state, 'enabled', True):
@@ -105,8 +103,4 @@ def extract_contiguous_buckets(images, batch_size):
 callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 settings.init_extension_base_dir()
-workflow_patcher.apply_patches()
-
-from modules import generation_parameters_copypaste
-generation_parameters_copypaste.re_param_code = r'\s*([\w ]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
-generation_parameters_copypaste.re_param = re.compile(generation_parameters_copypaste.re_param_code)
+patches.apply_patches()

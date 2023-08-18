@@ -1,5 +1,5 @@
 from lib_comfyui import comfyui_process, ipc, global_state, external_code
-from lib_comfyui.webui import tab, settings, workflow_patcher, reverse_proxy
+from lib_comfyui.webui import tab, settings, patches, reverse_proxy
 
 
 @ipc.restrict_to_process('webui')
@@ -24,7 +24,7 @@ def on_ui_settings():
 
 @ipc.restrict_to_process('webui')
 def on_after_component(*args, **kwargs):
-    return workflow_patcher.watch_prompts(*args, **kwargs)
+    return patches.watch_prompts(*args, **kwargs)
 
 
 @ipc.restrict_to_process('webui')
@@ -36,6 +36,6 @@ def on_app_started(_gr_root, fast_api):
 @ipc.restrict_to_process('webui')
 def on_script_unloaded():
     comfyui_process.stop()
-    workflow_patcher.clear_patches()
+    patches.clear_patches()
     global_state.is_ui_instantiated = False
     external_code.clear_workflow_types()

@@ -20,7 +20,7 @@ class FromWebui:
 
     @StaticProperty
     def RETURN_TYPES():
-        return global_state.current_workflow_input_types
+        return getattr(global_state, "current_workflow_input_types", ())
 
     RETURN_NAMES = ()
     FUNCTION = "get_node_inputs"
@@ -29,7 +29,7 @@ class FromWebui:
 
     @staticmethod
     def get_node_inputs(void):
-        return global_state.node_input_args
+        return global_state.node_inputs
 
 
 class ToWebui:
@@ -47,7 +47,7 @@ class ToWebui:
 
     @staticmethod
     def extend_node_outputs(**outputs):
-        global_state.batch_output_args += [outputs]
+        global_state.node_outputs += [outputs]
         return ()
 
 

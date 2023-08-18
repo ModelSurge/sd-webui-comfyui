@@ -48,13 +48,9 @@ async function patchDefaultGraph(iframeInfo) {
     }
 
     app.original_loadGraphData = app.loadGraphData;
-    app.loadGraphData = (graphData) => {
-        if (graphData) {
+    const doLoadGraphData = graphData => {
+        if (graphData !== "auto") {
             return app.original_loadGraphData(graphData);
-        }
-
-        if (iframeInfo.defaultWorkflow !== "auto") {
-            return app.original_loadGraphData(iframeInfo.defaultWorkflow);
         }
 
         app.graph.clear();
@@ -71,6 +67,15 @@ async function patchDefaultGraph(iframeInfo) {
         }
 
         app.graph.arrange();
+    };
+
+    app.loadGraphData = (graphData) => {
+        if (graphData) {
+            return doLoadGraphData(graphData);
+        }
+        else {
+            return doLoadGraphData(iframeInfo.defaultWorkflow);
+        }
     };
 
     app.loadGraphData();

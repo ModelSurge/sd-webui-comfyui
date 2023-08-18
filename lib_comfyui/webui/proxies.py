@@ -35,6 +35,10 @@ class ModelPatcher:
     def model_dtype(self):
         return self.model.dtype
 
+    @property
+    def current_device(self):
+        return self.model.device
+
     def add_patches(self, *args, **kwargs):
         soft_raise('patching a webui resource is not yet supported')
         return []

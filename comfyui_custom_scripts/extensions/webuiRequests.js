@@ -41,13 +41,13 @@ async function registerClientToWebui(workflowTypeId, webuiClientId, sid) {
 
 const webuiRequests = new Map([
     ["queue_prompt", async (json) => {
-        await app.queuePrompt(json.queueFront ? -1 : 0, 1);
+        await app.queuePrompt(json.detail.queueFront ? -1 : 0, 1);
     }],
     ["serialize_graph", (json) => {
         return app.graph.original_serialize();
     }],
     ["set_workflow", (json) => {
-        app.loadGraphData(json.workflow);
+        app.loadGraphData(json.detail.workflow);
     }],
 ]);
 

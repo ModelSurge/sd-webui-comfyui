@@ -28,6 +28,7 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
         mock_start_workflow.assert_called_once_with(
             batch_input_args=("value", 123),
             workflow_type_id="test_tab",
+            workflow_input_types=('IMAGE', 'LATENT'),
             queue_front=True,
         )
         self.assertEqual(result, mock_start_workflow.return_value)
@@ -48,6 +49,7 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
         mock_start_workflow.assert_called_once_with(
             batch_input_args=("value", 123),
             workflow_type_id="test_tab",
+            workflow_input_types=('IMAGE', 'LATENT'),
             queue_front=True,
         )
         self.assertEqual(result, [tuple(batch.values()) for batch in mock_start_workflow.return_value])
@@ -68,6 +70,7 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
         mock_start_workflow.assert_called_once_with(
             batch_input_args=("value",),
             workflow_type_id="test_tab",
+            workflow_input_types=('IMAGE',),
             queue_front=True,
         )
         self.assertEqual(result, [next(iter(batch.values())) for batch in mock_start_workflow.return_value])
@@ -179,6 +182,7 @@ class TestRunWorkflowInputValidation(unittest.TestCase):
         mock_start_workflow.assert_called_with(
             batch_input_args=("value",),
             workflow_type_id="test_tab",
+            workflow_input_types=('IMAGE',),
             queue_front=True,
         )
 

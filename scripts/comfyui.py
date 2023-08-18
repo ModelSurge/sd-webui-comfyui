@@ -1,3 +1,5 @@
+import re
+
 import torch
 
 from modules import scripts
@@ -104,3 +106,7 @@ callbacks.register_callbacks()
 default_workflow_types.add_default_workflow_types()
 settings.init_extension_base_dir()
 workflow_patcher.apply_patches()
+
+from modules import generation_parameters_copypaste
+generation_parameters_copypaste.re_param_code = r'\s*([\w ]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
+generation_parameters_copypaste.re_param = re.compile(generation_parameters_copypaste.re_param_code)

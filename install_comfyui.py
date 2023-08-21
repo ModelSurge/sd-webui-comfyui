@@ -14,6 +14,10 @@ def main(install_location):
 
 def update(install_location):
     print("[sd-webui-comfyui]", f"Updating comfyui at {install_location}...")
+    if not install_location.is_dir() or not any(install_location.iterdir()):
+        print("[sd-webui-comfyui]", f"Cannot update comfyui since it is not installed.", file=sys.stderr)
+        return
+
     import git
     repo = git.Repo(install_location)
     current = repo.head.commit

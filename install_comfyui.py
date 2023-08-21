@@ -23,7 +23,7 @@ def update(install_location):
     current = repo.head.commit
     repo.remotes.origin.pull()
     if current == repo.head.commit:
-        print("[sd-webui-comfyui", "Already up to date.")
+        print("[sd-webui-comfyui]", "Already up to date.")
     else:
         print("[sd-webui-comfyui]", "Done updating comfyui.")
 

@@ -54,16 +54,15 @@ def patch_prompt_server_init(parsed_class: ast.ClassDef, custom_scripts_path_lis
             continue
 
         code_patch = generate_prompt_server_init_code_patch(custom_scripts_path)
-        code_patch = textwrap.dedent(code_patch)
         extra_code = ast.parse(code_patch)
         function_to_patch.body[1:1] = extra_code.body
 
 
 def generate_prompt_server_init_code_patch(custom_scripts_path):
-    return rf'''
+    return textwrap.dedent(rf"""
         files.extend(os.path.join(self.web_root, "webui_scripts", "{os.path.basename(os.path.dirname(custom_scripts_path))}", os.path.relpath(f, r"{custom_scripts_path}")) 
         for f in glob.glob(r"{custom_scripts_path}/extensions/**/*.js", recursive=True))
-    '''
+    """)
 
 
 # patch for https://github.com/comfyanonymous/ComfyUI/blob/490771b7f495c95fb52875cf234fffc367162c7e/server.py#L487
@@ -84,7 +83,10 @@ def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_pa
     for custom_scripts_path in custom_scripts_path_list:
         code_patch = generate_prompt_server_add_routes_code_patch(custom_scripts_path)
         extra_line_of_code = ast.parse(code_patch)
-        add_routes_ast_function.body[1].value.args[0].elts[0:0] = [extra_line_of_code.body[0].value]
+        try:
+            add_routes_ast_function.body[2].value.args[0].elts[0:0] = [extra_line_of_code.body[0].value]
+        except:
+            raise RuntimeError("Cannot patch comfyui as it is not up to date")
 
 
 def generate_prompt_server_add_routes_code_patch(custom_scripts_path):

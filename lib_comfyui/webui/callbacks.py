@@ -24,7 +24,8 @@ def on_ui_settings():
 
 @ipc.restrict_to_process('webui')
 def on_after_component(*args, **kwargs):
-    return patches.watch_prompts(*args, **kwargs)
+    patches.watch_prompts(*args, **kwargs)
+    settings.subscribe_update_button(*args, **kwargs)
 
 
 @ipc.restrict_to_process('webui')

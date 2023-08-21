@@ -12,6 +12,10 @@ def create_section():
 
     section = ('comfyui', "ComfyUI")
     shared.opts.add_option('comfyui_enabled', shared.OptionInfo(True, 'Enable sd-webui-comfyui extension', section=section))
+
+    shared.opts.add_option("comfyui_update_button", shared.OptionInfo(
+        "Update comfyui (requires reload ui)", "Update comfyui", gr.Button, section=section))
+
     shared.opts.add_option("comfyui_install_location", shared.OptionInfo(
         install_comfyui.default_install_location, "ComfyUI install location", section=section))
     shared.opts.add_option("comfyui_additional_args", shared.OptionInfo(
@@ -64,6 +68,17 @@ def update_reverse_proxy_enabled():
     from modules import shared
     reverse_proxy_enabled = shared.opts.data.get('comfyui_reverse_proxy_enabled', next(iter(reverse_proxy_choices.keys())))
     global_state.reverse_proxy_enabled = reverse_proxy_choices[reverse_proxy_enabled]() and getattr(shared.cmd_opts, "api", False)
+
+
+@ipc.restrict_to_process("webui")
+def subscribe_update_button(component, **kwargs):
+    if getattr(component, "elem_id", None) == "setting_comfyui_update_button":
+        component.click(fn=update_comfyui)
+
+
+@ipc.restrict_to_process("webui")
+def update_comfyui():
+    install_comfyui.update(get_install_location())
 
 
 ipc_strategy_choices = {

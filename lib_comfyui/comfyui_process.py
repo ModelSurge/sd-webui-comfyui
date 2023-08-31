@@ -7,7 +7,7 @@ from pathlib import Path
 
 from lib_comfyui import ipc, torch_utils, argv_conversion, global_state
 from lib_comfyui.webui import settings
-from lib_comfyui.comfyui import pre_main, print_sys_path
+from lib_comfyui.comfyui import pre_main
 
 
 comfyui_process = None

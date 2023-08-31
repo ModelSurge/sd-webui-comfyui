@@ -1,8 +1,8 @@
 import os
 import sys
 
-if __name__ == "__main__":
-    # patch sys.path
+
+def patch_sys_path():
     comfyui_install_dir = os.getcwd()
     extension_dir = os.getenv("SD_WEBUI_COMFYUI_EXTENSION_DIR")
     if not comfyui_install_dir or not extension_dir:
@@ -11,6 +11,11 @@ if __name__ == "__main__":
         exit(1)
 
     sys.path[:0] = (comfyui_install_dir, extension_dir)
+
+
+if __name__ == "__main__":
+    patch_sys_path()
+
 
 import atexit
 import builtins

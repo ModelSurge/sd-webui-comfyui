@@ -136,5 +136,11 @@ function setupIFrame(workflowTypeId) {
     iframeSearchParams.set("webuiClientId", WEBUI_CLIENT_ID);
     const iframe = getWorkflowTypeIFrame(workflowTypeId);
     const base_src = iframe.getAttribute("base_src");
-    iframe.src = base_src + "?" + iframeSearchParams.toString();
+    const iframe_src = base_src + "?" + iframeSearchParams.toString();
+    if (iframe.src !== iframe_src) {
+        iframe.src = iframe_src;
+    }
+    else {
+        reloadFrameElement(iframe);
+    }
 }

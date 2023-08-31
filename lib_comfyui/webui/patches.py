@@ -37,7 +37,7 @@ def watch_prompts(component, **kwargs):
         attribute = f'last_{"negative" if possible_elem_ids[elem_id] else "positive"}_prompt'
         for event_listener in event_listeners:
             getattr(component, event_listener)(
-                fn = lambda p: setattr(global_state, attribute, p),
+                fn=lambda p: setattr(global_state, attribute, p),
                 inputs=[component]
             )
 
@@ -64,6 +64,16 @@ def create_sampler_hijack(name: str, model, original_function):
 
 @ipc.restrict_to_process('webui')
 def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
+    from modules import processing
+    workflow_type = default_workflow_types.preprocess_latent_workflow_type
+
+    if not (
+        isinstance(p, processing.StableDiffusionProcessingImg2Img) and
+        external_code.is_workflow_type_enabled(workflow_type.get_ids("img2img")[0])
+    ):
+        return original_function(p, x, *args, **kwargs)
+
+    print('preprocess_latent')
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_latent_workflow_type,
         tab='img2img',
@@ -93,9 +103,15 @@ def patch_processing(p):
 
 def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     x = original_function(*args, **kwargs)
+    tab = 'img2img' if is_img2img else 'txt2img'
+
+    if not external_code.is_workflow_type_enabled(default_workflow_types.postprocess_latent_workflow_type.get_ids(tab)[0]):
+        return x
+
+    print('postprocess_latent')
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.postprocess_latent_workflow_type,
-        tab='img2img' if is_img2img else 'txt2img',
+        tab=tab,
         batch_input=type_conversion.webui_latent_to_comfyui(x.to(device='cpu')),
         identity_on_error=True,
     )
@@ -104,6 +120,10 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
 
 
 def p_img2img_init(*args, original_function, p_ref, **kwargs):
+    if not external_code.is_workflow_type_enabled(default_workflow_types.preprocess_workflow_type.get_ids("img2img")[0]):
+        return original_function(*args, **kwargs)
+
+    print('preprocess')
     processed_images = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_workflow_type,
         tab='img2img',

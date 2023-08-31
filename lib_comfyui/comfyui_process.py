@@ -65,7 +65,6 @@ def get_comfyui_env(comfyui_install_location):
     if 'PYTHONPATH' in comfyui_env:
         del comfyui_env['PYTHONPATH']
 
-    comfyui_env['SD_WEBUI_COMFYUI_INSTALL_DIR'] = str(comfyui_install_location)
     comfyui_env['SD_WEBUI_COMFYUI_EXTENSION_DIR'] = settings.get_extension_base_dir()
     comfyui_env['SD_WEBUI_COMFYUI_IPC_STRATEGY_CLASS_NAME'] = global_state.ipc_strategy_class.__name__
     return comfyui_env

@@ -3,7 +3,7 @@ import sys
 
 if __name__ == "__main__":
     # patch sys.path
-    install_dir = os.getenv("SD_WEBUI_COMFYUI_INSTALL_DIR")
+    install_dir = os.getcwd()  # comfyui dir
     extension_dir = os.getenv("SD_WEBUI_COMFYUI_EXTENSION_DIR")
     if not install_dir or not extension_dir:
         print("[sd-webui-comfyui]", f"Could not add new entries to sys.path. install_dir={install_dir}, extension_dir={extension_dir}, sys.path={sys.path}", file=sys.stderr)

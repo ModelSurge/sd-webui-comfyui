@@ -59,7 +59,6 @@ class ComfyUIScript(scripts.Script):
 
         all_results = []
         p_rescale_factor = 0
-        print('postprocess')
         for batch_input in extract_contiguous_buckets(pp.images, p.batch_size):
             batch_results = external_code.run_workflow(
                 workflow_type=default_workflow_types.postprocess_workflow_type,

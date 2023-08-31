@@ -73,7 +73,6 @@ def sample_img2img_hijack(p, x, *args, original_function, **kwargs):
     ):
         return original_function(p, x, *args, **kwargs)
 
-    print('preprocess_latent')
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_latent_workflow_type,
         tab='img2img',
@@ -108,7 +107,6 @@ def p_sample_patch(*args, original_function, is_img2img, **kwargs):
     if not external_code.is_workflow_type_enabled(default_workflow_types.postprocess_latent_workflow_type.get_ids(tab)[0]):
         return x
 
-    print('postprocess_latent')
     processed_x = external_code.run_workflow(
         workflow_type=default_workflow_types.postprocess_latent_workflow_type,
         tab=tab,
@@ -123,7 +121,6 @@ def p_img2img_init(*args, original_function, p_ref, **kwargs):
     if not external_code.is_workflow_type_enabled(default_workflow_types.preprocess_workflow_type.get_ids("img2img")[0]):
         return original_function(*args, **kwargs)
 
-    print('preprocess')
     processed_images = external_code.run_workflow(
         workflow_type=default_workflow_types.preprocess_workflow_type,
         tab='img2img',

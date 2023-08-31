@@ -35,7 +35,7 @@ def start_comfyui_process(comfyui_install_location):
     global comfyui_process
 
     executable = get_comfyui_executable(comfyui_install_location)
-    comfyui_env = get_comfyui_env(executable, comfyui_install_location)
+    comfyui_env = get_comfyui_env(comfyui_install_location)
     install_comfyui_requirements(executable, comfyui_install_location, comfyui_env)
     args = [executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()
     comfyui_process = subprocess.Popen(
@@ -60,27 +60,15 @@ def get_comfyui_executable(comfyui_install_location):
     return str(executable)
 
 
-def get_comfyui_env(executable, comfyui_install_location):
+def get_comfyui_env(comfyui_install_location):
     comfyui_env = os.environ.copy()
-    comfyui_sys_path = get_base_sys_path(executable, comfyui_install_location)
-    comfyui_sys_path[:0] = (str(comfyui_install_location), settings.get_extension_base_dir())
-    comfyui_env['PYTHONPATH'] = os.pathsep.join(comfyui_sys_path)
+    if 'PYTHONPATH' in comfyui_env:
+        del comfyui_env['PYTHONPATH']
+
+    comfyui_env['SD_WEBUI_COMFYUI_INSTALL_DIR'] = str(comfyui_install_location)
+    comfyui_env['SD_WEBUI_COMFYUI_EXTENSION_DIR'] = settings.get_extension_base_dir()
     comfyui_env['SD_WEBUI_COMFYUI_IPC_STRATEGY_CLASS_NAME'] = global_state.ipc_strategy_class.__name__
     return comfyui_env
-
-
-def get_base_sys_path(executable, comfyui_install_location):
-    env = os.environ.copy()
-    if 'PYTHONPATH' in env:
-        del env['PYTHONPATH']
-    return subprocess.run(
-        args=[executable, inspect.getfile(print_sys_path)],
-        executable=executable,
-        cwd=str(comfyui_install_location),
-        env=env,
-        text=True,
-        capture_output=True,
-    ).stdout.split(os.pathsep)[1:]  # remove PYTHONHOME because it is automatically added
 
 
 def install_comfyui_requirements(executable, comfyui_install_location, comfyui_env):

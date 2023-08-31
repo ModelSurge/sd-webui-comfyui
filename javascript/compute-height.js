@@ -90,7 +90,7 @@ function updateFooterStyle() {
 
 function getClearEnabledDisplayNamesButtons() {
     return [
-        document.getElementById("script_txt2txt_comfyui_clear_enabled_display_names") ?? null,
+        document.getElementById("script_txt2txt_comfyui_clear_enabled_display_names") ?? document.getElementById("script_txt2img_comfyui_clear_enabled_display_names") ?? null,
         document.getElementById("script_img2img_comfyui_clear_enabled_display_names") ?? null,
     ];
 }
@@ -125,9 +125,7 @@ function getExtensionDynamicProperty(key) {
 }
 
 function reloadFrameElement(iframeElement) {
-    oldSrc = iframeElement.src;
-    iframeElement.src = '';
-    iframeElement.src = oldSrc;
+    iframeElement.src += "";
 }
 
 function setupIFrame(workflowTypeId) {

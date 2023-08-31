@@ -6,7 +6,7 @@ if __name__ == "__main__":
     comfyui_install_dir = os.getcwd()
     extension_dir = os.getenv("SD_WEBUI_COMFYUI_EXTENSION_DIR")
     if not comfyui_install_dir or not extension_dir:
-        print("[sd-webui-comfyui]", f"Could not add new entries to sys.path. install_dir={install_dir}, extension_dir={extension_dir}, sys.path={sys.path}", file=sys.stderr)
+        print("[sd-webui-comfyui]", f"Could not add new entries to sys.path. install_dir={comfyui_install_dir}, extension_dir={extension_dir}, sys.path={sys.path}", file=sys.stderr)
         print("[sd-webui-comfyui]", f"Exiting...", file=sys.stderr)
         exit(1)
 

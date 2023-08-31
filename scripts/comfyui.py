@@ -54,10 +54,7 @@ class ComfyUIScript(scripts.Script):
         patches.patch_processing(p)
 
     def postprocess_batch_list(self, p, pp, *args, **kwargs):
-        if not (
-            getattr(global_state, 'enabled', True) and
-            external_code.is_workflow_type_enabled(default_workflow_types.postprocess_workflow_type.get_ids(self.get_tab())[0])
-        ):
+        if not external_code.is_workflow_type_enabled(default_workflow_types.postprocess_workflow_type.get_ids(self.get_tab())[0]):
             return
 
         all_results = []

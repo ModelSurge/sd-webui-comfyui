@@ -68,6 +68,15 @@ app.registerExtension({
             }
         }
     },
+    async setup() {
+        try {
+            await iframeRegisteredEvent;
+        } catch {
+            return;
+        }
+
+        app.loadGraphData();
+    },
     async nodeCreated(node) {
         let iframeInfo = null;
 

@@ -68,15 +68,6 @@ app.registerExtension({
             }
         }
     },
-    async setup() {
-        try {
-            await iframeRegisteredEvent;
-        } catch {
-            return;
-        }
-
-        app.loadGraphData();
-    },
     async nodeCreated(node) {
         let iframeInfo = null;
 
@@ -96,6 +87,9 @@ app.registerExtension({
         );
         // 240 and 40 are empirical values that seem to work
         node.size = [240, 40 + distanceBetweenIoSlots * maxIoLength];
+    },
+    async setup() {
+        app.loadGraphData();
     },
 });
 

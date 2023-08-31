@@ -58,6 +58,10 @@ async function patchDefaultGraph(iframeInfo) {
         const from_webui = LiteGraph.createNode("FromWebui");
         const to_webui = LiteGraph.createNode("ToWebui");
 
+        if (!from_webui || !to_webui) {
+            return;
+        }
+
         app.graph.add(from_webui);
         app.graph.add(to_webui);
 

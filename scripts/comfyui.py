@@ -54,12 +54,11 @@ class ComfyUIScript(scripts.Script):
         patches.patch_processing(p)
 
     def postprocess_batch_list(self, p, pp, *args, **kwargs):
-        if not getattr(global_state, 'enabled', True):
-            return
-        if len(pp.images) == 0:
+        if not external_code.is_workflow_type_enabled(default_workflow_types.postprocess_workflow_type.get_ids(self.get_tab())[0]):
             return
 
         all_results = []
+        p_rescale_factor = 0
         for batch_input in extract_contiguous_buckets(pp.images, p.batch_size):
             batch_results = external_code.run_workflow(
                 workflow_type=default_workflow_types.postprocess_workflow_type,
@@ -68,13 +67,15 @@ class ComfyUIScript(scripts.Script):
                 identity_on_error=True,
             )
 
-            for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
-                list_to_scale[:] = list_to_scale * len(batch_results)
-
+            p_rescale_factor += len(batch_results)
             all_results.extend(
                 image
                 for batch in batch_results
                 for image in type_conversion.comfyui_image_to_webui(batch, return_tensors=True))
+
+        p_rescale_factor = max(1, p_rescale_factor)
+        for list_to_scale in [p.prompts, p.negative_prompts, p.seeds, p.subseeds]:
+            list_to_scale[:] = list_to_scale * p_rescale_factor
 
         pp.images.clear()
         pp.images.extend(all_results)

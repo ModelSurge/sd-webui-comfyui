@@ -1,8 +1,25 @@
+import os
+import sys
+
+
+def patch_sys_path():
+    comfyui_install_dir = os.getcwd()
+    extension_dir = os.getenv("SD_WEBUI_COMFYUI_EXTENSION_DIR")
+    if not comfyui_install_dir or not extension_dir:
+        print("[sd-webui-comfyui]", f"Could not add new entries to sys.path. install_dir={comfyui_install_dir}, extension_dir={extension_dir}, sys.path={sys.path}", file=sys.stderr)
+        print("[sd-webui-comfyui]", f"Exiting...", file=sys.stderr)
+        exit(1)
+
+    sys.path[:0] = (comfyui_install_dir, extension_dir)
+
+
+if __name__ == "__main__":
+    patch_sys_path()
+
+
 import atexit
 import builtins
 import signal
-import sys
-import os
 import runpy
 from lib_comfyui import (
     custom_extension_injector,
@@ -20,33 +37,9 @@ def comfyui_print(*args, **kwargs):
 @ipc.restrict_to_process('comfyui')
 def main():
     builtins.print = comfyui_print
-    fix_path()
     setup_ipc()
     patch_comfyui()
     start_comfyui()
-
-
-@ipc.restrict_to_process('comfyui')
-def fix_path():
-    def make_path_unique():
-        path = sys.path.copy()
-        sys.path.clear()
-        seen = set()
-        sys.path.extend(
-            p for p in path
-            if not (p in seen or seen.add(p))
-        )
-
-    def move_comfyui_to_front():
-        comfyui_dir = os.getcwd()
-        try:
-            sys.path.remove(comfyui_dir)
-        except ValueError:
-            pass
-        sys.path.insert(0, comfyui_dir)
-
-    make_path_unique()
-    move_comfyui_to_front()
 
 
 @ipc.restrict_to_process('comfyui')

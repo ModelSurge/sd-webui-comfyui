@@ -145,8 +145,9 @@ def get_comfyui_client_url():
     """
     from modules import shared
     loopback_address = '127.0.0.1'
-    server_url = "http://" + (get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)) + ":" + str(get_port())
+    server_url = get_setting_value('--listen') or getattr(shared.cmd_opts, 'comfyui_listen', loopback_address)
     client_url = shared.opts.data.get('comfyui_client_address', None) or getattr(shared.cmd_opts, 'webui_comfyui_client_address', None) or server_url
+    client_url = canonicalize_url(client_url, get_port())
     if client_url.startswith(('http://0.0.0.0', 'https://0.0.0.0')):
         print(textwrap.dedent(f"""
             [sd-webui-comfyui] changing the ComfyUI client address from {client_url} to http://{loopback_address}
@@ -156,6 +157,33 @@ def get_comfyui_client_url():
         client_url = client_url.replace("0.0.0.0", "127.0.0.1", 1)
 
     return client_url
+
+
+
+def canonicalize_url(input_url: str, default_port: int = 8189) -> str:
+    from urllib.parse import urlparse, urlunparse
+
+    # Step 1: Prepend 'http://' if scheme is missing
+    if not input_url.startswith(('http://', 'https://')):
+        input_url = 'http://' + input_url
+
+    # Step 2: Parse the modified URL
+    parsed = urlparse(input_url)
+
+    # Step 3: Add the missing scheme
+    scheme = parsed.scheme if parsed.scheme else 'http'
+
+    # Step 4: Add the missing port
+    netloc = parsed.netloc
+    if ':' not in netloc:  # Check if port is missing
+        netloc += f":{default_port}"
+    elif netloc.count(':') == 1 and parsed.scheme:  # If port exists but scheme was present in input
+        host, port = netloc.split(':')
+        netloc = f"{host}:{port}"
+
+    # Reconstruct the URL
+    canonicalized_url = urlunparse((scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+    return canonicalized_url
 
 
 @ipc.restrict_to_process('webui')

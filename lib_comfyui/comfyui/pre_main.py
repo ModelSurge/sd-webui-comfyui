@@ -69,6 +69,14 @@ def setup_ipc():
 @ipc.restrict_to_process('comfyui')
 def patch_comfyui():
     print('[sd-webui-comfyui]', 'Patching ComfyUI...')
+    try:
+        # workaround for newer versions of comfyui https://github.com/comfyanonymous/ComfyUI/commit/3039b08eb16777431946ed9ae4a63c5466336bff
+        # remove the try-except to stop supporting older versions
+        import comfy.options
+        comfy.options.enable_args_parsing()
+    except ImportError:
+        pass
+
     paths.share_webui_folder_paths()
     custom_extension_injector.register_webui_extensions()
     routes_extension.patch_server_routes()

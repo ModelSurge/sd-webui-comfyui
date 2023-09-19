@@ -150,14 +150,13 @@ def get_comfyui_client_url():
     client_url = canonicalize_url(client_url, get_port())
     if client_url.startswith(('http://0.0.0.0', 'https://0.0.0.0')):
         print(textwrap.dedent(f"""
-            [sd-webui-comfyui] changing the ComfyUI client address from {client_url} to http://{loopback_address}
+            [sd-webui-comfyui] changing the ComfyUI client address from {client_url} to {loopback_address}
             This does not change the --listen address passed to ComfyUI, but instead the address used by the extension to load the iframe
             To override this behavior, navigate to the extension settings or use the --webui-comfyui-client-address <address> cli argument
         """), sys.stderr)
         client_url = client_url.replace("0.0.0.0", "127.0.0.1", 1)
 
     return client_url
-
 
 
 def canonicalize_url(input_url: str, default_port: int = 8189) -> str:

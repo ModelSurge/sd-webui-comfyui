@@ -38,6 +38,8 @@ def start_comfyui_process(comfyui_install_location):
     comfyui_env = get_comfyui_env(comfyui_install_location)
     install_comfyui_requirements(executable, comfyui_install_location, comfyui_env)
     args = [executable, inspect.getfile(pre_main)] + argv_conversion.get_comfyui_args()
+
+    print('[sd-webui-comfyui]', 'Starting subprocess for comfyui...')
     comfyui_process = subprocess.Popen(
         args=args,
         executable=executable,

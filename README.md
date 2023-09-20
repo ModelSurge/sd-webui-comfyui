@@ -1,6 +1,6 @@
 # sd-webui-comfyui
 ## Overview
-sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that embeds [ComfyUI](https://github.com/comfyanonymous/ComfyUI) workflows in different sections of the normal pipeline of the webui. This allows to create ComfyUI nodes that interact directly with some parts of the webui's normal pipeline.
+sd-webui-comfyui is an extension for [A1111 webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that embeds [ComfyUI](https://github.com/comfyanonymous/ComfyUI) workflows in different sections of the normal pipeline of the webui. This allows to create ComfyUI nodes that interact directly with some parts of the webui's normal pipeline.
 
 ![front-page-gif](/resources/front-page.gif)
 
@@ -13,8 +13,8 @@ sd-webui-comfyui is an extension for [Automatic1111's stable-diffusion-webui](ht
 For a full overview of all the advantageous features this extension adds to ComfyUI and to the Webui, check out the [wiki page](https://github.com/ModelSurge/sd-webui-comfyui/wiki). 
 
 ## Officially supported versions
-- A1111 Webui >= `V1.5.1`
-- ComfyUI == `Latest`
+- A1111 Webui >= `1.5.1`
+- ComfyUI == `latest`
 
 ## Installation
 1) Go to Extensions > Available

@@ -48,7 +48,7 @@ class ComfyUIScript(scripts.Script):
         if not hasattr(global_state, 'enabled_workflow_type_ids'):
             global_state.enabled_workflow_type_ids = {}
 
-        global_state.webui_client_id = webui_client_id
+        global_state.focused_webui_client_id = webui_client_id
         global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
         global_state.queue_front = queue_front
         patches.patch_processing(p)

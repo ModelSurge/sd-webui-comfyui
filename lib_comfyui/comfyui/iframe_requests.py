@@ -18,12 +18,12 @@ class ComfyuiIFrameRequests:
             data = {}
 
         cls = ComfyuiIFrameRequests
-        if global_state.webui_client_id is None:
+        if global_state.focused_webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
-        ws_client_ids = cls.sid_map[global_state.webui_client_id]
+        ws_client_ids = cls.sid_map[global_state.focused_webui_client_id]
         if workflow_type not in ws_client_ids:
-            raise RuntimeError(f"The workflow type {workflow_type} has not been registered by the active webui client {global_state.webui_client_id}")
+            raise RuntimeError(f"The workflow type {workflow_type} has not been registered by the active webui client {global_state.focused_webui_client_id}")
 
         clear_queue(cls.finished_comfyui_queue)
         cls.server_instance.send_sync(request, data, ws_client_ids[workflow_type])

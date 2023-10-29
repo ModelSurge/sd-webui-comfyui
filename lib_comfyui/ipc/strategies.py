@@ -8,6 +8,9 @@ from multiprocessing.shared_memory import SharedMemory
 from typing import IO, Union
 
 
+BytesLike = Union[bytes, bytearray, memoryview]
+
+
 __all__ = [
     'FileSystemIpcStrategy',
     'SharedMemoryIpcStrategy',
@@ -21,12 +24,12 @@ class IpcStrategy(ABC):
         pass
 
     @abstractmethod
-    def set_data(self, lock_file: IO, data: Union[bytes, bytearray, memoryview]) -> None:
+    def set_data(self, lock_file: IO, data: BytesLike) -> None:
         pass
 
     @abstractmethod
     @contextlib.contextmanager
-    def get_data(self, lock_file: IO) -> Union[bytes, bytearray, memoryview]:
+    def get_data(self, lock_file: IO) -> BytesLike:
         pass
 
     @abstractmethod
@@ -42,11 +45,11 @@ class FileSystemIpcStrategy(IpcStrategy):
         lock_file.seek(0, os.SEEK_END)
         return lock_file.tell() == 0
 
-    def set_data(self, lock_file: IO, data: Union[bytes, bytearray, memoryview]):
+    def set_data(self, lock_file: IO, data: BytesLike):
         lock_file.write(data)
 
     @contextlib.contextmanager
-    def get_data(self, lock_file: IO) -> Union[bytes, bytearray, memoryview]:
+    def get_data(self, lock_file: IO) -> BytesLike:
         lock_file.seek(0)
         yield lock_file.read()
         self.clear(lock_file)
@@ -54,9 +57,6 @@ class FileSystemIpcStrategy(IpcStrategy):
     def clear(self, lock_file: IO):
         lock_file.seek(0)
         lock_file.truncate()
-
-
-BytesLike = Union[bytes, bytearray, memoryview]
 
 
 class SharedMemoryIpcStrategy(IpcStrategy):

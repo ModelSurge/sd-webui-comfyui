@@ -8,7 +8,6 @@ from lib_comfyui.comfyui import queue_tracker
 
 class ComfyuiIFrameRequests:
     finished_comfyui_queue = multiprocessing.Queue()
-    focused_webui_client_id = None
     server_instance = None
     sid_map = {}
 
@@ -19,12 +18,12 @@ class ComfyuiIFrameRequests:
             data = {}
 
         cls = ComfyuiIFrameRequests
-        if cls.focused_webui_client_id is None:
+        if global_state.webui_client_id is None:
             raise RuntimeError('No active webui connection')
 
-        ws_client_ids = cls.sid_map[cls.focused_webui_client_id]
+        ws_client_ids = cls.sid_map[global_state.webui_client_id]
         if workflow_type not in ws_client_ids:
-            raise RuntimeError(f"The workflow type {workflow_type} has not been registered by the active webui client {cls.focused_webui_client_id}")
+            raise RuntimeError(f"The workflow type {workflow_type} has not been registered by the active webui client {global_state.webui_client_id}")
 
         clear_queue(cls.finished_comfyui_queue)
         cls.server_instance.send_sync(request, data, ws_client_ids[workflow_type])
@@ -75,9 +74,6 @@ class ComfyuiIFrameRequests:
         workflow_type_id = request['workflowTypeId']
         webui_client_id = request['webuiClientId']
         sid = request['sid']
-
-        # TODO: generalize this
-        ComfyuiIFrameRequests.focused_webui_client_id = webui_client_id
 
         if webui_client_id not in ComfyuiIFrameRequests.sid_map:
             ComfyuiIFrameRequests.sid_map[webui_client_id] = {}

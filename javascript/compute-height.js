@@ -22,7 +22,8 @@ function onComfyuiTabLoaded(callback) {
     if (getClearEnabledDisplayNamesButtons().some(e => e === null) ||
         getWorkflowTypeIds() === null ||
         getComfyuiContainer() === null ||
-        getTabNav() === null
+        getTabNav() === null ||
+        getWebuiClientIdTextArea() === null
     ) {
         // webui not yet ready, try again in a bit
         setTimeout(() => { onComfyuiTabLoaded(callback); }, POLLING_TIMEOUT);
@@ -39,6 +40,7 @@ function clearEnabledDisplayNames() {
 }
 
 function setupComfyuiTabEvents() {
+    setupWebuiClientId();
     setupResizeTabEvent();
     setupToggleFooterEvent();
 
@@ -52,6 +54,12 @@ function reloadComfyuiIFrames() {
         const comfyuiFrame = getWorkflowTypeIFrame(id);
         reloadFrameElement(comfyuiFrame);
     });
+}
+
+function setupWebuiClientId() {
+    const textArea = getWebuiClientIdTextArea();
+    textArea.value = WEBUI_CLIENT_ID;
+    textArea.dispatchEvent(new Event('input'));
 }
 
 function setupResizeTabEvent() {
@@ -106,6 +114,10 @@ function getComfyuiTab() {
 
 function getComfyuiContainer() {
     return document.getElementById("comfyui_webui_container") ?? null;
+}
+
+function getWebuiClientIdTextArea() {
+    return document.querySelector("#comfyui_webui_client_id textarea") ?? null;
 }
 
 function getFooter() {

@@ -8,6 +8,12 @@ from lib_comfyui.webui import settings, gradio_utils
 from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
 
 
+webui_client_id = gr.Text(
+    elem_id='comfyui_webui_client_id',
+    visible=False,
+)
+
+
 def create_tab():
     install_location = settings.get_install_location()
     with gr.Blocks() as tab:
@@ -33,6 +39,7 @@ def create_tab():
             key='workflow_type_ids',
             value=external_code.get_workflow_type_ids(),
         )
+        webui_client_id.render()
     return [(tab, sandbox_tab_workflow_type.display_name, 'comfyui_webui_root')]
 
 

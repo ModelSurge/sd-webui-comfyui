@@ -2,7 +2,7 @@ import torch
 
 from modules import scripts
 from lib_comfyui import global_state, platform_utils, external_code, default_workflow_types, comfyui_process
-from lib_comfyui.webui import callbacks, settings, patches, gradio_utils, accordion
+from lib_comfyui.webui import callbacks, settings, patches, gradio_utils, accordion, tab
 from lib_comfyui.comfyui import iframe_requests, type_conversion
 
 
@@ -39,17 +39,17 @@ class ComfyUIScript(scripts.Script):
         self.accordion.arrange_components()
         self.accordion.connect_events()
         self.accordion.setup_infotext_fields(self)
-        return self.accordion.get_script_ui_components()
+        return (tab.webui_client_id,) + self.accordion.get_script_ui_components()
 
-    def process(self, p, queue_front, enabled_workflow_type_ids, **kwargs):
+    def process(self, p, webui_client_id, queue_front, enabled_workflow_type_ids, *args, **kwargs):
         if not getattr(global_state, 'enabled', True):
             return
 
         if not hasattr(global_state, 'enabled_workflow_type_ids'):
             global_state.enabled_workflow_type_ids = {}
 
+        global_state.focused_webui_client_id = webui_client_id
         global_state.enabled_workflow_type_ids.update(enabled_workflow_type_ids)
-
         global_state.queue_front = queue_front
         patches.patch_processing(p)
 

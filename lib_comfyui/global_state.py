@@ -7,6 +7,7 @@ from lib_comfyui import ipc
 enabled: bool
 is_ui_instantiated: bool
 queue_front: bool
+focused_webui_client_id: str
 
 workflow_types: List
 enabled_workflow_type_ids: Dict[str, bool]

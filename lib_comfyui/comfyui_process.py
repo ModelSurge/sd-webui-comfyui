@@ -67,6 +67,23 @@ def get_comfyui_env(comfyui_install_location):
     if 'PYTHONPATH' in comfyui_env:
         del comfyui_env['PYTHONPATH']
 
+    problematic_windows_tmp_dirs = {
+        k: v
+        for k, v in comfyui_env.items()
+        if k in ("TMP", "TEMP") and v == "tmp"
+    }
+    if os.name == "nt" and problematic_windows_tmp_dirs:
+        problematic_windows_tmp_dirs = " and ".join(f'{k}="{v}"' for k, v in problematic_windows_tmp_dirs.items())
+        message_prefix = "[sd-webui-comfyui] "
+        print(
+            "\n".join([
+                f'{message_prefix}Found {problematic_windows_tmp_dirs} in the environment. On Windows, this is known to cause issues.',
+                f'{message_prefix}If ComfyUI refuses to start, consider using TEMP="temp" or TMP="temp" as a workaround.',
+                f'{message_prefix}For more information, see https://github.com/ModelSurge/sd-webui-comfyui/issues/170#issuecomment-1792009789',
+            ]),
+            file=sys.stderr,
+        )
+
     comfyui_env['SD_WEBUI_COMFYUI_EXTENSION_DIR'] = settings.get_extension_base_dir()
     comfyui_env['SD_WEBUI_COMFYUI_IPC_STRATEGY_CLASS_NAME'] = global_state.ipc_strategy_class.__name__
     return comfyui_env

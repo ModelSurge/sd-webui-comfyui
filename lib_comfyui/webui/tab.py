@@ -3,7 +3,6 @@ import sys
 import textwrap
 import gradio as gr
 import install_comfyui
-import install_comfyui_manager
 from lib_comfyui import external_code, ipc
 from lib_comfyui.webui import settings, gradio_utils
 from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
@@ -59,12 +58,8 @@ def automatic_install_comfyui(should_install_manager, install_location):
         print(message, file=sys.stderr)
         return gr.Markdown.update(message)
 
-    install_comfyui.main(install_location)
+    install_comfyui.main(install_location, should_install_manager)
     shared.opts.comfyui_install_location = install_location
-
-    if should_install_manager:
-        manager_install_location = os.path.join(install_location, 'custom_nodes', 'ComfyUI-Manager')
-        install_comfyui_manager.main(manager_install_location)
 
     return gr.Markdown.update('Installed! Now please reload the UI.')
 

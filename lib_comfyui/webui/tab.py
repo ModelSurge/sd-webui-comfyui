@@ -3,6 +3,7 @@ import sys
 import textwrap
 import gradio as gr
 import install_comfyui
+import install_comfyui_manager
 from lib_comfyui import external_code, ipc
 from lib_comfyui.webui import settings, gradio_utils
 from lib_comfyui.default_workflow_types import sandbox_tab_workflow_type
@@ -25,6 +26,9 @@ def create_tab():
 
             with gr.Column():
                 with gr.Row():
+                    install_manager = gr.Checkbox(label='Install with ComfyUI-Manager', value=True)
+
+                with gr.Row():
                     install_path = gr.Textbox(placeholder=f'Leave empty to install at {install_comfyui.default_install_location}', label='Installation path')
 
                 with gr.Row():
@@ -33,7 +37,7 @@ def create_tab():
                 with gr.Row():
                     installed_feedback = gr.Markdown()
 
-            install_button.click(automatic_install_comfyui, inputs=[install_path], outputs=[installed_feedback], show_progress=True)
+            install_button.click(automatic_install_comfyui, inputs=[install_manager, install_path], outputs=[installed_feedback], show_progress=True)
 
         gradio_utils.ExtensionDynamicProperty(
             key='workflow_type_ids',
@@ -44,7 +48,7 @@ def create_tab():
 
 
 @ipc.restrict_to_process('webui')
-def automatic_install_comfyui(install_location):
+def automatic_install_comfyui(should_install_manager, install_location):
     from modules import shared
     install_location = install_location.strip()
     if not install_location:
@@ -58,6 +62,10 @@ def automatic_install_comfyui(install_location):
     install_comfyui.main(install_location)
     shared.opts.comfyui_install_location = install_location
 
+    if should_install_manager:
+        manager_install_location = os.path.join(install_location, 'custom_nodes', 'ComfyUI-Manager')
+        install_comfyui_manager.main(manager_install_location)
+
     return gr.Markdown.update('Installed! Now please reload the UI.')
 
 
@@ -68,10 +76,10 @@ def can_install_at(path):
 
 comfyui_install_instructions_markdown = '''
 ## ComfyUI extension
-It looks like your ComfyUI installation isn't set up yet!  
+It looks like your ComfyUI installation isn't set up yet.  
 If you already have ComfyUI installed on your computer, go to `Settings > ComfyUI`, and set the proper install location.  
 
-Alternatively, if you don't have ComfyUI installed, you can install it with this button:
+Alternatively, if you don't have ComfyUI installed, you can install it here: 
 '''
 
 

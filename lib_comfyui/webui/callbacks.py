@@ -47,13 +47,17 @@ def on_script_unloaded():
 
 @ipc.restrict_to_process('webui')
 def on_before_image_saved(params):
-    if params.p is None:
-        return
-
-    tab = {
+    tab_map = {
         StableDiffusionProcessingTxt2Img: 'txt2img',
         StableDiffusionProcessingImg2Img: 'img2img',
-    }[type(params.p)]
+    }
+
+    pipeline_type = type(params.p)
+
+    if pipeline_type not in tab_map:
+        return
+
+    tab = tab_map[pipeline_type]
 
     if not external_code.is_workflow_type_enabled(default_workflow_types.before_save_image_workflow_type.get_ids(tab)[0]):
         return

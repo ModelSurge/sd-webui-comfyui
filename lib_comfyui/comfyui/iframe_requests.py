@@ -1,7 +1,7 @@
 import json
 import multiprocessing
 from queue import Empty
-from typing import List, Any, Dict, Tuple, Sequence, Optional
+from typing import List, Any, Dict, Tuple, Optional
 from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 

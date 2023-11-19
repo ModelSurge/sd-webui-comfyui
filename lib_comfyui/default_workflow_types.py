@@ -37,14 +37,14 @@ postprocess_image_workflow_type = external_code.WorkflowType(
     display_name='Postprocess image',
     default_workflow=external_code.AUTO_WORKFLOW,
     types='IMAGE',
-    max_amount_of_io_nodes=[None, 1],
+    max_amount_of_ToWebui_nodes=1,
 )
 before_save_image_workflow_type = external_code.WorkflowType(
     base_id='before_save_image',
     display_name='Before save image',
     default_workflow=external_code.AUTO_WORKFLOW,
     types='IMAGE',
-    max_amount_of_io_nodes=[None, 1],
+    max_amount_of_ToWebui_nodes=1,
 )
 
 

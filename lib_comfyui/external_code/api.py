@@ -23,7 +23,8 @@ class WorkflowType:
     default_workflow: Union[str, Path] = "null"
     types: Union[str, Tuple[str, ...], Dict[str, str]] = dataclasses.field(default_factory=tuple)
     input_types: Union[str, Tuple[str, ...], Dict[str, str], None] = None
-    max_amount_of_io_nodes: Optional[Tuple[int | None, int | None]] = (None, None)
+    max_amount_of_ToWebui_nodes: Optional[int] = None
+    max_amount_of_FromWebui_nodes: Optional[int] = None
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
@@ -256,7 +257,11 @@ def run_workflow(
     workflow_type_id = candidate_ids[0]
 
     try:
-        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, workflow_type.max_amount_of_io_nodes)
+        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(
+            workflow_type_id,
+            workflow_type.max_amount_of_FromWebui_nodes,
+            workflow_type.max_amount_of_ToWebui_nodes,
+        )
     except RuntimeError as e:
         if not identity_on_error:
             raise e

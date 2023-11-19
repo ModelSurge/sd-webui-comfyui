@@ -72,27 +72,27 @@ class ComfyuiIFrameRequests:
     @ipc.restrict_to_process('webui')
     def validate_amount_of_nodes_or_throw(
         workflow_type_id: str,
-        max_amount_of_io_nodes: Sequence[Optional[int]]
+        max_amount_of_FromWebui_nodes: Optional[int],
+        max_amount_of_ToWebui_nodes: Optional[int],
     ) -> None:
-        if len(max_amount_of_io_nodes) != 2:
-            raise RuntimeError(f'Expected a sequence of length 2 for argument "max_amount_of_nodes", got {len(max_amount_of_nodes)} instead')
-
         workflow_graph = get_workflow_graph(workflow_type_id)
         all_nodes = workflow_graph['nodes']
         enabled_nodes = [node for node in all_nodes if node['mode'] != 2]
         node_types = [node['type'] for node in enabled_nodes]
-        amount_of_from_webui_nodes = len([t for t in node_types if t == 'FromWebui'])
-        amount_of_to_webui_nodes = len([t for t in node_types if t == 'ToWebui'])
-        max_from_webui_nodes = max_amount_of_io_nodes[0] if max_amount_of_io_nodes[0] is not None else amount_of_from_webui_nodes
-        max_to_webui_nodes = max_amount_of_io_nodes[1] if max_amount_of_io_nodes[1] is not None else amount_of_to_webui_nodes
+        amount_of_FromWebui_nodes = len([t for t in node_types if t == 'FromWebui'])
+        amount_of_ToWebui_nodes = len([t for t in node_types if t == 'ToWebui'])
+        max_FromWebui_nodes = max_amount_of_FromWebui_nodes if max_amount_of_FromWebui_nodes is not None else amount_of_FromWebui_nodes
+        max_ToWebui_nodes = max_amount_of_ToWebui_nodes if max_amount_of_ToWebui_nodes is not None else amount_of_ToWebui_nodes
 
-        if amount_of_from_webui_nodes > max_from_webui_nodes:
+        if amount_of_FromWebui_nodes > max_FromWebui_nodes:
             raise TooManyFromWebuiNodesError(f'Unable to run the workflow {workflow_type_id}. '
-                             f'Expected at most {max_from_webui_nodes} FromWebui node(s), {amount_of_from_webui_nodes} were found.')
+                                             f'Expected at most {max_FromWebui_nodes} FromWebui node(s), '
+                                             f'{amount_of_FromWebui_nodes} were found.')
 
-        if amount_of_to_webui_nodes > max_to_webui_nodes:
+        if amount_of_ToWebui_nodes > max_ToWebui_nodes:
             raise TooManyToWebuiNodesError(f'Unable to run the workflow {workflow_type_id}. '
-                             f'Expected at most {max_to_webui_nodes} ToWebui node(s), {amount_of_to_webui_nodes} were found.')
+                                           f'Expected at most {max_ToWebui_nodes} ToWebui node(s), '
+                                           f'{amount_of_ToWebui_nodes} were found.')
 
     @staticmethod
     @ipc.restrict_to_process('comfyui')
@@ -118,7 +118,11 @@ def extend_infotext_with_comfyui_workflows(p, tab):
     for workflow_type in external_code.get_workflow_types(tab):
         workflow_type_id = workflow_type.get_ids(tab)[0]
         try:
-            ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, workflow_type.max_amount_of_io_nodes)
+            ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(
+                workflow_type_id,
+                workflow_type.max_amount_of_FromWebui_nodes,
+                workflow_type.max_amount_of_ToWebui_nodes,
+            )
         except RuntimeError:
             continue
         if not external_code.is_workflow_type_enabled(workflow_type_id):

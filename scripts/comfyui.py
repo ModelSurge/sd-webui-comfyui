@@ -81,20 +81,6 @@ class ComfyUIScript(scripts.Script):
         pp.images.extend(all_results)
         iframe_requests.extend_infotext_with_comfyui_workflows(p, self.get_tab())
 
-    def postprocess_image(self, p, pp, *args):
-        if not external_code.is_workflow_type_enabled(default_workflow_types.postprocess_image_workflow_type.get_ids(self.get_tab())[0]):
-            return
-
-        results = external_code.run_workflow(
-            workflow_type=default_workflow_types.postprocess_image_workflow_type,
-            tab=self.get_tab(),
-            batch_input=type_conversion.webui_image_to_comfyui([pp.image]),
-            identity_on_error=True,
-            max_amount_of_nodes=[None, 1]
-        )
-
-        pp.image = type_conversion.comfyui_image_to_webui(results[0], return_tensors=False)[0]
-
 
 def extract_contiguous_buckets(images, batch_size):
     current_shape = None

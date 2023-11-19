@@ -1,5 +1,7 @@
-from lib_comfyui import comfyui_process, ipc, global_state, external_code
+from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
+from lib_comfyui import comfyui_process, ipc, global_state, external_code, default_workflow_types
 from lib_comfyui.webui import tab, settings, patches, reverse_proxy
+from lib_comfyui.comfyui import type_conversion
 
 
 @ipc.restrict_to_process('webui')
@@ -10,6 +12,7 @@ def register_callbacks():
     script_callbacks.on_after_component(on_after_component)
     script_callbacks.on_app_started(on_app_started)
     script_callbacks.on_script_unloaded(on_script_unloaded)
+    script_callbacks.on_before_image_saved(on_before_image_saved)
 
 
 @ipc.restrict_to_process('webui')
@@ -40,3 +43,24 @@ def on_script_unloaded():
     patches.clear_patches()
     global_state.is_ui_instantiated = False
     external_code.clear_workflow_types()
+
+
+@ipc.restrict_to_process('webui')
+def on_before_image_saved(params):
+    tab = {
+        StableDiffusionProcessingTxt2Img: 'txt2img',
+        StableDiffusionProcessingImg2Img: 'img2img',
+    }[type(params.p)]
+
+    if not external_code.is_workflow_type_enabled(default_workflow_types.before_save_image_workflow_type.get_ids(tab)[0]):
+        return
+
+    results = external_code.run_workflow(
+        workflow_type=default_workflow_types.before_save_image_workflow_type,
+        tab=tab,
+        batch_input=type_conversion.webui_image_to_comfyui([params.image]),
+        identity_on_error=True,
+        max_amount_of_nodes=[None, 1]
+    )
+
+    params.image.putdata(type_conversion.comfyui_image_to_webui(results[0], return_tensors=False)[0].getdata())

@@ -143,9 +143,9 @@ def clear_queue(queue: multiprocessing.Queue):
             pass
 
 
-class TooManyFromWebuiNodesError(ValueError):
+class TooManyFromWebuiNodesError(RuntimeError):
     pass
 
 
-class TooManyToWebuiNodesError(ValueError):
+class TooManyToWebuiNodesError(RuntimeError):
     pass

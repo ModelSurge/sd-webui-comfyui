@@ -221,7 +221,7 @@ def run_workflow(
             - if **input_types** is a str, **batch_input** should be a single value that should match the type expected by **input_types**.
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
         identity_on_error (Optional[bool]): Whether to return batch_input (converted to the type expected by workflow_type.types) instead of raising a RuntimeError when the workflow fails to run
-        max_amount_of_nodes: (Optional[Sequence[int]]): Maximum amount of From Webui and To Webui nodes present in the workflow, respectively. If either of the conditions are not met, a RuntimeError is raised.
+        max_amount_of_nodes: (Optional[Sequence[int]]): Maximum amount of From Webui and To Webui nodes present in the workflow, respectively. If either of the conditions are not met, a RuntimeError is raised
     Returns:
         The outputs of the workflow, as a list.
         Each element of the list corresponds to one output node in the workflow.

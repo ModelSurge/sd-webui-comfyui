@@ -115,6 +115,10 @@ def extend_infotext_with_comfyui_workflows(p, tab):
     workflows = {}
     for workflow_type in external_code.get_workflow_types(tab):
         workflow_type_id = workflow_type.get_ids(tab)[0]
+        try:
+            ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, workflow_type.max_amount_of_io_nodes)
+        except RuntimeError:
+            continue
         if not external_code.is_workflow_type_enabled(workflow_type_id):
             continue
 

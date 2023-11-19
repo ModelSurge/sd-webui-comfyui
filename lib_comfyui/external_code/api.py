@@ -2,7 +2,7 @@ import dataclasses
 import sys
 import traceback
 from pathlib import Path
-from typing import List, Tuple, Union, Any, Optional, Dict, Sequence
+from typing import List, Tuple, Union, Any, Optional, Dict
 from lib_comfyui import global_state, ipc
 
 
@@ -23,6 +23,7 @@ class WorkflowType:
     default_workflow: Union[str, Path] = "null"
     types: Union[str, Tuple[str, ...], Dict[str, str]] = dataclasses.field(default_factory=tuple)
     input_types: Union[str, Tuple[str, ...], Dict[str, str], None] = None
+    max_amount_of_io_nodes: Optional[Tuple[int | None, int | None]] = (None, None)
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
@@ -205,8 +206,7 @@ def run_workflow(
     tab: str,
     batch_input: Any,
     queue_front: Optional[bool] = None,
-    identity_on_error: Optional[bool] = False,
-    max_amount_of_io_nodes: Optional[Sequence[int]] = None
+    identity_on_error: Optional[bool] = False
 ) -> List[Any]:
     """
     Run a comfyui workflow synchronously
@@ -221,7 +221,6 @@ def run_workflow(
             - if **input_types** is a str, **batch_input** should be a single value that should match the type expected by **input_types**.
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
         identity_on_error (Optional[bool]): Whether to return batch_input (converted to the type expected by workflow_type.types) instead of raising a RuntimeError when the workflow fails to run
-        max_amount_of_io_nodes: (Optional[Sequence[int]]): Maximum amount of From Webui and To Webui nodes present in the workflow, respectively. If either of the conditions are not met, a RuntimeError is raised
     Returns:
         The outputs of the workflow, as a list.
         Each element of the list corresponds to one output node in the workflow.
@@ -248,9 +247,6 @@ def run_workflow(
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    if max_amount_of_io_nodes is None:
-        max_amount_of_io_nodes = [None, None]
-
     batch_input_args, input_types = _normalize_to_tuple(batch_input, workflow_type.input_types)
 
     if not candidate_ids:
@@ -260,7 +256,7 @@ def run_workflow(
     workflow_type_id = candidate_ids[0]
 
     try:
-        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, max_amount_of_io_nodes)
+        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, workflow_type.max_amount_of_io_nodes)
     except RuntimeError as e:
         if not identity_on_error:
             raise e

@@ -47,6 +47,9 @@ def on_script_unloaded():
 
 @ipc.restrict_to_process('webui')
 def on_before_image_saved(params):
+    if params.p is None:
+        return
+
     tab = {
         StableDiffusionProcessingTxt2Img: 'txt2img',
         StableDiffusionProcessingImg2Img: 'img2img',

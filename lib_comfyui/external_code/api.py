@@ -260,7 +260,7 @@ def run_workflow(
 
     try:
         ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, max_amount_of_nodes)
-    except ValueError as e:
+    except RuntimeError as e:
         if not identity_on_error:
             raise e
 

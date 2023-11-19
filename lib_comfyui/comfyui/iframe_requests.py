@@ -75,7 +75,7 @@ class ComfyuiIFrameRequests:
         max_amount_of_nodes: Sequence[Optional[int]]
     ) -> None:
         if len(max_amount_of_nodes) != 2:
-            raise ValueError(f'Expected a sequence of length 2 for argument "max_amount_of_nodes", got {len(max_amount_of_nodes)} instead')
+            raise RuntimeError(f'Expected a sequence of length 2 for argument "max_amount_of_nodes", got {len(max_amount_of_nodes)} instead')
 
         workflow_graph = get_workflow_graph(workflow_type_id)
         node_types = [node['type'] for node in workflow_graph['nodes']]

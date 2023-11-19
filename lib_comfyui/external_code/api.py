@@ -23,6 +23,8 @@ class WorkflowType:
     default_workflow: Union[str, Path] = "null"
     types: Union[str, Tuple[str, ...], Dict[str, str]] = dataclasses.field(default_factory=tuple)
     input_types: Union[str, Tuple[str, ...], Dict[str, str], None] = None
+    max_amount_of_ToWebui_nodes: Optional[int] = None
+    max_amount_of_FromWebui_nodes: Optional[int] = None
 
     def __post_init__(self):
         if isinstance(self.tabs, str):
@@ -205,7 +207,7 @@ def run_workflow(
     tab: str,
     batch_input: Any,
     queue_front: Optional[bool] = None,
-    identity_on_error: Optional[bool] = False,
+    identity_on_error: Optional[bool] = False
 ) -> List[Any]:
     """
     Run a comfyui workflow synchronously
@@ -249,9 +251,23 @@ def run_workflow(
     batch_input_args, input_types = _normalize_to_tuple(batch_input, workflow_type.input_types)
 
     if not candidate_ids:
-        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type are: {workflow_type.tabs}')
+        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. '
+                         f'Valid tabs for the given workflow type are: {workflow_type.tabs}')
 
     workflow_type_id = candidate_ids[0]
+
+    try:
+        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(
+            workflow_type_id,
+            workflow_type.max_amount_of_FromWebui_nodes,
+            workflow_type.max_amount_of_ToWebui_nodes,
+        )
+    except RuntimeError as e:
+        if not identity_on_error:
+            raise e
+
+        traceback.print_exception(e)
+        return batch_input_args
 
     try:
         if not is_workflow_type_enabled(workflow_type_id):
@@ -269,7 +285,7 @@ def run_workflow(
 
         # don't print just because the workflow type is disabled
         if not isinstance(e, WorkflowTypeDisabled):
-            print('\n'.join(traceback.format_exception_only(e)))
+            traceback.print_exception(e)
 
         if not workflow_type.is_same_io():
             print('[sd-webui-comfyui]', f'Returning input of type {workflow_type.input_types}, which likely does not match the expected output type {workflow_type.types}', file=sys.stderr)

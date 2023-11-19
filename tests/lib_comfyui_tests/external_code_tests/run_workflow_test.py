@@ -12,8 +12,9 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
             'test_tab': True,
         })
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_valid_workflow_with_dict_types(self, mock_start_workflow):
+    def test_valid_workflow_with_dict_types(self, mock_start_workflow, _):
         mock_start_workflow.return_value = [{"key1": 0, "key2": 1}]
         workflow_type = external_code.WorkflowType(
             base_id="test",
@@ -33,8 +34,9 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
         )
         self.assertEqual(result, mock_start_workflow.return_value)
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_valid_workflow_with_tuple_types(self, mock_start_workflow):
+    def test_valid_workflow_with_tuple_types(self, mock_start_workflow, _):
         mock_start_workflow.return_value = [{"key1": 0, "key2": 1}]
         workflow_type = external_code.WorkflowType(
             base_id="test",
@@ -54,8 +56,9 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
         )
         self.assertEqual(result, [tuple(batch.values()) for batch in mock_start_workflow.return_value])
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch('lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync')
-    def test_valid_workflow_with_str_types(self, mock_start_workflow):
+    def test_valid_workflow_with_str_types(self, mock_start_workflow, _):
         mock_start_workflow.return_value = [{"key1": 0}]
         workflow_type = external_code.WorkflowType(
             base_id="test",
@@ -75,8 +78,9 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
         )
         self.assertEqual(result, [next(iter(batch.values())) for batch in mock_start_workflow.return_value])
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch('lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync')
-    def test_workflow_type_not_on_tab(self, mock_start_workflow):
+    def test_workflow_type_not_on_tab(self, mock_start_workflow, _):
         workflow_type = external_code.WorkflowType(
             base_id="test",
             display_name="Test Tab",
@@ -90,8 +94,9 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
 
         mock_start_workflow.assert_not_called()
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_workflow_type_not_enabled(self, mock_start_workflow):
+    def test_workflow_type_not_enabled(self, mock_start_workflow, _):
         setattr(global_state, 'enabled_workflow_type_ids', {})
 
         workflow_type = external_code.WorkflowType(
@@ -107,8 +112,9 @@ class TestRunWorkflowBasicFunctionality(unittest.TestCase):
 
         mock_start_workflow.assert_not_called()
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_multiple_outputs(self, mock_start_workflow):
+    def test_multiple_outputs(self, mock_start_workflow, _):
         mock_start_workflow.return_value = [{"key1": 0, "key2": 1}, {"key1": 2, "key2": 3}]
 
         workflow_type = external_code.WorkflowType(
@@ -130,8 +136,9 @@ class TestRunWorkflowInputValidation(unittest.TestCase):
             'test_tab': True,
         })
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_batch_input_mismatch_dict(self, mock_start_workflow):
+    def test_batch_input_mismatch_dict(self, mock_start_workflow, _):
         workflow_type = external_code.WorkflowType(
             base_id="test",
             display_name="Test Tab",
@@ -145,8 +152,9 @@ class TestRunWorkflowInputValidation(unittest.TestCase):
 
         mock_start_workflow.assert_not_called()
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_batch_input_mismatch_tuple(self, mock_start_workflow):
+    def test_batch_input_mismatch_tuple(self, mock_start_workflow, _):
         workflow_type = external_code.WorkflowType(
             base_id="test",
             display_name="Test Tab",
@@ -160,8 +168,9 @@ class TestRunWorkflowInputValidation(unittest.TestCase):
 
         mock_start_workflow.assert_not_called()
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_identity_on_error(self, mock_start_workflow):
+    def test_identity_on_error(self, mock_start_workflow, _):
         mock_start_workflow.side_effect = RuntimeError("Failed to execute workflow")
         workflow_type = external_code.WorkflowType(
             base_id="test",
@@ -186,8 +195,9 @@ class TestRunWorkflowInputValidation(unittest.TestCase):
             queue_front=True,
         )
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_multiple_candidate_ids(self, mock_start_workflow):
+    def test_multiple_candidate_ids(self, mock_start_workflow, _):
         workflow_type = external_code.WorkflowType(
             base_id="test",
             display_name="Test Tab",
@@ -202,8 +212,9 @@ class TestRunWorkflowInputValidation(unittest.TestCase):
 
         mock_start_workflow.assert_not_called()
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_invalid_batch_input_type(self, mock_start_workflow):
+    def test_invalid_batch_input_type(self, mock_start_workflow, _):
         workflow_type = external_code.WorkflowType(
             base_id="test",
             display_name="Test Tab",
@@ -224,8 +235,9 @@ class TestRunWorkflowExecutionBehavior(unittest.TestCase):
             'test_tab': True,
         })
 
+    @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw")
     @patch("lib_comfyui.comfyui.iframe_requests.ComfyuiIFrameRequests.start_workflow_sync")
-    def test_large_batch_input(self, mock_start_workflow):
+    def test_large_batch_input(self, mock_start_workflow, _):
         workflow_type = external_code.WorkflowType(
             base_id="test",
             display_name="Test Tab",

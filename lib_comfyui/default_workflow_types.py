@@ -26,6 +26,12 @@ postprocess_workflow_type = external_code.WorkflowType(
     default_workflow=external_code.AUTO_WORKFLOW,
     types='IMAGE',
 )
+postprocess_image_workflow_type = external_code.WorkflowType(
+    base_id='postprocess_image',
+    display_name='Postprocess Image',
+    default_workflow=external_code.AUTO_WORKFLOW,
+    types='IMAGE',
+)
 postprocess_latent_workflow_type = external_code.WorkflowType(
     base_id='postprocess_latent',
     display_name='Postprocess (latent)',
@@ -38,6 +44,7 @@ def add_default_workflow_types():
     workflow_types = [
         sandbox_tab_workflow_type,
         postprocess_workflow_type,
+        postprocess_image_workflow_type,
         postprocess_latent_workflow_type,
         preprocess_workflow_type,
         preprocess_latent_workflow_type,

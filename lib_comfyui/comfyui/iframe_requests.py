@@ -1,7 +1,7 @@
 import json
 import multiprocessing
 from queue import Empty
-from typing import List, Any, Dict, Tuple
+from typing import List, Any, Dict, Tuple, Sequence, Optional
 from lib_comfyui import ipc, global_state, torch_utils, external_code
 from lib_comfyui.comfyui import queue_tracker
 
@@ -69,8 +69,32 @@ class ComfyuiIFrameRequests:
             global_state.node_inputs = None
 
     @staticmethod
+    @ipc.restrict_to_process('webui')
+    def validate_amount_of_nodes_or_throw(
+        workflow_type_id: str,
+        max_amount_of_nodes: Sequence[Optional[int]]
+    ) -> None:
+        if len(max_amount_of_nodes) != 2:
+            raise ValueError(f'Expected a sequence of length 2 for argument "max_amount_of_nodes", got {len(max_amount_of_nodes)} instead')
+
+        workflow_graph = get_workflow_graph(workflow_type_id)
+        node_types = [node['type'] for node in workflow_graph['nodes']]
+        amount_of_from_webui_nodes = len([t for t in node_types if t == 'FromWebui'])
+        amount_of_to_webui_nodes = len([t for t in node_types if t == 'ToWebui'])
+        max_from_webui_nodes = max_amount_of_nodes[0] if max_amount_of_nodes[0] is not None else amount_of_from_webui_nodes
+        max_to_webui_nodes = max_amount_of_nodes[1] if max_amount_of_nodes[1] is not None else amount_of_to_webui_nodes
+
+        if amount_of_from_webui_nodes > max_from_webui_nodes:
+            raise TooManyFromWebuiNodesError(f'Unable to run the workflow {workflow_type_id}. '
+                             f'Expected at most {max_from_webui_nodes} FromWebui node(s), {amount_of_from_webui_nodes} were found.')
+
+        if amount_of_to_webui_nodes > max_to_webui_nodes:
+            raise TooManyToWebuiNodesError(f'Unable to run the workflow {workflow_type_id}. '
+                             f'Expected at most {max_to_webui_nodes} ToWebui node(s), {amount_of_to_webui_nodes} were found.')
+
+    @staticmethod
     @ipc.restrict_to_process('comfyui')
-    def register_client(request):
+    def register_client(request) -> None:
         workflow_type_id = request['workflowTypeId']
         webui_client_id = request['webuiClientId']
         sid = request['sid']
@@ -79,7 +103,6 @@ class ComfyuiIFrameRequests:
             ComfyuiIFrameRequests.sid_map[webui_client_id] = {}
 
         ComfyuiIFrameRequests.sid_map[webui_client_id][workflow_type_id] = sid
-
         print(f'registered ws - {workflow_type_id} - {sid}')
 
     @staticmethod
@@ -118,3 +141,11 @@ def clear_queue(queue: multiprocessing.Queue):
             queue.get(timeout=1)
         except Empty:
             pass
+
+
+class TooManyFromWebuiNodesError(ValueError):
+    pass
+
+
+class TooManyToWebuiNodesError(ValueError):
+    pass

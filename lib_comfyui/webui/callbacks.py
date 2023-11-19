@@ -60,7 +60,7 @@ def on_before_image_saved(params):
         tab=tab,
         batch_input=type_conversion.webui_image_to_comfyui([params.image]),
         identity_on_error=True,
-        max_amount_of_nodes=[None, 1]
+        max_amount_of_io_nodes=[None, 1]
     )
 
-    params.image.putdata(type_conversion.comfyui_image_to_webui(results[0], return_tensors=False)[0].getdata())
+    params.image = type_conversion.comfyui_image_to_webui(results[0], return_tensors=False)[0]

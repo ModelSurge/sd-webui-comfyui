@@ -72,17 +72,17 @@ class ComfyuiIFrameRequests:
     @ipc.restrict_to_process('webui')
     def validate_amount_of_nodes_or_throw(
         workflow_type_id: str,
-        max_amount_of_nodes: Sequence[Optional[int]]
+        max_amount_of_io_nodes: Sequence[Optional[int]]
     ) -> None:
-        if len(max_amount_of_nodes) != 2:
+        if len(max_amount_of_io_nodes) != 2:
             raise RuntimeError(f'Expected a sequence of length 2 for argument "max_amount_of_nodes", got {len(max_amount_of_nodes)} instead')
 
         workflow_graph = get_workflow_graph(workflow_type_id)
         node_types = [node['type'] for node in workflow_graph['nodes']]
         amount_of_from_webui_nodes = len([t for t in node_types if t == 'FromWebui'])
         amount_of_to_webui_nodes = len([t for t in node_types if t == 'ToWebui'])
-        max_from_webui_nodes = max_amount_of_nodes[0] if max_amount_of_nodes[0] is not None else amount_of_from_webui_nodes
-        max_to_webui_nodes = max_amount_of_nodes[1] if max_amount_of_nodes[1] is not None else amount_of_to_webui_nodes
+        max_from_webui_nodes = max_amount_of_io_nodes[0] if max_amount_of_io_nodes[0] is not None else amount_of_from_webui_nodes
+        max_to_webui_nodes = max_amount_of_io_nodes[1] if max_amount_of_io_nodes[1] is not None else amount_of_to_webui_nodes
 
         if amount_of_from_webui_nodes > max_from_webui_nodes:
             raise TooManyFromWebuiNodesError(f'Unable to run the workflow {workflow_type_id}. '

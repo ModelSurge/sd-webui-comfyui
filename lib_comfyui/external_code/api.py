@@ -206,7 +206,7 @@ def run_workflow(
     batch_input: Any,
     queue_front: Optional[bool] = None,
     identity_on_error: Optional[bool] = False,
-    max_amount_of_nodes: Optional[Sequence[int]] = None
+    max_amount_of_io_nodes: Optional[Sequence[int]] = None
 ) -> List[Any]:
     """
     Run a comfyui workflow synchronously
@@ -221,7 +221,7 @@ def run_workflow(
             - if **input_types** is a str, **batch_input** should be a single value that should match the type expected by **input_types**.
         queue_front (Optional[bool]): Whether to queue the workflow before or after the currently queued workflows
         identity_on_error (Optional[bool]): Whether to return batch_input (converted to the type expected by workflow_type.types) instead of raising a RuntimeError when the workflow fails to run
-        max_amount_of_nodes: (Optional[Sequence[int]]): Maximum amount of From Webui and To Webui nodes present in the workflow, respectively. If either of the conditions are not met, a RuntimeError is raised
+        max_amount_of_io_nodes: (Optional[Sequence[int]]): Maximum amount of From Webui and To Webui nodes present in the workflow, respectively. If either of the conditions are not met, a RuntimeError is raised
     Returns:
         The outputs of the workflow, as a list.
         Each element of the list corresponds to one output node in the workflow.
@@ -248,18 +248,19 @@ def run_workflow(
     if queue_front is None:
         queue_front = getattr(global_state, 'queue_front', True)
 
-    if max_amount_of_nodes is None:
-        max_amount_of_nodes = [None, None]
+    if max_amount_of_io_nodes is None:
+        max_amount_of_io_nodes = [None, None]
 
     batch_input_args, input_types = _normalize_to_tuple(batch_input, workflow_type.input_types)
 
     if not candidate_ids:
-        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. Valid tabs for the given workflow type are: {workflow_type.tabs}')
+        raise ValueError(f'The workflow type {workflow_type.pretty_str()} does not exist on tab {tab}. '
+                         f'Valid tabs for the given workflow type are: {workflow_type.tabs}')
 
     workflow_type_id = candidate_ids[0]
 
     try:
-        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, max_amount_of_nodes)
+        ComfyuiIFrameRequests.validate_amount_of_nodes_or_throw(workflow_type_id, max_amount_of_io_nodes)
     except RuntimeError as e:
         if not identity_on_error:
             raise e

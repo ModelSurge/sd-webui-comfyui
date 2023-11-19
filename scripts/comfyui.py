@@ -92,7 +92,6 @@ class ComfyUIScript(scripts.Script):
             tab=self.get_tab(),
             batch_input=type_conversion.webui_image_to_comfyui([pp.image]),
             identity_on_error=True,
-            max_amount_of_io_nodes=[None, 1]
         )
 
         pp.image = type_conversion.comfyui_image_to_webui(results[0], return_tensors=False)[0]

@@ -78,7 +78,9 @@ class ComfyuiIFrameRequests:
             raise RuntimeError(f'Expected a sequence of length 2 for argument "max_amount_of_nodes", got {len(max_amount_of_nodes)} instead')
 
         workflow_graph = get_workflow_graph(workflow_type_id)
-        node_types = [node['type'] for node in workflow_graph['nodes']]
+        all_nodes = workflow_graph['nodes']
+        enabled_nodes = [node for node in all_nodes if node['mode'] != 2]
+        node_types = [node['type'] for node in enabled_nodes]
         amount_of_from_webui_nodes = len([t for t in node_types if t == 'FromWebui'])
         amount_of_to_webui_nodes = len([t for t in node_types if t == 'ToWebui'])
         max_from_webui_nodes = max_amount_of_io_nodes[0] if max_amount_of_io_nodes[0] is not None else amount_of_from_webui_nodes

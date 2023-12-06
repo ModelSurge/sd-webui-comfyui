@@ -82,9 +82,9 @@ class SharedMemoryIpcStrategy(IpcStrategy):
 
     def _set_metadata(self, lock_file: IO, metadata: Metadata):
         lock_file.seek(0)
-        sezialized = pickle.dumps(metadata)
-        lock_file.write(sezialized)
-        lock_file.truncate(len(sezialized))
+        serialized = pickle.dumps(metadata)
+        lock_file.write(serialized)
+        lock_file.truncate(len(serialized))
 
     def is_empty(self, lock_file: IO) -> bool:
         return self._get_metadata(lock_file).is_empty

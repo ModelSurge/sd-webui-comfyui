@@ -48,16 +48,25 @@ def start_comfyui_process(comfyui_install_location):
     )
 
 
-def get_comfyui_executable(comfyui_install_location):
+def get_comfyui_executable(comfyui_install_location: Path) -> str:
     executable = sys.executable
-    venv = comfyui_install_location / 'venv'
-    if venv.exists():
-        if os.name == 'nt':
-            executable = venv / 'scripts' / 'python.exe'
-        else:
-            executable = venv / 'bin' / 'python'
 
-        print('[sd-webui-comfyui]', 'Detected custom ComfyUI venv:', venv)
+    if os.name == 'nt':
+        executable_paths = [
+            comfyui_install_location / 'venv' / 'scripts' / 'python.exe',
+            comfyui_install_location.parent / 'python_embeded' / 'python.exe',
+        ]
+    else:
+        executable_paths = [
+            comfyui_install_location / 'venv' / 'bin' / 'python',
+            comfyui_install_location.parent / 'python_embeded' / 'python',
+        ]
+
+    for potential_executable in executable_paths:
+        if potential_executable.exists():
+            executable = potential_executable
+            print('[sd-webui-comfyui]', 'Detected custom ComfyUI venv:', executable)
+            break
 
     return str(executable)
 

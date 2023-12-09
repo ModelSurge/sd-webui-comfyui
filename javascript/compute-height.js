@@ -52,8 +52,7 @@ function setupComfyuiTabEvents() {
 
 function reloadComfyuiIFrames() {
     getWorkflowTypeIds().forEach(id => {
-        const comfyuiFrame = getWorkflowTypeIFrame(id);
-        reloadFrameElement(comfyuiFrame);
+        setupIFrame(id);
     });
 }
 
@@ -151,7 +150,7 @@ function setupIFrame(workflowTypeId) {
     const base_src = iframe.getAttribute("base_src");
     const iframe_src = base_src + "?" + iframeSearchParams.toString();
     if (iframe.src !== iframe_src) {
-        iframe.src =iframe_src;
+        iframe.src = iframe_src;
     }
     else {
         reloadFrameElement(iframe);

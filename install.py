@@ -1,12 +1,12 @@
 import launch
-import os
+import pathlib
 import pkg_resources
 import re
 import sys
 import traceback
 
 
-req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
+req_file = pathlib.Path(__file__).resolve().parent / "requirements.txt"
 req_re = re.compile('^([^=<>~]*)\s*(?:([=<>~])=\s*([^=<>~]*))?$')
 
 

@@ -7,20 +7,15 @@ from lib_comfyui.comfyui import type_conversion
 
 
 __original_create_sampler = None
-__original_re_param_code = None
 
 
 @ipc.restrict_to_process('webui')
 def apply_patches():
     from modules import sd_samplers, generation_parameters_copypaste
-    global __original_create_sampler, __original_re_param_code
+    global __original_create_sampler
 
     __original_create_sampler = sd_samplers.create_sampler
     sd_samplers.create_sampler = functools.partial(create_sampler_hijack, original_function=sd_samplers.create_sampler)
-
-    __original_re_param_code = generation_parameters_copypaste.re_param_code
-    generation_parameters_copypaste.re_param_code = r'\s*([\w ]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)'
-    generation_parameters_copypaste.re_param = re.compile(generation_parameters_copypaste.re_param_code)
 
 
 @ipc.restrict_to_process('webui')
@@ -45,14 +40,10 @@ def watch_prompts(component, **kwargs):
 @ipc.restrict_to_process('webui')
 def clear_patches():
     from modules import sd_samplers, generation_parameters_copypaste
-    global __original_create_sampler, __original_re_param_code
+    global __original_create_sampler
 
     if __original_create_sampler is not None:
         sd_samplers.create_sampler = __original_create_sampler
-
-    if __original_re_param_code is not None:
-        generation_parameters_copypaste.re_param_code = __original_re_param_code
-        generation_parameters_copypaste.re_param = re.compile(generation_parameters_copypaste.re_param_code)
 
 
 @ipc.restrict_to_process('webui')

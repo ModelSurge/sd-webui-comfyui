@@ -1,13 +1,13 @@
 import sys
 from types import ModuleType
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Optional, Dict, Any
 from lib_comfyui import ipc
 
 
 enabled: bool
 is_ui_instantiated: bool
 queue_front: bool
-focused_webui_client_id: str
+focused_webui_client_id: Optional[str] = None
 
 workflow_types: List
 enabled_workflow_type_ids: Dict[str, bool]

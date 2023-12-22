@@ -368,6 +368,7 @@ def get_comfy_model_config():
     unet_config = config_dict['model']['params']['unet_config']['params']
     unet_config['use_linear_in_transformer'] = unet_config.get('use_linear_in_transformer', False)
     unet_config['adm_in_channels'] = unet_config.get('adm_in_channels', None)
+    unet_config['use_temporal_attention'] = unet_config.get('use_temporal_attention', False)
     return comfy.model_detection.model_config_from_unet_config(unet_config)
 
 

@@ -19,7 +19,9 @@ if __name__ == "__main__":
 
 import atexit
 import builtins
-import signal
+import psutil
+import threading
+import time
 import runpy
 from lib_comfyui import (
     custom_extension_injector,
@@ -53,17 +55,19 @@ def setup_ipc():
     ipc.start_callback_listeners()
     atexit.register(ipc.stop_callback_listeners)
 
-    def exit_signal_handler(sig, frame):
-        exit()
+    parent_id = os.getppid()
+    monitor_thread = threading.Thread(target=watch_webui_exit, args=(parent_id,))
+    monitor_thread.start()
 
-    # signal handlers for graceful termination
-    # they should trigger in one of the following situations:
-    # - the user hits ctrl+C
-    # linux only:
-    # - the webui gradio UI is reloaded
-    # - the comfyui server is closed using the stop function of the lib_comfyui.comfyui_process module
-    signal.signal(signal.SIGTERM, exit_signal_handler)
-    signal.signal(signal.SIGINT, exit_signal_handler)
+
+@ipc.restrict_to_process('comfyui')
+def watch_webui_exit(parent_id):
+    while True:
+        if not psutil.pid_exists(parent_id):
+            print("[sd-webui-comfyui]", "The webui has exited, exiting comfyui.")
+            exit()
+
+        time.sleep(1)
 
 
 @ipc.restrict_to_process('comfyui')

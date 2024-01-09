@@ -75,10 +75,12 @@ def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_pa
             self.user_manager.add_routes(self.routes)
             self.app.add_routes(self.routes)
 
-            for name, dir in nodes.EXTENSION_WEB_DIRS.items():
-                self.app.add_routes([
-                    web.static('/extensions/' + urllib.parse.quote(name), dir, follow_symlinks=True),
-                ])
+            [...]
+
+            self.app.add_routes([
+                <- add code right there in the list
+                web.static('/', self.web_root, follow_symlinks=True),
+            ])
     ...
     """
     add_routes_ast_function = get_ast_function(parsed_class, 'add_routes')

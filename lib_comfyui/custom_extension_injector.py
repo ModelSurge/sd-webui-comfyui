@@ -72,11 +72,13 @@ def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_pa
 
     ...
         def add_routes(self):
+            self.user_manager.add_routes(self.routes)
             self.app.add_routes(self.routes)
-            self.app.add_routes([
-                    <- add code right there in the list
-                web.static('/', self.web_root, follow_symlinks=True),
-            ])
+
+            for name, dir in nodes.EXTENSION_WEB_DIRS.items():
+                self.app.add_routes([
+                    web.static('/extensions/' + urllib.parse.quote(name), dir, follow_symlinks=True),
+                ])
     ...
     """
     add_routes_ast_function = get_ast_function(parsed_class, 'add_routes')
@@ -84,9 +86,11 @@ def patch_prompt_server_add_routes(parsed_class: ast.ClassDef, custom_scripts_pa
         code_patch = generate_prompt_server_add_routes_code_patch(custom_scripts_path)
         extra_line_of_code = ast.parse(code_patch)
         try:
-            add_routes_ast_function.body[2].value.args[0].elts[0:0] = [extra_line_of_code.body[0].value]
+            add_routes_ast_function.body[3].value.args[0].elts[0:0] = [extra_line_of_code.body[0].value]
         except:
-            raise RuntimeError("Cannot patch comfyui as it is not up to date")
+            raise RuntimeError("ComfyUI was probably updated with breaking changes. "
+                               "If A1111, ComfyUI and sd-webui-comfyui are up to date, "
+                               "please notify the authors of sd-webui-comfyui.")
 
 
 def generate_prompt_server_add_routes_code_patch(custom_scripts_path):

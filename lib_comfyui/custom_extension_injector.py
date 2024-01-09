@@ -14,7 +14,6 @@ def register_custom_nodes(custom_nodes_path_list):
 
     for custom_nodes_path in custom_nodes_path_list:
         add_model_folder_path('custom_nodes', custom_nodes_path)
-        # load_custom_node(custom_nodes_path)
 
 
 @ipc.restrict_to_process('comfyui')

@@ -18,9 +18,6 @@ def register_custom_nodes(custom_nodes_path_list):
 
 @ipc.restrict_to_process('comfyui')
 def register_custom_scripts(custom_scripts_path_list):
-    if not custom_scripts_path_list:
-        return
-
     from nodes import EXTENSION_WEB_DIRS
 
     for custom_scripts_path in custom_scripts_path_list:

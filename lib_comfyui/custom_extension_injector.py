@@ -85,10 +85,6 @@ def patch_prompt_server_add_routes(self, *_, custom_scripts_path_list, **__):
     self.add_routes = functools.partial(add_routes_patch, original_function=self.add_routes)
 
 
-def generate_prompt_server_add_routes_code_patch(custom_scripts_path):
-    return rf'web.static("/webui_scripts/{os.path.basename(os.path.dirname(custom_scripts_path))}", r"{custom_scripts_path}", follow_symlinks=True)'
-
-
 def get_ast_function(parsed_object, function_name):
     res = [exp for exp in parsed_object.body if getattr(exp, 'name', None) == function_name]
     if not res:

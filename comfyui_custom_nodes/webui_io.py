@@ -1,3 +1,5 @@
+import os.path
+
 from lib_comfyui import global_state
 
 
@@ -57,6 +59,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "FromWebui": 'From Webui',
-    "ToWebui": 'To Webui',
+    "FromWebui": "From Webui",
+    "ToWebui": "To Webui",
 }

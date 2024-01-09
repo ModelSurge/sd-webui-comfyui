@@ -1,7 +1,7 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
-import { patchUiEnv } from "/webui_scripts/sd-webui-comfyui/extensions/webuiPatches.js";
-import { iframeRegisteredEvent, appReadyEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { patchUiEnv } from "/extensions/webui_scripts/sd-webui-comfyui/extensions/webuiPatches.js";
+import { iframeRegisteredEvent, appReadyEvent } from "/extensions/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
 
 
 async function setupWebuiRequestsEnvironment() {

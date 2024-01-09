@@ -102,8 +102,8 @@ def add_server__init__patch(callback):
     import server
     original_init = server.PromptServer.__init__
 
-    def patched_PromptQueue__init__(*args, **kwargs):
+    def patched_PromptServer__init__(*args, **kwargs):
         callback(*args, **kwargs)
         original_init(*args, **kwargs)
 
-    server.PromptServer.__init__ = patched_PromptQueue__init__
+    server.PromptServer.__init__ = patched_PromptServer__init__

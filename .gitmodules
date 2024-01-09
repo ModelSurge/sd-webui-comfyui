@@ -1,0 +1,3 @@
+[submodule "docs/sd-webui-comfyui.wiki"]
+	path = docs/sd-webui-comfyui.wiki
+	url = git@github.com:ModelSurge/sd-webui-comfyui.wiki.git

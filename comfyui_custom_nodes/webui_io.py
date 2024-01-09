@@ -1,5 +1,3 @@
-import os.path
-
 from lib_comfyui import global_state
 
 

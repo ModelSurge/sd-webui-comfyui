@@ -1,7 +1,7 @@
 import { app } from "/scripts/app.js";
 import { api } from "/scripts/api.js";
-import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
-import { getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
+import { iframeRegisteredEvent } from "/extensions/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { getTypesLength } from "/extensions/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
 
 
 async function patchUiEnv(iframeInfo) {

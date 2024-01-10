@@ -48,7 +48,7 @@ async def async_iter_raw_patched(response, proxy_route):
     import_paths_to_patch = [
         "/scripts/",
         "/extensions/",
-        "/webui_scripts/"
+        "/extensions/webui_scripts/"
     ]
     patches = [
         (b'/favicon', proxy_route_bytes + b'/favicon'),

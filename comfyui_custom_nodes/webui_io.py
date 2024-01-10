@@ -57,6 +57,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "FromWebui": 'From Webui',
-    "ToWebui": 'To Webui',
+    "FromWebui": "From Webui",
+    "ToWebui": "To Webui",
 }

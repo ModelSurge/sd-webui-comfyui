@@ -1,6 +1,6 @@
 import { app } from "/scripts/app.js";
-import { iframeRegisteredEvent } from "/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
-import { isString, getTypesLength } from "/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
+import { iframeRegisteredEvent } from "/extensions/webui_scripts/sd-webui-comfyui/extensions/webuiEvents.js";
+import { isString, getTypesLength } from "/extensions/webui_scripts/sd-webui-comfyui/extensions/webuiTypes.js";
 
 
 function createVoidWidget(node, name) {

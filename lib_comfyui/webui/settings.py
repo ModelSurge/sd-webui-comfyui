@@ -161,6 +161,7 @@ def get_comfyui_client_url():
     return client_url
 
 
+@ipc.restrict_to_process('webui')
 def canonicalize_url(input_url: str, default_port: int = 8189) -> str:
     from urllib.parse import urlparse, urlunparse
     from modules import shared

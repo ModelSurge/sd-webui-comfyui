@@ -41,6 +41,8 @@ def create_section():
     shared.opts.onchange("comfyui_reverse_proxy_enabled", update_reverse_proxy_enabled)
     update_reverse_proxy_enabled()
 
+    shared.opts.add_option("comfyui_reverse_proxy_disable_port", shared.OptionInfo(False,'Disable using the port when using reverse_proxy. Useful if using a nginx server',section=section))
+
 
 @ipc.restrict_to_process('webui')
 def update_enabled():
@@ -161,7 +163,7 @@ def get_comfyui_client_url():
 
 def canonicalize_url(input_url: str, default_port: int = 8189) -> str:
     from urllib.parse import urlparse, urlunparse
-
+    from modules import shared
     # Step 1: Prepend 'http://' if scheme is missing
     if not input_url.startswith(('http://', 'https://')):
         input_url = 'http://' + input_url
@@ -173,8 +175,9 @@ def canonicalize_url(input_url: str, default_port: int = 8189) -> str:
     scheme = parsed.scheme if parsed.scheme else 'http'
 
     # Step 4: Add the missing port
+    disable_port = shared.opts.data.get('comfyui_reverse_proxy_disable_port',False)
     netloc = parsed.netloc
-    if ':' not in netloc:  # Check if port is missing
+    if ':' not in netloc and not disable_port:  # Check if port is missing
         netloc += f":{default_port}"
     elif netloc.count(':') == 1 and parsed.scheme:  # If port exists but scheme was present in input
         host, port = netloc.split(':')
